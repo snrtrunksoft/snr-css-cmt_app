@@ -1,0 +1,12 @@
+form input{
+    border : 1px transparent;
+    background-color : #0001;
+    border-radius : 5px; 
+    outline: none;
+    padding: 3px;
+    font-weight: bold;
+    font-size: medium;
+}
+form h2{
+    margin: 5px;
+}
