@@ -1,13 +1,87 @@
 import React from "react";
-const AddNewNameCard = () =>{
+import "./AddNewNameCard.css";
+import { Row, Col, Button } from "antd";
+import { useForm } from "react-hook-form";
+
+const AddNewNameCard = ({ 
+    data,
+    setNewRecordId,
+    setNewRecordName,
+    setNewRecordPhone,
+    setNewRecordAddress,
+    setNewRecordStatus,
+    setIsAddNewNameCardModalOpen,
+    handleAddNewNameCard,
+    }) => {
+
+    const { register, reset } = useForm();
+    const handleReset = () => {
+        reset();
+    };
 
     return(
         <div>
             <form>
-                <h2>Name : <input/></h2>
-                <h2>Phone : <input/></h2>
-                <h2>Address : <input/></h2>
-                <h2>Status : <input/></h2>
+                <Row>
+                    <h2>Id : {parseInt(data[data.length - 1]['id']) + 1}</h2>
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Name : </h2>
+                    </Col>
+                    <Col>
+                        <h2><input
+                            type="text" {...register('newRecordName')}
+                            onChange={(e) => {setNewRecordName(e.target.value)}}
+                        /></h2>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Phone : </h2>
+                    </Col>
+                    <Col>
+                        <h2><input
+                            type="number"
+                            {...register('newRecordPhone')}
+                            onChange={(e) => {setNewRecordPhone(e.target.value)}}
+                        /></h2>
+                    </Col>  
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Address : </h2>
+                    </Col>
+                    <Col>
+                        <h2><input
+                            {...register('Address')}
+                            onChange={(e) => {setNewRecordAddress(e.target.value)}}
+                        /></h2>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Status : </h2>
+                    </Col>
+                    <Col>
+                        <h2><input
+                            {...register('Status')}
+                            onChange={(e) => {setNewRecordStatus(e.target.value)}}
+                        /></h2>
+                    </Col>
+                </Row>
+                <Row style={{display:'flex',alignItems:'flex-end',justifyContent:'flex-end'}}>
+                    <Button 
+                        onClick={()=>{handleReset();setIsAddNewNameCardModalOpen(false)}}
+                        style={{margin:'0px 5px',border:'1px solid black',backgroundColor:'transparent',color:"black"}}
+                        >Cancel</Button>
+                    <Button 
+                        type="primary" 
+                        onClick={()=>{
+                            handleAddNewNameCard();
+                            handleReset();
+                        }}>Add</Button>
+                </Row>
             </form>
         </div>
     );
