@@ -1,8 +1,8 @@
 .app {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh;
   background-color: #f0f0f0;
   margin: 0;
 }
@@ -18,8 +18,8 @@
 
 .fixed-div {
   position: fixed;
-  bottom: 100px;
-  right: 170px;
+  bottom: 50px;
+  right: 30px;
   padding: 20px;
   color: blue;
   font-style: italic;
