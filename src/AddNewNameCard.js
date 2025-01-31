@@ -5,19 +5,35 @@ import { useForm } from "react-hook-form";
 
 const AddNewNameCard = ({ 
     data,
-    setNewRecordId,
     setNewRecordName,
     setNewRecordPhone,
     setNewRecordAddress,
     setNewRecordStatus,
+    newRecordStatus,
     setIsAddNewNameCardModalOpen,
     handleAddNewNameCard,
     }) => {
 
     const { register, reset } = useForm();
+
     const handleReset = () => {
         reset();
+        setNewRecordName("");
+        setNewRecordPhone("");
+        setNewRecordAddress("");
+        setNewRecordStatus("New");
     };
+
+    const dropDownList = (
+    <select
+      value={newRecordStatus}
+      onChange={(e) => setNewRecordStatus(e.target.value)}
+    >
+      <option value="New">New</option>
+      <option value="In-progress">In-progress</option>
+      <option value="Complete">Complete</option>
+    </select>
+  );
 
     return(
         <div>
@@ -31,7 +47,7 @@ const AddNewNameCard = ({
                     </Col>
                     <Col>
                         <h2><input
-                            type="text" {...register('newRecordName')}
+                            type="text" {...register("name")}
                             onChange={(e) => {setNewRecordName(e.target.value)}}
                         /></h2>
                     </Col>
@@ -42,8 +58,7 @@ const AddNewNameCard = ({
                     </Col>
                     <Col>
                         <h2><input
-                            type="number"
-                            {...register('newRecordPhone')}
+                            type="number" {...register("phone")}
                             onChange={(e) => {setNewRecordPhone(e.target.value)}}
                         /></h2>
                     </Col>  
@@ -53,8 +68,7 @@ const AddNewNameCard = ({
                         <h2>Address : </h2>
                     </Col>
                     <Col>
-                        <h2><input
-                            {...register('Address')}
+                        <h2><input {...register('Address')}
                             onChange={(e) => {setNewRecordAddress(e.target.value)}}
                         /></h2>
                     </Col>
@@ -64,10 +78,7 @@ const AddNewNameCard = ({
                         <h2>Status : </h2>
                     </Col>
                     <Col>
-                        <h2><input
-                            {...register('Status')}
-                            onChange={(e) => {setNewRecordStatus(e.target.value)}}
-                        /></h2>
+                        <h2>{dropDownList}</h2>
                     </Col>
                 </Row>
                 <Row style={{display:'flex',alignItems:'flex-end',justifyContent:'flex-end'}}>
