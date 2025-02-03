@@ -25,15 +25,16 @@ const AddNewNameCard = ({
     };
 
     const dropDownList = (
-    <select
-      value={newRecordStatus}
-      onChange={(e) => setNewRecordStatus(e.target.value)}
-    >
-      <option value="New">New</option>
-      <option value="In-progress">In-progress</option>
-      <option value="Complete">Complete</option>
-    </select>
-  );
+        <select
+            value={newRecordStatus}
+            style={{borderRadius:'5px',padding:'5px'}}
+            onChange={(e) => setNewRecordStatus(e.target.value)}
+            >
+            <option value="New">New</option>
+            <option value="In-progress">In-progress</option>
+            <option value="Complete">Complete</option>
+        </select>
+    );
 
     return(
         <div>
