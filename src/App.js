@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import './App.css';
 import NameCard from './NameCard';
 import AddNewNameCard from './AddNewNameCard';
-import { Button, Col, Divider, Modal, Row, Switch, Table,Tag } from "antd";
-import { Bar, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { Button, Modal } from "antd";
+import { SwapOutlined } from "@ant-design/icons";
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
 // Registering necessary Chart.js components
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 function App() {
 
@@ -17,16 +18,16 @@ function App() {
   const [ newRecordPhone, setNewRecordPhone ] = useState('');
   const [ newRecordAddress, setNewRecordAddress ] = useState('');
   const [ newRecordStatus, setNewRecordStatus ] = useState("New");
-  const [ statusSelection, setStatusSelection ] = useState("New");
+
 
 
   const [ data, setData]  = useState([
-      { id: 1, Name: "Name 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New", },
-      { id: 2, Name: "Name 2", Phone:"9767203040", Age:24, Address:'home 2', Status: "In-progress", },
-      { id: 3, Name: "Name 3", Phone:"9992344760", Age:14, Address:'home 3', Status: "Complete", },
-      { id: 4, Name: "Name 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New", },
-      { id: 5, Name: "Name 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New", },
-      { id: 6, Name: "Name 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete", },
+      { id: 1, Name: "Name 1", Phone:"9700xxx", Address:'home 1', Status: "In-progress" },
+      { id: 2, Name: "Name 2", Phone:"9767xxx", Address:'home 2', Status: "New" },
+      { id: 3, Name: "Name 3", Phone:"9993xxx", Address:'home 3', Status: "Complete" },
+      { id: 4, Name: "Name 4", Phone:"8324xxx", Address:'home 4', Status: "New" },
+      { id: 5, Name: "Name 5", Phone:"6304xxx", Address:'home 5', Status: "New" },
+      { id: 6, Name: "Name 6", Phone:"8121xxx", Address:'home 6', Status: "Complete" },
   ]);
 
   const statusCount = data.reduce((acc,item) => {
@@ -36,14 +37,14 @@ function App() {
 
   console.log("StatusCount:",statusCount);
   
-  const graphData = {
-    labels: ["New","In-progress","Complete","Cancelled"],
+  const BarGraphData = {
+    labels: Object.keys(statusCount),
     datasets: [
         {
           label: 'Status Count',
           data: Object.values(statusCount),
-          backgroundColor: ['#FF5733', '#00B0FF', '#4CAF50', 'pink'],
-          borderColor: ['#FF5733', '#00B0FF', '#4CAF50', 'pink'],
+          backgroundColor: ['#FF5733', '#4CAF50', '#00B0FF'],
+          borderColor: ['#FF5733', '#4CAF50', '#00B0FF'],
         }
       ]
   };
@@ -58,35 +59,6 @@ function App() {
     },
   };
 
-  const columns = [
-    {
-      title:'Name',
-      dataIndex :'Name',
-      key:'Name',
-      render: (text) => <a>{text}</a>,
-    },
-    {
-      title:'Phone',
-      dataIndex:'Phone',
-      key:'Phone',
-    },
-    {
-      title:'Age',
-      dataIndex:'Age',
-      key:'Age',
-    },
-    {
-      title:'Address',
-      dataIndex:'Address',
-      key:'Address',
-    },
-    {
-      title:'Status',
-      dataIndex:'Status',
-      key:'Status',
-    },
-  ]
-
   const newRecord = {
     id: parseInt(data[data.length - 1]['id']) + 1,
     Name: newRecordName,
@@ -99,85 +71,31 @@ function App() {
     setIsAddNewNameCardModalOpen(false);
   };
 
-  const dropDownList = (
-    <select
-      value={statusSelection}
-      style={{borderRadius:'5px',padding:'5px',marginRight:'10px'}}
-      onChange={(e) => setStatusSelection(e.target.value)}
-    >
-      <option value="New">New</option>
-      <option value="In-progress">In-progress</option>
-      <option value="Complete">Complete</option>
-      <option value="Cancelled">Cancelled</option>
-    </select>
-  );
-
   return (
     <div className="app">
-      <div className='fixed-div'>
-        Status: {dropDownList}
-        Switch View
-        <Switch
-          style={{marginLeft:'5px'}}  
-          onClick={()=>{ dataView === "grid" ? setDataView("table") : setDataView("grid")}}
-        ></Switch>
+      <div >
+        <Bar data={BarGraphData} options={options} height="300px" width="400px"></Bar>
       </div>
-      {dataView === "table" ? (
-        <div style={{backgroundColor:'',width:'40%'}}>
-          <Table 
-            columns={columns} 
-            dataSource={data} 
-            pagination={{pageSize:5,simple:true}}
-            style={{padding:'5px'}}
-            footer={()=>(
-              <tr style={{display:'flex',alignItems:'center',justifyContent:'center',height:'10px'}}>
-                <td colSpan={columns.length}>
-                  <Button 
-                    onClick={()=>setIsAddNewNameCardModalOpen(true)}
-                    style={{
-                      border:'transparent',
-                      fontSize:'40px',
-                      backgroundColor:'transparent'
-                      }}>+</Button>
-                </td>
-              </tr>
-            )}
-            ></Table>
-        </div>) : (
-        <div className='grid'>
-          {data.map((item) => (
-            <NameCard key={item.id}
-              Name={item.Name}
-              Phone={item.Phone}
-              Address={item.Address}
-              Status={item.Status}
-              dataView={dataView}
-              data={data}
-              />
-          ))}
-            <div
-              className={dataView === "grid" ? 'nameCard' : 'table'}
-              onClick={()=>setIsAddNewNameCardModalOpen(true)}
-              style= {{
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-              }}>
-              <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
-            </div>
-        </div>)}
-      <div style={{width:"100%"}}>
-        <Row style={{padding:'10px',backgroundColor:'',display:'flex',alignItems:'center',justifyContent:'space-evenly'}}>
-          <Col>
-            <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar> 
-          </Col>
-          <Col>
-            <Divider type='vertical' style={{height:250,backgroundColor:'black'}}></Divider>
-          </Col>
-          <Col>
-            <Pie data={graphData} options={options}></Pie>
-          </Col>
-        </Row>
+      <div className={dataView === "grid" ? "grid" : "list"}>
+        {data.map((item) => (
+          <NameCard key={item.id}
+            Name={item.Name}
+            Phone={item.Phone}
+            Address={item.Address}
+            Status={item.Status}
+            dataView={dataView}
+            />
+        ))}
+          <div
+            className= { dataView === "grid" ? 'nameCard' : 'list-item'}
+            onClick={()=>setIsAddNewNameCardModalOpen(true)}
+            style= {{
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center',
+            }}>
+            <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
+          </div>
       </div>
       <Modal
         title="AddNewNameCard"
@@ -196,6 +114,12 @@ function App() {
           handleAddNewNameCard={handleAddNewNameCard}
           />
       </Modal>
+      <div 
+        className='fixed-div' 
+        onClick={()=>{ dataView === "grid" ? setDataView("list") : setDataView("grid")}}
+        >
+        Switch View {<SwapOutlined/>}
+        </div>
     </div>
   );
 }

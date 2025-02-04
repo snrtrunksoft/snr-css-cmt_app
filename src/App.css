@@ -1,7 +1,5 @@
 .app {
   display: flex;
-  padding-right: 60px;
-  padding-top: 40px;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -20,8 +18,12 @@
 
 .fixed-div {
   position: fixed;
-  Top: 10px;
-  right: 50px;
-  color: Black;
+  bottom: 50px;
+  right: 30px;
+  padding: 20px;
+  color: blue;
+  font-style: italic;
   font-size: larger;
+  border-radius: 8px;
+  /* Optional: rounded corners */
 }
