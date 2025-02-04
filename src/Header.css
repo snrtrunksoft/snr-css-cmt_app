@@ -1,0 +1,15 @@
+
+.header{
+    width: 100%;
+    display: flex;
+    background: linear-gradient(to right, rgb(255, 94, 98,0.8), rgb(255, 153, 102));
+    align-items: center;
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    justify-content: space-between;
+}
+
+.header-left{
+    margin-left: 20px;
+}

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import NameCard from './NameCard';
+import Header from './Header';
 import AddNewNameCard from './AddNewNameCard';
-import { Button, Col, Divider, Modal, Row, Switch, Table,Tag } from "antd";
+import { Button, Col, Divider, Modal, Row, Table, } from "antd";
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
@@ -17,8 +18,8 @@ function App() {
   const [ newRecordPhone, setNewRecordPhone ] = useState('');
   const [ newRecordAddress, setNewRecordAddress ] = useState('');
   const [ newRecordStatus, setNewRecordStatus ] = useState("New");
-  const [ statusSelection, setStatusSelection ] = useState("New");
-
+  const [ statusSelection, setStatusSelection ] = useState("All");
+  const [ hideDashboard, setHideDashboard ] = useState(false);
 
   const [ data, setData]  = useState([
       { id: 1, Name: "Name 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New", },
@@ -29,12 +30,24 @@ function App() {
       { id: 6, Name: "Name 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete", },
   ]);
 
+  const [ duplicateData, setDuplicateData ] = useState(data);
+
+  useEffect(()=>{
+    setDuplicateData(data);
+  },[data]);
+
   const statusCount = data.reduce((acc,item) => {
     acc[item.Status] = (acc[item.Status] || 0) + 1;
     return acc;
   }, {});
 
   console.log("StatusCount:",statusCount);
+
+  const legendLabels = {
+    "New": "New Status",
+    "In-progress": "In Progress Status",
+    "Complete": "Completed Status"
+  };
   
   const graphData = {
     labels: ["New","In-progress","Complete","Cancelled"],
@@ -42,8 +55,8 @@ function App() {
         {
           label: 'Status Count',
           data: Object.values(statusCount),
-          backgroundColor: ['#FF5733', '#00B0FF', '#4CAF50', 'pink'],
-          borderColor: ['#FF5733', '#00B0FF', '#4CAF50', 'pink'],
+          backgroundColor: ['brown', '#00B0FF', '#4CAF50', 'pink'],
+          borderColor: ['brown', '#00B0FF', '#4CAF50', 'pink'],
         }
       ]
   };
@@ -55,6 +68,21 @@ function App() {
         display: true,
         text: 'Status Distribution',
       },
+      legend: {
+        position: 'top',
+        labels: {
+          generateLabels: (chart) => {
+            // Customizing the legend labels based on the chart's data
+            return chart.data.labels.map((label, index) => ({
+              text: legendLabels[label] || label,
+              fillStyle: chart.data.datasets[0].backgroundColor[index],
+              strokeStyle: chart.data.datasets[0].borderColor[index],
+              lineWidth: 1
+            }));
+          } 
+        },
+        onClick: null,
+      }
     },
   };
 
@@ -74,6 +102,8 @@ function App() {
       title:'Age',
       dataIndex:'Age',
       key:'Age',
+      sorter: (a, b) => a.Age - b.Age,
+      sortDirections : ['ascend', 'descend'],
     },
     {
       title:'Address',
@@ -84,6 +114,8 @@ function App() {
       title:'Status',
       dataIndex:'Status',
       key:'Status',
+      sorter: (a, b) => a.Status.localeCompare(b.Status),  // Sorting by status alphabetically
+      sortDirections: ['ascend','descend'],
     },
   ]
 
@@ -99,12 +131,25 @@ function App() {
     setIsAddNewNameCardModalOpen(false);
   };
 
+  const handleStatusSelection = (value) =>{
+    setStatusSelection(value);
+    setHideDashboard(true);
+    if(value === "All"){
+      setDuplicateData(data);
+      setHideDashboard(false);
+    }else{
+      const filteredRecords = data.filter((prev)=> prev.Status === value);
+      setDuplicateData(filteredRecords);
+    };
+  };
+
   const dropDownList = (
     <select
       value={statusSelection}
       style={{borderRadius:'5px',padding:'5px',marginRight:'10px'}}
-      onChange={(e) => setStatusSelection(e.target.value)}
+      onChange={(e) => handleStatusSelection(e.target.value)}
     >
+      <option value="All">All</option>
       <option value="New">New</option>
       <option value="In-progress">In-progress</option>
       <option value="Complete">Complete</option>
@@ -114,21 +159,19 @@ function App() {
 
   return (
     <div className="app">
-      <div className='fixed-div'>
-        Status: {dropDownList}
-        Switch View
-        <Switch
-          style={{marginLeft:'5px'}}  
-          onClick={()=>{ dataView === "grid" ? setDataView("table") : setDataView("grid")}}
-        ></Switch>
-      </div>
+      <Header 
+        dropDownList={dropDownList} 
+        dataView={dataView} 
+        setDataView={setDataView} 
+        setHideDashboard={setHideDashboard} 
+        hideDashboard={hideDashboard}
+        />
       {dataView === "table" ? (
-        <div style={{backgroundColor:'',width:'40%'}}>
+        <div style={{width:'40%',paddingTop:'30px'}}>
           <Table 
             columns={columns} 
-            dataSource={data} 
+            dataSource={duplicateData} 
             pagination={{pageSize:5,simple:true}}
-            style={{padding:'5px'}}
             footer={()=>(
               <tr style={{display:'flex',alignItems:'center',justifyContent:'center',height:'10px'}}>
                 <td colSpan={columns.length}>
@@ -145,7 +188,7 @@ function App() {
             ></Table>
         </div>) : (
         <div className='grid'>
-          {data.map((item) => (
+          {duplicateData.map((item) => (
             <NameCard key={item.id}
               Name={item.Name}
               Phone={item.Phone}
@@ -166,8 +209,8 @@ function App() {
               <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
             </div>
         </div>)}
-      <div style={{width:"100%"}}>
-        <Row style={{padding:'10px',backgroundColor:'',display:'flex',alignItems:'center',justifyContent:'space-evenly'}}>
+      <div style={{width:"100%"}} hidden={hideDashboard}>
+        <Row className='graph'>
           <Col>
             <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar> 
           </Col>
