@@ -3,7 +3,7 @@
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-align: left;
+    text-align: center;
 }
 
 .nameCard h3 {
@@ -17,7 +17,7 @@
     color: #666;
 }
 
-/* .list {
+.list {
     width: 100%;
     max-width: 600px;
     padding: 20px;
@@ -40,4 +40,4 @@
 .list-item p {
     margin-top: 5px;
     color: #555;
-} */
+}
