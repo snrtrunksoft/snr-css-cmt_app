@@ -6,7 +6,7 @@
     align-items: center;
     position: fixed;
     top: 0px;
-    right: 0px;
+    z-index: 1000;
     justify-content: space-between;
 }
 

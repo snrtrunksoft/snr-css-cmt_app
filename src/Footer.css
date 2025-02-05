@@ -1,0 +1,9 @@
+.footer{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    bottom: 10px;
+    right: 20px;
+}
