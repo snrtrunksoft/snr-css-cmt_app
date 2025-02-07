@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import NameCard from './NameCard';
 import Header from './Header';
+import Footer from './Footer';
 import AddNewNameCard from './AddNewNameCard';
 import { Button, Col, Divider, Modal, Row, Table, } from "antd";
 import { Bar, Pie } from 'react-chartjs-2';
@@ -41,6 +42,19 @@ function App() {
     return acc;
   }, {});
 
+  if(!("New" in statusCount)){
+    statusCount["New"] = 0;
+  };
+  if(!("In-progress" in statusCount)){
+    statusCount["In-progress"] = 0;
+  };
+  if(!("Complete" in statusCount)){
+    statusCount["Complete"] = 0;
+  };
+  if (!("Cancelled" in statusCount)) {
+    statusCount["Cancelled"] = 0;
+  };
+
   console.log("StatusCount:",statusCount);
 
   const legendLabels = {
@@ -50,7 +64,7 @@ function App() {
   };
   
   const graphData = {
-    labels: ["New","In-progress","Complete","Cancelled"],
+    labels: Object.keys(statusCount),
     datasets: [
         {
           label: 'Status Count',
@@ -167,7 +181,7 @@ function App() {
         hideDashboard={hideDashboard}
         />
       {dataView === "table" ? (
-        <div style={{width:'40%',paddingTop:'30px'}}>
+        <div className='table'>
           <Table 
             columns={columns} 
             dataSource={duplicateData} 
@@ -209,6 +223,7 @@ function App() {
               <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
             </div>
         </div>)}
+      <Divider type='horizontal'/>
       <div style={{width:"100%"}} hidden={hideDashboard}>
         <Row className='graph'>
           <Col>
@@ -239,6 +254,8 @@ function App() {
           handleAddNewNameCard={handleAddNewNameCard}
           />
       </Modal>
+      <Divider type='horizontal'/>
+      {<Footer/>}
     </div>
   );
 }
