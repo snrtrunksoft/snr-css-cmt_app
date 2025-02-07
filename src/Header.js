@@ -1,19 +1,23 @@
 import { Switch } from "antd";
-import React from "react";
+import React, { useState } from "react";
 import "./Header.css";
 
 const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDashboard }) =>{
+    const [ view, setView ] = useState("Grid");
     return(
         <header className="header">
             <div className="header-left">
-                <h3>SNR CMT APP</h3>
+                <h1 style={{color:'#FF5F09'}}>SNR&nbsp;</h1>
+                <h1>CMT APP</h1>
             </div>
             <div className='header-right'>
                 Status: {dropDownList}
-                Switch View
+                {view +" View"}
                 <Switch
-                style={{margin:'0px 10px'}}  
-                onClick={()=>{ dataView === "grid" ? setDataView("table") : setDataView("grid")}}
+                style={{margin:'0px 10px'}}
+                onClick={()=>{ 
+                    dataView === "grid" ? setDataView("table") : setDataView("grid");
+                    view === "Grid" ? setView("List") : setView("Grid")}}
                 ></Switch>
                 Dashboard Off
                 <Switch

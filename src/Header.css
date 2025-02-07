@@ -2,9 +2,10 @@
 .header{
     width: 100%;
     display: flex;
-    background: linear-gradient(to right, rgb(255, 94, 98,0.8), rgb(255, 153, 102));
+    background-color: #373d4b;
     align-items: center;
     position: fixed;
+    color: azure;
     top: 0px;
     z-index: 1000;
     justify-content: space-between;
@@ -12,4 +13,7 @@
 
 .header-left{
     margin-left: 20px;
+    display: flex;
+    flex-direction: row;
+    color: aliceblue;
 }
