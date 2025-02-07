@@ -23,12 +23,12 @@ function App() {
   const [ hideDashboard, setHideDashboard ] = useState(false);
 
   const [ data, setData]  = useState([
-      { id: 1, Name: "Name 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New", },
-      { id: 2, Name: "Name 2", Phone:"9767203040", Age:24, Address:'home 2', Status: "In-progress", },
-      { id: 3, Name: "Name 3", Phone:"9992344760", Age:14, Address:'home 3', Status: "Complete", },
-      { id: 4, Name: "Name 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New", },
-      { id: 5, Name: "Name 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New", },
-      { id: 6, Name: "Name 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete", },
+      { id: 1, Name: "Name 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New",Comments:["hii1","Hello"] },
+      { id: 2, Name: "Name 2", Phone:"9767203040", Age:24, Address:'home 2', Status: "In-progress",Comments:["hii2"] },
+      { id: 3, Name: "Name 3", Phone:"9992344760", Age:14, Address:'home 3', Status: "Complete",Comments:["hii3"] },
+      { id: 4, Name: "Name 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New",Comments:["hii4"] },
+      { id: 5, Name: "Name 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New",Comments:["hii5"] },
+      { id: 6, Name: "Name 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete",Comments:["hii6"] },
   ]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
@@ -204,12 +204,14 @@ function App() {
         <div className='grid'>
           {duplicateData.map((item) => (
             <NameCard key={item.id}
+              Id={item.id}
               Name={item.Name}
               Phone={item.Phone}
+              Age={item.Age}
               Address={item.Address}
               Status={item.Status}
-              dataView={dataView}
-              data={data}
+              comments={item.Comments}
+              setDuplicateData={setDuplicateData}
               />
           ))}
             <div
