@@ -4,9 +4,10 @@ import NameCard from './NameCard';
 import Header from './Header';
 import Footer from './Footer';
 import AddNewNameCard from './AddNewNameCard';
-import { Button, Col, Divider, Modal, Row, Table, } from "antd";
+import { Badge, Button, Col, Divider, Modal, Drawer, Space, Card, Row, Table, } from "antd";
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { InboxOutlined } from '@ant-design/icons';
 
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -21,19 +22,23 @@ function App() {
   const [ newRecordStatus, setNewRecordStatus ] = useState("New");
   const [ statusSelection, setStatusSelection ] = useState("All");
   const [ hideDashboard, setHideDashboard ] = useState(false);
+  const [ handleInboxDrawer, setHandleInboxDrawer ] = useState(false);
 
   const [ data, setData]  = useState([
-      { id: 1, Name: "Name 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New",Comments:["hii1","Hello"] },
-      { id: 2, Name: "Name 2", Phone:"9767203040", Age:24, Address:'home 2', Status: "In-progress",Comments:["hii2"] },
-      { id: 3, Name: "Name 3", Phone:"9992344760", Age:14, Address:'home 3', Status: "Complete",Comments:["hii3"] },
-      { id: 4, Name: "Name 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New",Comments:["hii4"] },
-      { id: 5, Name: "Name 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New",Comments:["hii5"] },
-      { id: 6, Name: "Name 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete",Comments:["hii6"] },
-      { id: 7, Name: "Name 7", Phone:"5121253468", Age:30, Address:'home 7', Status: "Cancelled",Comments:["hii7"] },
-      { id: 8, Name: "Name 8", Phone:"7121225413", Age:25, Address:'home 8', Status: "Cancelled",Comments:["hii8"] },
+      { id: 1, Name: "Name 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New", Comments:["hii1","Hello"] },
+      { id: 2, Name: "Name 2", Phone:"9767203040", Age:24, Address:'home 2', Status: "In-progress", Comments:["hii2"] },
+      { id: 3, Name: "Name 3", Phone:"9992344760", Age:14, Address:'home 3', Status: "Complete", Comments:["hii3"] },
+      { id: 4, Name: "Name 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New", Comments:["hii4"] },
+      { id: 5, Name: "Name 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New", Comments:["hii5"] },
+      { id: 6, Name: "Name 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete", Comments:["hii6"] },
+      { id: 7, Name: "Name 7", Phone:"5121253468", Age:30, Address:'home 7', Status: "Cancelled", Comments:["hii7"] },
+      { id: 8, Name: "Name 8", Phone:"7121225413", Age:25, Address:'home 8', Status: "Cancelled", Comments:["hii8"] },
   ]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
+  const [ commentBox, setCommentBox ] = useState([]);
+
+  console.log("comment Box:",commentBox);
 
   useEffect(()=>{
     setDuplicateData(data);
@@ -182,6 +187,11 @@ function App() {
         setHideDashboard={setHideDashboard} 
         hideDashboard={hideDashboard}
         />
+        <div style={{position:'absolute',top:'130px',right:'50px'}}>
+          <Badge count={commentBox.length}>
+            <Button icon={<InboxOutlined/>} style={{fontSize:'20px'}} onClick={() => setHandleInboxDrawer(true)}>Inbox</Button>
+          </Badge>
+        </div>
       {dataView === "table" ? (
         <div className='table'>
           <Table 
@@ -205,16 +215,18 @@ function App() {
         </div>) : (
         <div className='grid'>
           {duplicateData.map((item) => (
-            <NameCard key={item.id}
-              Id={item.id}
-              Name={item.Name}
-              Phone={item.Phone}
-              Age={item.Age}
-              Address={item.Address}
-              Status={item.Status}
-              comments={item.Comments}
-              setDuplicateData={setDuplicateData}
-              />
+              <NameCard key={item.id}
+                Id={item.id}
+                Name={item.Name}
+                Phone={item.Phone}
+                Age={item.Age}
+                Address={item.Address}
+                Status={item.Status}
+                comments={item.Comments}
+                setDuplicateData={setDuplicateData}
+                commentBox = {commentBox}
+                setCommentBox = {setCommentBox}
+                />
           ))}
             <div
               className={dataView === "grid" ? 'nameCard' : 'table'}
@@ -241,6 +253,27 @@ function App() {
           </Col>
         </Row>
       </div>
+      <Drawer
+          open={handleInboxDrawer}
+          title="Inbox"
+          onClose={() => setHandleInboxDrawer(false)}
+        >
+        {commentBox.map((item) => (
+          <Space
+              direction="vertical"
+              size="middle"
+              style={{
+                width: '100%',
+              }}
+            >
+            <Badge.Ribbon text={item.Name} color={item.color}>
+                <Card title={item.Name} size="small">
+                  {item.comment[item.comment.length - 1]}
+                </Card>
+            </Badge.Ribbon>
+          </Space>
+        ))}
+        </Drawer>
       <Modal
         title="AddNewNameCard"
         open={isAddNewNameCardModalOpen}
