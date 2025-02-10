@@ -23,14 +23,70 @@ function App() {
   const [ hideDashboard, setHideDashboard ] = useState(false);
 
   const [ data, setData]  = useState([
-      { id: 1, Name: "Test User 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New",Comments:["hii1","Hello"] },
-      { id: 2, Name: "Test User 2", Phone:"9767203040", Age:24, Address:'home 2', Status: "In-progress",Comments:["hii2"] },
-      { id: 3, Name: "Test User 3", Phone:"9992344760", Age:14, Address:'home 3', Status: "Complete",Comments:["hii3"] },
-      { id: 4, Name: "Test User 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New",Comments:["hii4"] },
-      { id: 5, Name: "Test User 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New",Comments:["hii5"] },
-      { id: 6, Name: "Test User 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete",Comments:["hii6"] },
-      {id: 7, Name: "Test User 7", Phone:"6304904959", Age:28, Address:'home 7', Status: "Cancelled",Comments:["hii5"] },
-      { id: 8, Name: "Test User 8", Phone:"8121223412", Age:35, Address:'home 8', Status: "Cancelled",Comments:["hii6"] }
+      { id: 1, Name: "Test User 1", Phone:"9700697999", Age:20, Address: {
+        street1: 'test address st1',
+        stree2: 'test address st1',
+        aptNo: '1234',
+        city: 'Austin',
+        state: 'Tx',
+        Country: 'USA',
+      }, Status: "New",Comments:["hii1","Hello"] },
+      { id: 2, Name: "Test User 2", Phone:"9767203040", Age:24, Address: {
+        street1: 'test address st2',
+        stree2: 'test address st2',
+        aptNo: '2235',
+        city: 'Dallas',
+        state: 'Tx',
+        Country: 'USA',
+      }, Status: "In-progress",Comments:["hii2"] },
+      { id: 3, Name: "Test User 3", Phone:"9992344760", Age:14, Address: {
+        street1: 'test address st3',
+        stree2: 'test address st3',
+        aptNo: '3236',
+        city: 'Boston',
+        state: 'Tx',
+        Country: 'USA',
+      }, Status: "Complete",Comments:["hii3"] },
+      { id: 4, Name: "Test User 4", Phone:"8324940232", Age:25, Address: {
+        street1: 'test address st4',
+        stree2: 'test address st4',
+        aptNo: '4237',
+        city: 'Houston',
+        state: 'Tx',
+        Country: 'USA',
+      }, Status: "New",Comments:["hii4"] },
+      { id: 5, Name: "Test User 5", Phone:"6304904959", Age:28, Address: {
+        street1: 'test address st5',
+        stree2: 'test address st5',
+        aptNo: '5238',
+        city: 'Florida',
+        state: 'Tx',
+        Country: 'USA',
+      }, Status: "New",Comments:["hii5"] },
+      { id: 6, Name: "Test User 6", Phone:"8121223412", Age:35, Address: {
+        street1: 'test address st6',
+        stree2: 'test address st6',
+        aptNo: '6239',
+        city: 'Forth Worh',
+        state: 'Tx',
+        Country: 'USA',
+      }, Status: "Complete",Comments:["hii6"] },
+      {id: 7, Name: "Test User 7", Phone:"6304904959", Age:28, Address: {
+        street1: 'test address st1',
+        stree2: 'test address st1',
+        aptNo: '1234',
+        city: 'Austin',
+        state: 'Tx',
+        Country: 'USA',
+      }, Status: "Cancelled",Comments:["hii5"] },
+      { id: 8, Name: "Test User 8", Phone:"8121223412", Age:35, Address: {
+        street1: 'test address st1',
+        stree2: 'test address st1',
+        aptNo: '1234',
+        city: 'Austin',
+        state: 'Tx',
+        Country: 'USA',
+      }, Status: "Cancelled",Comments:["hii6"] }
   ]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
