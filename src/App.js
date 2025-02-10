@@ -29,8 +29,8 @@ function App() {
       { id: 4, Name: "Test User 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New",Comments:["hii4"] },
       { id: 5, Name: "Test User 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New",Comments:["hii5"] },
       { id: 6, Name: "Test User 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete",Comments:["hii6"] },
-      {id: 7, Name: "Test User 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New",Comments:["hii5"] },
-      { id: 8, Name: "Test User 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete",Comments:["hii6"] }
+      {id: 7, Name: "Test User 7", Phone:"6304904959", Age:28, Address:'home 7', Status: "Cancelled",Comments:["hii5"] },
+      { id: 8, Name: "Test User 8", Phone:"8121223412", Age:35, Address:'home 8', Status: "Cancelled",Comments:["hii6"] }
   ]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
