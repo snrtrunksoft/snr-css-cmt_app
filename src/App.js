@@ -24,16 +24,7 @@ function App() {
   const [ hideDashboard, setHideDashboard ] = useState(false);
   const [ handleInboxDrawer, setHandleInboxDrawer ] = useState(false);
 
-  const [ data, setData]  = useState([
-      { id: 1, Name: "Name 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New", Comments:["hii1","Hello"] },
-      { id: 2, Name: "Name 2", Phone:"9767203040", Age:24, Address:'home 2', Status: "In-progress", Comments:["hii2"] },
-      { id: 3, Name: "Name 3", Phone:"9992344760", Age:14, Address:'home 3', Status: "Complete", Comments:["hii3"] },
-      { id: 4, Name: "Name 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New", Comments:["hii4"] },
-      { id: 5, Name: "Name 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New", Comments:["hii5"] },
-      { id: 6, Name: "Name 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete", Comments:["hii6"] },
-      { id: 7, Name: "Name 7", Phone:"5121253468", Age:30, Address:'home 7', Status: "Cancelled", Comments:["hii7"] },
-      { id: 8, Name: "Name 8", Phone:"7121225413", Age:25, Address:'home 8', Status: "Cancelled", Comments:["hii8"] },
-  ]);
+  const [ data, setData]  = useState([]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
   const [ commentBox, setCommentBox ] = useState([]);
