@@ -88,11 +88,17 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
                 >
                 <div className="nameDrawer">
                     <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',margin:'0',height:'30px'}}>
-                        <h2>Name : { Name }, { Age }</h2>
+                        <h2>Name : { Name }, Age: { Age }</h2>
                         <h2 style={{backgroundColor:`${color}`,borderRadius:'5px',padding:'0px 5px'}}>{Status}</h2>
                     </span>
                     <h3>Phone : { Phone }</h3>
-                    <h3 style={{marginBottom:'-10px'}}>Address : </h3> <h3> { addressKeys.map((item,index) => <span key={index}>{address[item]}{ item !== "Country" ? "," : "." }<br/></span>)} </h3>
+                    <h3 style={{marginBottom:'-10px'}}>Address : </h3> 
+                    <h3> { addressKeys.map((item,index) => 
+                        <span key={index}>
+                            {address[item]}{ item !== "Country" ? ", " : "." }
+                            {(item === "city") || (item === "state") ? "" : (<br/>) }
+                        </span>)} 
+                    </h3>
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
                         {comments.map((comment,index) =>(
