@@ -4,9 +4,10 @@ import NameCard from './NameCard';
 import Header from './Header';
 import Footer from './Footer';
 import AddNewNameCard from './AddNewNameCard';
-import { Button, Col, Divider, Modal, Row, Table, } from "antd";
+import { Badge, Button, Col, Divider, Modal, Drawer, Space, Card, Row, Table, } from "antd";
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { InboxOutlined } from '@ant-design/icons';
 
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -21,19 +22,14 @@ function App() {
   const [ newRecordStatus, setNewRecordStatus ] = useState("New");
   const [ statusSelection, setStatusSelection ] = useState("All");
   const [ hideDashboard, setHideDashboard ] = useState(false);
+  const [ handleInboxDrawer, setHandleInboxDrawer ] = useState(false);
 
-  const [ data, setData]  = useState([
-      { id: 1, Name: "Test User 1", Phone:"9700697999", Age:20, Address:'home 1', Status: "New",Comments:["hii1","Hello"] },
-      { id: 2, Name: "Test User 2", Phone:"9767203040", Age:24, Address:'home 2', Status: "In-progress",Comments:["hii2"] },
-      { id: 3, Name: "Test User 3", Phone:"9992344760", Age:14, Address:'home 3', Status: "Complete",Comments:["hii3"] },
-      { id: 4, Name: "Test User 4", Phone:"8324940232", Age:25, Address:'home 4', Status: "New",Comments:["hii4"] },
-      { id: 5, Name: "Test User 5", Phone:"6304904959", Age:28, Address:'home 5', Status: "New",Comments:["hii5"] },
-      { id: 6, Name: "Test User 6", Phone:"8121223412", Age:35, Address:'home 6', Status: "Complete",Comments:["hii6"] },
-      {id: 7, Name: "Test User 7", Phone:"6304904959", Age:28, Address:'home 7', Status: "Cancelled",Comments:["hii5"] },
-      { id: 8, Name: "Test User 8", Phone:"8121223412", Age:35, Address:'home 8', Status: "Cancelled",Comments:["hii6"] }
-  ]);
+  const [ data, setData]  = useState([]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
+  const [ commentBox, setCommentBox ] = useState([]);
+
+  console.log("comment Box:",commentBox);
 
   useEffect(()=>{
     setDuplicateData(data);
@@ -182,6 +178,11 @@ function App() {
         setHideDashboard={setHideDashboard} 
         hideDashboard={hideDashboard}
         />
+        <div style={{position:'absolute',top:'130px',right:'50px'}}>
+          <Badge count={commentBox.length}>
+            <Button icon={<InboxOutlined/>} style={{fontSize:'20px'}} onClick={() => setHandleInboxDrawer(true)}>Inbox</Button>
+          </Badge>
+        </div>
       {dataView === "table" ? (
         <div className='table'>
           <Table 
@@ -205,16 +206,18 @@ function App() {
         </div>) : (
         <div className='grid'>
           {duplicateData.map((item) => (
-            <NameCard key={item.id}
-              Id={item.id}
-              Name={item.Name}
-              Phone={item.Phone}
-              Age={item.Age}
-              Address={item.Address}
-              Status={item.Status}
-              comments={item.Comments}
-              setDuplicateData={setDuplicateData}
-              />
+              <NameCard key={item.id}
+                Id={item.id}
+                Name={item.Name}
+                Phone={item.Phone}
+                Age={item.Age}
+                Address={item.Address}
+                Status={item.Status}
+                comments={item.Comments}
+                setDuplicateData={setDuplicateData}
+                commentBox = {commentBox}
+                setCommentBox = {setCommentBox}
+                />
           ))}
             <div
               className={dataView === "grid" ? 'nameCard' : 'table'}
@@ -241,6 +244,27 @@ function App() {
           </Col>
         </Row>
       </div>
+      <Drawer
+          open={handleInboxDrawer}
+          title="Inbox"
+          onClose={() => setHandleInboxDrawer(false)}
+        >
+        {commentBox.map((item) => (
+          <Space
+              direction="vertical"
+              size="middle"
+              style={{
+                width: '100%',
+              }}
+            >
+            <Badge.Ribbon text={item.Name} color={item.color}>
+                <Card title={item.Name} size="small">
+                  {item.comment[item.comment.length - 1]}
+                </Card>
+            </Badge.Ribbon>
+          </Space>
+        ))}
+        </Drawer>
       <Modal
         title="AddNewNameCard"
         open={isAddNewNameCardModalOpen}

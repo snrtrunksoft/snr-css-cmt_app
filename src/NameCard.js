@@ -3,7 +3,7 @@ import "./NameCard.css";
 import { Button, Drawer, Row } from "antd";
 import TextArea from "antd/es/input/TextArea";
 
-const NameCard = ({ Id, Name, Phone, Age, Address, Status, comments, setDuplicateData }) => {
+const NameCard = ({ Id, Name, Phone, Age, Address, Status, comments, setDuplicateData, commentBox, setCommentBox, }) => {
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
@@ -16,6 +16,22 @@ const NameCard = ({ Id, Name, Phone, Age, Address, Status, comments, setDuplicat
                         Comments: [...prev.Comments,newComment]
                     } : prev)
             );
+            const existingData = commentBox.findIndex((person) => person.Name === Name);
+
+            if(existingData !== -1){
+                setCommentBox(prevComments => 
+                    prevComments.map((prev, index) =>
+                        index === existingData
+                            ? { ...prev, comment: [...prev.comment, newComment] }
+                            : prev
+                    )
+                );
+            } else {
+                setCommentBox(prevComments => [
+                    ...prevComments,
+                    { Name,color, comment: [newComment] }
+                ]);
+            }
         }
         setNewComment("");
     }

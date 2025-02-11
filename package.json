@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ant-design/icons": "^5.6.1",
     "antd": "^5.23.3",
     "chart.js": "^4.4.7",
     "cra-template": "1.2.0",
