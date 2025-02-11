@@ -4,10 +4,9 @@ import NameCard from './NameCard';
 import Header from './Header';
 import Footer from './Footer';
 import AddNewNameCard from './AddNewNameCard';
-import { Badge, Button, Col, Divider, Modal, Drawer, Space, Card, Row, Table, } from "antd";
+import { Button, Col, Divider, Modal, Row, Steps, Table, } from "antd";
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { InboxOutlined } from '@ant-design/icons';
 
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -15,6 +14,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 function App() {
 
   const [ isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen ] = useState(false);
+  const [current, setCurrent] = useState(0);
   const [ dataView, setDataView ] = useState("grid");
   const [ newRecordName, setNewRecordName ] = useState('');
   const [ newRecordPhone, setNewRecordPhone ] = useState('');
@@ -22,7 +22,6 @@ function App() {
   const [ newRecordStatus, setNewRecordStatus ] = useState("New");
   const [ statusSelection, setStatusSelection ] = useState("All");
   const [ hideDashboard, setHideDashboard ] = useState(false);
-  const [ handleInboxDrawer, setHandleInboxDrawer ] = useState(false);
 
   const [ data, setData]  = useState([
       { id: 1, Name: "Test User 1", Phone:"9700697999", Age:20, Address: {
@@ -90,7 +89,6 @@ function App() {
         Country: 'USA',
       }, Status: "Cancelled",Comments:["hii6"] }
   ]);
-  const [ data, setData]  = useState([]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
   const [ commentBox, setCommentBox ] = useState([]);
@@ -105,6 +103,11 @@ function App() {
     acc[item.Status] = (acc[item.Status] || 0) + 1;
     return acc;
   }, {});
+
+  const stepsData = Object.keys(statusCount).map((status) => ({
+    title: `${status} (${statusCount[status]})`,
+    description: `${statusCount[status]} ${status} items`,
+  }));
 
   if(!("New" in statusCount)){
     statusCount["New"] = 0;
@@ -224,7 +227,7 @@ function App() {
   const dropDownList = (
     <select
       value={statusSelection}
-      style={{borderRadius:'5px',padding:'5px',marginRight:'10px'}}
+      style={{borderRadius:'5px',padding:'5px',margin:'0px 10px',outline:'none'}}
       onChange={(e) => handleStatusSelection(e.target.value)}
     >
       <option value="All">All</option>
@@ -243,12 +246,9 @@ function App() {
         setDataView={setDataView} 
         setHideDashboard={setHideDashboard} 
         hideDashboard={hideDashboard}
+        commentBox={commentBox}
         />
-        <div style={{position:'absolute',top:'130px',right:'50px'}}>
-          <Badge count={commentBox.length}>
-            <Button icon={<InboxOutlined/>} style={{fontSize:'20px'}} onClick={() => setHandleInboxDrawer(true)}>Inbox</Button>
-          </Badge>
-        </div>
+
       {dataView === "table" ? (
         <div className='table'>
           <Table 
@@ -268,7 +268,7 @@ function App() {
                 </td>
               </tr>
             )}
-            ></Table>
+          ></Table>
         </div>) : (
         <div className='grid'>
           {duplicateData.map((item) => (
@@ -277,7 +277,7 @@ function App() {
                 Name={item.Name}
                 Phone={item.Phone}
                 Age={item.Age}
-                Address={item.Address}
+                address={item.Address}
                 Status={item.Status}
                 comments={item.Comments}
                 setDuplicateData={setDuplicateData}
@@ -300,37 +300,26 @@ function App() {
       <div style={{width:"100%"}} hidden={hideDashboard}>
         <Row className='graph'>
           <Col>
-            <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar> 
+            {/* <Pie data={graphData} options={options}></Pie> */}
+            <Steps
+              width="100%"
+              current={current}
+              items={stepsData}
+            />
+            <center>
+              <Button style={{marginTop:'40px'}} onClick={() => setCurrent((prev) => (prev + 1) % stepsData.length)}>
+                Next Step
+              </Button>
+            </center>
           </Col>
           <Col>
             <Divider type='vertical' style={{height:250,backgroundColor:'black'}}></Divider>
           </Col>
           <Col>
-            <Pie data={graphData} options={options}></Pie>
+            <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar> 
           </Col>
         </Row>
       </div>
-      <Drawer
-          open={handleInboxDrawer}
-          title="Inbox"
-          onClose={() => setHandleInboxDrawer(false)}
-        >
-        {commentBox.map((item) => (
-          <Space
-              direction="vertical"
-              size="middle"
-              style={{
-                width: '100%',
-              }}
-            >
-            <Badge.Ribbon text={item.Name} color={item.color}>
-                <Card title={item.Name} size="small">
-                  {item.comment[item.comment.length - 1]}
-                </Card>
-            </Badge.Ribbon>
-          </Space>
-        ))}
-        </Drawer>
       <Modal
         title="AddNewNameCard"
         open={isAddNewNameCardModalOpen}
