@@ -7,6 +7,7 @@ const AddNewNameCard = ({
     data,
     setNewRecordName,
     setNewRecordPhone,
+    setNewRecordAge,
     setNewRecordAddress,
     setNewRecordStatus,
     newRecordStatus,
@@ -20,6 +21,7 @@ const AddNewNameCard = ({
         reset();
         setNewRecordName("");
         setNewRecordPhone("");
+        setNewRecordAge("")
         setNewRecordAddress("");
         setNewRecordStatus("New");
     };
@@ -62,7 +64,18 @@ const AddNewNameCard = ({
                             type="number" {...register("phone")}
                             onChange={(e) => {setNewRecordPhone(e.target.value)}}
                         /></h2>
-                    </Col>  
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Age : </h2>
+                    </Col>
+                    <Col>
+                        <h2><input
+                            type="number" {...register("Age")}
+                            onChange={(e) => {setNewRecordAge(e.target.value)}}
+                        /></h2>
+                    </Col>
                 </Row>
                 <Row>
                     <Col>
@@ -87,8 +100,8 @@ const AddNewNameCard = ({
                         onClick={()=>{handleReset();setIsAddNewNameCardModalOpen(false)}}
                         style={{margin:'0px 5px',border:'1px solid black',backgroundColor:'transparent',color:"black"}}
                         >Cancel</Button>
-                    <Button 
-                        type="primary" 
+                    <Button
+                        type="primary"
                         onClick={()=>{
                             handleAddNewNameCard();
                             handleReset();

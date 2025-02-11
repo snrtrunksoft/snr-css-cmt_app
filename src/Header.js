@@ -1,14 +1,13 @@
-import { Badge, Button, Card, Drawer, Modal, Space, Switch } from "antd";
+import { Badge, Button, Card, Drawer, Space, Switch } from "antd";
 import { CalendarTwoTone, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
 import React, { useState } from "react";
-import CalendarPage from "./CalendarPage";
 import "./Header.css";
 
-const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDashboard, commentBox, }) =>{
+const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDashboard, commentBox, openCalendarPage, setOpenCalendarPage }) =>{
 
     const [ view, setView ] = useState("Grid");
     const [ handleInboxDrawer, setHandleInboxDrawer ] = useState(false);
-    const [ openCalendarModal, setOpenCalendarModal ] = useState(false);
+    
     
     return(
         <header className="header">
@@ -18,8 +17,8 @@ const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDas
             </div>
             <div className='header-right'>
                 <CalendarTwoTone 
-                    twoToneColor="azure"
-                    onClick={()=>setOpenCalendarModal(true)}
+                    twoToneColor={openCalendarPage ? "" : "azure"}
+                    onClick={()=>setOpenCalendarPage(prev => !prev)}
                     style={{fontSize:'32px',margin:'15px'}} 
                     />
                 <div style={{padding:'0px 20px'}}>
@@ -51,30 +50,23 @@ const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDas
                 width="40%"
                 onClose={() => setHandleInboxDrawer(false)}
                 >
-                {commentBox.length === 0 ? (<center><h2 style={{color:'#9999'}}>Inbox is Empty..</h2></center>):commentBox.map((item) => (
+                {commentBox.length === 0 ? (<center><h2 style={{color:'#9999'}}>Inbox is Empty..</h2></center>):commentBox.map((item,index) => (
                 <Space
+                    key={index}
                     direction="vertical"
                     size="middle"
                     style={{
                         width: '100%',
                     }}
                     >
-                    <Badge.Ribbon text={item.Name} color={item.color}>
+                    <Badge.Ribbon text={item.comment[item.comment.length - 1]["author"]} color={item.color}>
                         <Card title={item.Name} size="small">
-                        {item.comment[item.comment.length - 1]}
+                        {item.comment[item.comment.length - 1]["commentMessage"]}
                         </Card>
                     </Badge.Ribbon>
                 </Space>
             ))}
             </Drawer>
-            <Modal 
-                open={openCalendarModal}
-                onClose={()=>setOpenCalendarModal(false)}
-                onCancel={()=>setOpenCalendarModal(false)}
-                footer={null}
-                >
-                <CalendarPage/>
-            </Modal>
         </header>
     );
 };

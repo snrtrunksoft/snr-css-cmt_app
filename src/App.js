@@ -5,6 +5,7 @@ import Header from './Header';
 import Footer from './Footer';
 import AddNewNameCard from './AddNewNameCard';
 import { Button, Col, Divider, Modal, Row, Steps, Table, } from "antd";
+import CalendarPage from "./CalendarPage";
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
@@ -14,14 +15,16 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 function App() {
 
   const [ isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen ] = useState(false);
-  const [current, setCurrent] = useState(0);
+  const [ current, setCurrent ] = useState(0);
   const [ dataView, setDataView ] = useState("grid");
   const [ newRecordName, setNewRecordName ] = useState('');
   const [ newRecordPhone, setNewRecordPhone ] = useState('');
+  const [ newRecordAge, setNewRecordAge ] = useState('');
   const [ newRecordAddress, setNewRecordAddress ] = useState('');
   const [ newRecordStatus, setNewRecordStatus ] = useState("New");
   const [ statusSelection, setStatusSelection ] = useState("All");
   const [ hideDashboard, setHideDashboard ] = useState(false);
+  const [ openCalendarPage, setOpenCalendarPage ] = useState(false);
 
   const [ data, setData]  = useState([
       { id: 1, Name: "Test User 1", Phone:"9700697999", Age:20, Address: {
@@ -31,7 +34,12 @@ function App() {
         city: 'Austin',
         state: 'Tx',
         Country: 'USA',
-      }, Status: "New",Comments:["hii1","Hello"] },
+      },
+        Status: "New",
+        Comments:[
+          {commentId:'1231',commentMessage:'hii',author:'Sandy'},
+          {commentId:'1232',commentMessage:'hello',author:'Sandy_2'},
+        ]},
       { id: 2, Name: "Test User 2", Phone:"9767203040", Age:24, Address: {
         street1: 'test address st2',
         stree2: 'test address st2',
@@ -39,7 +47,11 @@ function App() {
         city: 'Dallas',
         state: 'Tx',
         Country: 'USA',
-      }, Status: "In-progress",Comments:["hii2"] },
+      }, 
+        Status: "In-progress",
+        Comments:[
+           {commentId:'1331',commentMessage:'hii2',author:'author_2'},        
+        ]},
       { id: 3, Name: "Test User 3", Phone:"9992344760", Age:14, Address: {
         street1: 'test address st3',
         stree2: 'test address st3',
@@ -47,7 +59,10 @@ function App() {
         city: 'Boston',
         state: 'Tx',
         Country: 'USA',
-      }, Status: "Complete",Comments:["hii3"] },
+      }, Status: "Complete",
+        Comments:[
+          {commentId:'1431',commentMessage:'hii3',author:'author_33'},        
+        ]},
       { id: 4, Name: "Test User 4", Phone:"8324940232", Age:25, Address: {
         street1: 'test address st4',
         stree2: 'test address st4',
@@ -55,7 +70,10 @@ function App() {
         city: 'Houston',
         state: 'Tx',
         Country: 'USA',
-      }, Status: "New",Comments:["hii4"] },
+      }, Status: "New",
+      Comments:[
+        {commentId:'1531',commentMessage:'hii4',author:'author_25'},
+      ]},
       { id: 5, Name: "Test User 5", Phone:"6304904959", Age:28, Address: {
         street1: 'test address st5',
         stree2: 'test address st5',
@@ -63,7 +81,9 @@ function App() {
         city: 'Florida',
         state: 'Tx',
         Country: 'USA',
-      }, Status: "New",Comments:["hii5"] },
+      }, Status: "New",Comments:[
+        {commentId:'1631',commentMessage:'hii5',author:'author_45'},        
+        ]},
       { id: 6, Name: "Test User 6", Phone:"8121223412", Age:35, Address: {
         street1: 'test address st6',
         stree2: 'test address st6',
@@ -71,7 +91,9 @@ function App() {
         city: 'Forth Worh',
         state: 'Tx',
         Country: 'USA',
-      }, Status: "Complete",Comments:["hii6"] },
+      }, Status: "Complete",Comments:[
+        {commentId:'1731',commentMessage:'hii6',author:'author_18'},        
+        ]},
       {id: 7, Name: "Test User 7", Phone:"6304904959", Age:28, Address: {
         street1: 'test address st1',
         stree2: 'test address st1',
@@ -79,7 +101,9 @@ function App() {
         city: 'Austin',
         state: 'Tx',
         Country: 'USA',
-      }, Status: "Cancelled",Comments:["hii5"] },
+      }, Status: "Cancelled",Comments:[
+        {commentId:'1831',commentMessage:'hii7',author:'author_07'},        
+        ]},
       { id: 8, Name: "Test User 8", Phone:"8121223412", Age:35, Address: {
         street1: 'test address st1',
         stree2: 'test address st1',
@@ -87,13 +111,16 @@ function App() {
         city: 'Austin',
         state: 'Tx',
         Country: 'USA',
-      }, Status: "Cancelled",Comments:["hii6"] }
+      }, Status: "Cancelled",Comments:[
+        {commentId:'1931',commentMessage:'hii8',author:'author_63'},
+      ]},
   ]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
   const [ commentBox, setCommentBox ] = useState([]);
 
   console.log("comment Box:",commentBox);
+  console.log("data:",duplicateData);
 
   useEffect(()=>{
     setDuplicateData(data);
@@ -188,8 +215,28 @@ function App() {
     },
     {
       title:'Address',
-      dataIndex:'Address',
+      dataIndex:"Address",
       key:'Address',
+      render: (address) => {
+        return (
+          <div
+            style={{
+              maxHeight: '60px', // Limit the height
+              overflow: 'hidden', // Hide overflow content
+              textOverflow: 'ellipsis', // Optional: show ellipsis if text overflows
+              display: 'inline-block', // Ensure it behaves like a block element
+              whiteSpace:'nowrap'
+            }}
+          >
+            {Object.keys(address).map((key, index) => (
+              <div key={index}>
+                {address[key]}
+              </div>
+            ))}
+          </div>
+        );
+      },
+
     },
     {
       title:'Status',
@@ -204,8 +251,10 @@ function App() {
     id: parseInt(data[data.length - 1]['id']) + 1,
     Name: newRecordName,
     Phone: newRecordPhone,
+    Age: newRecordAge,
     Address: newRecordAddress,
-    Status: newRecordStatus
+    Status: newRecordStatus,
+    Comments:[],
   }
   const handleAddNewNameCard = () =>{
     setData(prevData => [...prevData, newRecord]);
@@ -239,106 +288,114 @@ function App() {
   );
 
   return (
-    <div className="app">
-      <Header 
-        dropDownList={dropDownList} 
-        dataView={dataView} 
-        setDataView={setDataView} 
-        setHideDashboard={setHideDashboard} 
-        hideDashboard={hideDashboard}
-        commentBox={commentBox}
-        />
-
-      {dataView === "table" ? (
-        <div className='table'>
-          <Table 
-            columns={columns} 
-            dataSource={duplicateData} 
-            pagination={{pageSize:5,simple:true}}
-            footer={()=>(
-              <tr style={{display:'flex',alignItems:'center',justifyContent:'center',height:'10px'}}>
-                <td colSpan={columns.length}>
-                  <Button 
-                    onClick={()=>setIsAddNewNameCardModalOpen(true)}
-                    style={{
-                      border:'transparent',
-                      fontSize:'40px',
-                      backgroundColor:'transparent'
-                      }}>+</Button>
-                </td>
-              </tr>
-            )}
-          ></Table>
-        </div>) : (
-        <div className='grid'>
-          {duplicateData.map((item) => (
-              <NameCard key={item.id}
-                Id={item.id}
-                Name={item.Name}
-                Phone={item.Phone}
-                Age={item.Age}
-                address={item.Address}
-                Status={item.Status}
-                comments={item.Comments}
-                setDuplicateData={setDuplicateData}
-                commentBox = {commentBox}
-                setCommentBox = {setCommentBox}
-                />
-          ))}
-            <div
-              className={dataView === "grid" ? 'nameCard' : 'table'}
-              onClick={()=>setIsAddNewNameCardModalOpen(true)}
-              style= {{
-                display:'flex',
-                alignItems:'center',
-                justifyContent:'center',
-              }}>
-              <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
-            </div>
-        </div>)}
-      <Divider type='horizontal'/>
-      <div style={{width:"100%"}} hidden={hideDashboard}>
-        <Row className='graph'>
-          <Col>
-            {/* <Pie data={graphData} options={options}></Pie> */}
-            <Steps
-              width="100%"
-              current={current}
-              items={stepsData}
-            />
-            <center>
-              <Button style={{marginTop:'40px'}} onClick={() => setCurrent((prev) => (prev + 1) % stepsData.length)}>
-                Next Step
-              </Button>
-            </center>
-          </Col>
-          <Col>
-            <Divider type='vertical' style={{height:250,backgroundColor:'black'}}></Divider>
-          </Col>
-          <Col>
-            <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar> 
-          </Col>
-        </Row>
-      </div>
-      <Modal
-        title="AddNewNameCard"
-        open={isAddNewNameCardModalOpen}
-        onCancel={()=>setIsAddNewNameCardModalOpen(false)}
-        footer={null}
-        >
-        <AddNewNameCard
-          data={data}
-          setNewRecordName={setNewRecordName}
-          setNewRecordPhone={setNewRecordPhone}
-          setNewRecordAddress={setNewRecordAddress}
-          setNewRecordStatus={setNewRecordStatus}
-          newRecordStatus={newRecordStatus}
-          setIsAddNewNameCardModalOpen={setIsAddNewNameCardModalOpen}
-          handleAddNewNameCard={handleAddNewNameCard}
+    <div className='app'>
+        <Header 
+          dropDownList={dropDownList} 
+          dataView={dataView} 
+          setDataView={setDataView} 
+          setHideDashboard={setHideDashboard} 
+          hideDashboard={hideDashboard}
+          commentBox={commentBox}
+          openCalendarPage={openCalendarPage}
+          setOpenCalendarPage={setOpenCalendarPage}
           />
-      </Modal>
-      <Divider type='horizontal'/>
-      {<Footer/>}
+      {!openCalendarPage ? (
+        <div>
+          {dataView === "table" ? (
+            <div className='table'>
+              <Table 
+                columns={columns} 
+                dataSource={duplicateData} 
+                pagination={{pageSize:5,simple:true}}
+                footer={()=>(
+                  <tr style={{display:'flex',alignItems:'center',justifyContent:'center',height:'10px'}}>
+                    <td colSpan={columns.length}>
+                      <Button 
+                        onClick={()=>setIsAddNewNameCardModalOpen(true)}
+                        style={{
+                          border:'transparent',
+                          fontSize:'40px',
+                          backgroundColor:'transparent'
+                          }}>+</Button>
+                    </td>
+                  </tr>
+                )}
+              ></Table>
+            </div>) : (
+            <div className='grid'>
+              {duplicateData.map((item) => (
+                  <NameCard key={item.id}
+                    Id={item.id}
+                    Name={item.Name}
+                    Phone={item.Phone}
+                    Age={item.Age}
+                    address={item.Address}
+                    Status={item.Status}
+                    comments={item.Comments}
+                    setDuplicateData={setDuplicateData}
+                    commentBox = {commentBox}
+                    setCommentBox = {setCommentBox}
+                    />
+              ))}
+                <div
+                  className={dataView === "grid" ? 'nameCard' : 'table'}
+                  onClick={()=>setIsAddNewNameCardModalOpen(true)}
+                  style= {{
+                    display:'flex',
+                    alignItems:'center',
+                    justifyContent:'center',
+                  }}>
+                  <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
+                </div>
+            </div>)}
+          <Divider type='horizontal'/>
+          <div style={{width:"100%"}} hidden={hideDashboard}>
+            <Row className='graph'>
+              <Col >
+                {/* <Pie data={graphData} options={options}></Pie> */}
+                <Steps
+                  width="100%"
+                  current={current}
+                  items={stepsData}
+                  onChange={(e)=>setCurrent(e)}
+                  direction='vertical'
+                />
+              </Col>
+            </Row>
+             <Col>
+                <Divider type='horizontal' ></Divider>
+              </Col>
+            <Row className='graph'>
+              <Col>
+                <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar> 
+              </Col>
+            </Row>
+          </div>
+          <Modal
+            title="AddNewNameCard"
+            open={isAddNewNameCardModalOpen}
+            onCancel={()=>setIsAddNewNameCardModalOpen(false)}
+            footer={null}
+            >
+            <AddNewNameCard
+              data={data}
+              setNewRecordName={setNewRecordName}
+              setNewRecordPhone={setNewRecordPhone}
+              setNewRecordAge={setNewRecordAge}
+              setNewRecordAddress={setNewRecordAddress}
+              setNewRecordStatus={setNewRecordStatus}
+              newRecordStatus={newRecordStatus}
+              setIsAddNewNameCardModalOpen={setIsAddNewNameCardModalOpen}
+              handleAddNewNameCard={handleAddNewNameCard}
+              />
+          </Modal>
+        </div>
+      ) : (
+        <div>
+          <CalendarPage/>
+        </div>)}
+        <Divider type='horizontal'/>
+        {<Footer/>}
     </div>
   );
 }
