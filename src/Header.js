@@ -1,4 +1,5 @@
-import { Switch } from "antd";
+import { Button, Switch } from "antd";
+import { CalendarTwoTone, LogoutOutlined } from "@ant-design/icons";
 import React, { useState } from "react";
 import "./Header.css";
 
@@ -11,6 +12,7 @@ const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDas
                 <h1>CMT APP</h1>
             </div>
             <div className='header-right'>
+                <CalendarTwoTone style={{fontSize:'32px',margin:'15px'}} twoToneColor="azure"/>
                 Status: {dropDownList}
                 {view +" View"}
                 <Switch
@@ -26,6 +28,7 @@ const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDas
                 onClick={() => setHideDashboard((prev) => !prev)}
                 >
                 </Switch>
+                <Button icon={<LogoutOutlined/>} style={{margin:"15px",backgroundColor:'inherit',color:'white'}}></Button>
             </div>
         </header>
     );

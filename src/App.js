@@ -4,9 +4,10 @@ import NameCard from './NameCard';
 import Header from './Header';
 import Footer from './Footer';
 import AddNewNameCard from './AddNewNameCard';
-import { Button, Col, Divider, Modal, Row, Table, } from "antd";
+import { Badge, Button, Col, Divider, Modal, Drawer, Space, Card, Row, Table, } from "antd";
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { InboxOutlined } from '@ant-design/icons';
 
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -21,6 +22,7 @@ function App() {
   const [ newRecordStatus, setNewRecordStatus ] = useState("New");
   const [ statusSelection, setStatusSelection ] = useState("All");
   const [ hideDashboard, setHideDashboard ] = useState(false);
+  const [ handleInboxDrawer, setHandleInboxDrawer ] = useState(false);
 
   const [ data, setData]  = useState([
       { id: 1, Name: "Test User 1", Phone:"9700697999", Age:20, Address: {
@@ -88,8 +90,12 @@ function App() {
         Country: 'USA',
       }, Status: "Cancelled",Comments:["hii6"] }
   ]);
+  const [ data, setData]  = useState([]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
+  const [ commentBox, setCommentBox ] = useState([]);
+
+  console.log("comment Box:",commentBox);
 
   useEffect(()=>{
     setDuplicateData(data);
@@ -238,6 +244,11 @@ function App() {
         setHideDashboard={setHideDashboard} 
         hideDashboard={hideDashboard}
         />
+        <div style={{position:'absolute',top:'130px',right:'50px'}}>
+          <Badge count={commentBox.length}>
+            <Button icon={<InboxOutlined/>} style={{fontSize:'20px'}} onClick={() => setHandleInboxDrawer(true)}>Inbox</Button>
+          </Badge>
+        </div>
       {dataView === "table" ? (
         <div className='table'>
           <Table 
@@ -261,16 +272,18 @@ function App() {
         </div>) : (
         <div className='grid'>
           {duplicateData.map((item) => (
-            <NameCard key={item.id}
-              Id={item.id}
-              Name={item.Name}
-              Phone={item.Phone}
-              Age={item.Age}
-              Address={item.Address}
-              Status={item.Status}
-              comments={item.Comments}
-              setDuplicateData={setDuplicateData}
-              />
+              <NameCard key={item.id}
+                Id={item.id}
+                Name={item.Name}
+                Phone={item.Phone}
+                Age={item.Age}
+                Address={item.Address}
+                Status={item.Status}
+                comments={item.Comments}
+                setDuplicateData={setDuplicateData}
+                commentBox = {commentBox}
+                setCommentBox = {setCommentBox}
+                />
           ))}
             <div
               className={dataView === "grid" ? 'nameCard' : 'table'}
@@ -297,6 +310,27 @@ function App() {
           </Col>
         </Row>
       </div>
+      <Drawer
+          open={handleInboxDrawer}
+          title="Inbox"
+          onClose={() => setHandleInboxDrawer(false)}
+        >
+        {commentBox.map((item) => (
+          <Space
+              direction="vertical"
+              size="middle"
+              style={{
+                width: '100%',
+              }}
+            >
+            <Badge.Ribbon text={item.Name} color={item.color}>
+                <Card title={item.Name} size="small">
+                  {item.comment[item.comment.length - 1]}
+                </Card>
+            </Badge.Ribbon>
+          </Space>
+        ))}
+        </Drawer>
       <Modal
         title="AddNewNameCard"
         open={isAddNewNameCardModalOpen}
