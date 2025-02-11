@@ -15,7 +15,11 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
                 prevData.map(prev =>
                     prev.id === Id ? {
                         ...prev,
-                        Comments: [...prev.Comments,newComment]
+                        Comments: [...prev.Comments, { 
+                            commentID : parseInt(comments[comments.length - 1]["commentId"]) + 1,
+                            commentMessage:newComment,
+                            author:"TBD",
+                        }]
                     } : prev)
             );
             const existingData = commentBox.findIndex((person) => person.Name === Name);
@@ -24,14 +28,18 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
                 setCommentBox(prevComments => 
                     prevComments.map((prev, index) =>
                         index === existingData
-                            ? { ...prev, comment: [...prev.comment, newComment] }
+                            ? { ...prev, comment: [...prev.comment, {
+                                commentId:prev.comment.length + 1,
+                                commentMessage:newComment,
+                                author:'TBD',
+                            }] }
                             : prev
                     )
                 );
             } else {
                 setCommentBox(prevComments => [
                     ...prevComments,
-                    { Name,color, comment: [newComment] }
+                    { Name,color, comment: [{commentId:'1',commentMessage:newComment,author:'TBD'}] }
                 ]);
             }
         }
@@ -79,21 +87,23 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
                 onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
                 >
                 <div className="nameDrawer">
-                    <h2>Name : {Name}</h2>
+                    <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',margin:'0',height:'30px'}}>
+                        <h2>Name : { Name }, { Age }</h2>
+                        <h2 style={{backgroundColor:`${color}`,borderRadius:'5px',padding:'0px 5px'}}>{Status}</h2>
+                    </span>
                     <h3>Phone : { Phone }</h3>
-                    <h3>Age : { Age }</h3>
-                    <h3>Address : { addressKeys.map((item) => address[item] + ( item !== "Country" ? ", " :"."))}</h3>
-                    <h3>Status : { Status }</h3>
+                    <h3 style={{marginBottom:'-10px'}}>Address : </h3> <h3> { addressKeys.map((item,index) => <span key={index}>{address[item]}{ item !== "Country" ? "," : "." }<br/></span>)} </h3>
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
-                        {comments.map((comment) =>(
+                        {comments.map((comment,index) =>(
                             <Space 
+                                key={index}
                                 direction="vertical"
                                 size="middle"
                                 style={{
                                     width: '100%'}}>
-                                    <Badge.Ribbon text={Name} color={color}>
-                                        <Card size="small">{comment}</Card>
+                                    <Badge.Ribbon text={comment["author"]} color={color}>
+                                        <Card size="small">{comment["commentMessage"]}</Card>
                                     </Badge.Ribbon>
                             </Space>
                         ))}
