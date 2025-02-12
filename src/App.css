@@ -28,3 +28,22 @@
   width: 100%;
   padding-top: 30px;
 }
+.graph1{
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+.graph1 div{
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  font-size: 20px;
+  font-weight: bold;
+}
+.graph1 Col{
+  display: flex;
+  flex-direction: column;
+}
