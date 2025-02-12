@@ -15,7 +15,6 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 function App() {
 
   const [ isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen ] = useState(false);
-  const [ current, setCurrent ] = useState(0);
   const [ dataView, setDataView ] = useState("grid");
   const [ newRecordName, setNewRecordName ] = useState('');
   const [ newRecordPhone, setNewRecordPhone ] = useState('');
@@ -130,11 +129,6 @@ function App() {
     acc[item.Status] = (acc[item.Status] || 0) + 1;
     return acc;
   }, {});
-
-  const stepsData = Object.keys(statusCount).map((status) => ({
-    title: `${status} (${statusCount[status]})`,
-    description: `${statusCount[status]} ${status} items`,
-  }));
 
   if(!("New" in statusCount)){
     statusCount["New"] = 0;
@@ -350,19 +344,33 @@ function App() {
             </div>)}
           <Divider type='horizontal'/>
           <div style={{width:"100%"}} hidden={hideDashboard}>
-            <Row className='graph'>
-              <Col >
-                {/* <Pie data={graphData} options={options}></Pie> */}
-                <Steps
-                  width="100%"
-                  current={current}
-                  items={stepsData}
-                  onChange={(e)=>setCurrent(e)}
-                  direction='vertical'
-                />
-              </Col>
+            <Row className='graph1'>
+              <Row>
+                <Col>
+                  <div style={{backgroundColor:'pink'}}> {statusCount["New"]} </div>
+                </Col>
+                New
+              </Row>
+              <Row>
+                <Col >
+                  <div style={{backgroundColor:'lightBlue'}}> {statusCount["In-progress"]} </div>
+                </Col>
+                In_progress
+              </Row>
+              <Row>
+                <Col >
+                  <div style={{backgroundColor:'lightgreen'}}> {statusCount["Complete"]} </div>
+                </Col>
+                Completed
+              </Row>
+              <Row>
+                <Col >
+                  <div style={{backgroundColor:'rgba(256,0,0,0.7)'}}> {statusCount["Cancelled"]} </div>
+                </Col>
+                Cancelled
+              </Row>
             </Row>
-             <Col>
+             <Col style={{paddingTop:'20px'}}>
                 <Divider type='horizontal' ></Divider>
               </Col>
             <Row className='graph'>
@@ -390,10 +398,7 @@ function App() {
               />
           </Modal>
         </div>
-      ) : (
-        <div>
-          <CalendarPage/>
-        </div>)}
+      ) : (<CalendarPage/>)}
         <Divider type='horizontal'/>
         {<Footer/>}
     </div>

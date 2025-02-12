@@ -3,7 +3,16 @@ import { CalendarTwoTone, InboxOutlined, LogoutOutlined } from "@ant-design/icon
 import React, { useState } from "react";
 import "./Header.css";
 
-const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDashboard, commentBox, openCalendarPage, setOpenCalendarPage }) =>{
+const Header = ({ 
+    dropDownList, 
+    dataView, 
+    setDataView, 
+    setHideDashboard, 
+    hideDashboard, 
+    commentBox, 
+    openCalendarPage, 
+    setOpenCalendarPage,
+    }) => {
 
     const [ view, setView ] = useState("Grid");
     const [ handleInboxDrawer, setHandleInboxDrawer ] = useState(false);
@@ -21,6 +30,7 @@ const Header = ({ dropDownList, dataView, setDataView, setHideDashboard, hideDas
                     onClick={()=>setOpenCalendarPage(prev => !prev)}
                     style={{fontSize:'32px',margin:'15px'}} 
                     />
+                <Button style={{color:'white',backgroundColor:'inherit'}}>Todos</Button>
                 <div style={{padding:'0px 20px'}}>
                     <Badge count={commentBox.length}>
                         <Button icon={<InboxOutlined/>} style={{fontSize:'20px',backgroundColor:'inherit',color:'white'}} onClick={() => setHandleInboxDrawer(true)}></Button>
