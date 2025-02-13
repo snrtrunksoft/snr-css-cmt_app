@@ -53,7 +53,7 @@ const CalendarPage = () => {
       <div className="calendar-header">
         <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <Col style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
-                <Button >Today</Button> &nbsp;&nbsp;
+                <Button onClick={() => setCurrentDate(new Date())}>Today</Button> &nbsp;&nbsp;
                 <Button onClick={handlePrevMonth}><ChevronLeft/></Button> &nbsp;
                 <Button onClick={handleNextMonth}><ChevronRight/></Button>
             </Col>
@@ -76,16 +76,15 @@ const CalendarPage = () => {
         ))}
 
         {days.map((item, index) => (
-          <div
-            key={index}
-            // className={`day-${item.type}-${
-            //   item.day === new Date().getDate() &&
-            //   currentDate.getMonth() === new Date().getMonth()
-            //     ? "today"
-            //     : ""
-            // }`}
-          >
-            <div className="grid-item" >{item.day}</div>
+          <div key={index}>
+            <div 
+              className={item.type === "current" ? "grid-item":"disabled"}
+              style={{backgroundColor:(
+                currentDate.getFullYear() === new Date().getFullYear() &&
+                currentDate.getMonth() === new Date().getMonth() &&
+                item.day === new Date().getDate()
+                 ) ? "lightblue" : "" }}
+              >{item.day}</div>
           </div>
         ))}
       </div>
