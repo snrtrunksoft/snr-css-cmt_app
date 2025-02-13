@@ -37,6 +37,18 @@
 .calendar-header Button{
     background-color: #ddd;
 }
+.disabled{
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 40px 70px;
+    border: 1px solid gray;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #f0f0f0;
+    opacity: 0.5;
+    pointer-events: none;
+}
 .week-days{
     padding: 100px 80px;
     display: flex;

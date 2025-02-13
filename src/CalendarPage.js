@@ -78,7 +78,7 @@ const CalendarPage = () => {
       <div className="calendar-header">
         <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <Col style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
-                <Button >Today</Button> &nbsp;&nbsp;
+                <Button onClick={() => setCurrentDate(new Date())}>Today</Button> &nbsp;&nbsp;
                 <Button onClick={openWeekCalendar ? handlePrevWeek : handlePrevMonth}><ChevronLeft/></Button> &nbsp;
                 <Button onClick={openWeekCalendar ? handleNextWeek : handleNextMonth}><ChevronRight/></Button>
             </Col>
@@ -95,26 +95,25 @@ const CalendarPage = () => {
       </div>
       {!openWeekCalendar ? (
         <div className="grid-container header1">
-          {weekdays.map((day, index) => (
-            <div key={index} className="grid-header-item">
-              {day}
-            </div>
-          ))}
+        {weekdays.map((day, index) => (
+          <div key={index} className="grid-header-item">
+            {day}
+          </div>
+        ))}
 
-          {days.map((item, index) => (
-            <div
-              key={index}
-              // className={`day-${item.type}-${
-              //   item.day === new Date().getDate() &&
-              //   currentDate.getMonth() === new Date().getMonth()
-              //     ? "today"
-              //     : ""
-              // }`}
-            >
-              <div className="grid-item" >{item.day}</div>
-            </div>
-          ))}
-        </div>
+        {days.map((item, index) => (
+          <div key={index}>
+            <div 
+              className={item.type === "current" ? "grid-item":"disabled"}
+              style={{backgroundColor:(
+                currentDate.getFullYear() === new Date().getFullYear() &&
+                currentDate.getMonth() === new Date().getMonth() &&
+                item.day === new Date().getDate()
+                 ) ? "lightblue" : "" }}
+              >{item.day}</div>
+          </div>
+        ))}
+      </div>
         ):(
           <div className="grid-container header1" style={{display:'flex'}}>
           {getWeekDays().map((day, index) => (
