@@ -1,3 +1,6 @@
+.calendar-container{
+    margin-top: 20px;
+}
 .date-header {
     text-align: left;
     font-size: 24px;
@@ -33,4 +36,14 @@
 }
 .calendar-header Button{
     background-color: #ddd;
+}
+.week-days{
+    padding: 100px 80px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border: 2px solid gray;
+    background-color: #f0f0f0;
+    margin: 1px;
+    gap: 3px;
 }

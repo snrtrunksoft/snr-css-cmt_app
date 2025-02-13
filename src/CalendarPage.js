@@ -7,6 +7,7 @@ const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const CalendarPage = () => {
   const [ currentDate, setCurrentDate] = useState(new Date());
+  const [ openWeekCalendar, setOpenWeekCalendar ] = useState(false);
   const [ days, setDays ] = useState([]);
 
   useEffect(() => {
@@ -40,6 +41,22 @@ const CalendarPage = () => {
     setDays(tempDays);
   };
 
+  const getStartOfWeek = (date) => {
+    const startDate = new Date(date);
+    console.log(startDate);
+    startDate.setDate(date.getDate() - date.getDay());
+    return startDate;
+  };
+
+  const getWeekDays = () => {
+    const startOfWeek = getStartOfWeek(currentDate);
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      return day;
+    });
+  };
+
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
@@ -48,17 +65,26 @@ const CalendarPage = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
+  const handlePrevWeek = () => {
+    setCurrentDate((prev) => new Date(prev.setDate(prev.getDate() - 7)));
+  };
+
+  const handleNextWeek = () => {
+    setCurrentDate((prev) => new Date(prev.setDate(prev.getDate() + 7)));
+  };
+
   return (
     <div className="calendar-container">
       <div className="calendar-header">
         <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <Col style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
                 <Button >Today</Button> &nbsp;&nbsp;
-                <Button onClick={handlePrevMonth}><ChevronLeft/></Button> &nbsp;
-                <Button onClick={handleNextMonth}><ChevronRight/></Button>
+                <Button onClick={openWeekCalendar ? handlePrevWeek : handlePrevMonth}><ChevronLeft/></Button> &nbsp;
+                <Button onClick={openWeekCalendar ? handleNextWeek : handleNextMonth}><ChevronRight/></Button>
             </Col>
             <Col>
-                <Button>Week</Button> &nbsp;
+                <Button onClick={()=>{setOpenWeekCalendar(prev => !prev)}}
+                 style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}>Week</Button> &nbsp;
                 <Button>Month</Button>
             </Col>
         </Row>
@@ -67,28 +93,43 @@ const CalendarPage = () => {
           {currentDate.toLocaleString("default", { month: "long" })} {currentDate.getFullYear()}
         </h2>
       </div>
+      {!openWeekCalendar ? (
+        <div className="grid-container header1">
+          {weekdays.map((day, index) => (
+            <div key={index} className="grid-header-item">
+              {day}
+            </div>
+          ))}
 
-      <div className="grid-container header1">
-        {weekdays.map((day, index) => (
-          <div key={index} className="grid-header-item">
-            {day}
-          </div>
-        ))}
-
-        {days.map((item, index) => (
-          <div
-            key={index}
-            // className={`day-${item.type}-${
-            //   item.day === new Date().getDate() &&
-            //   currentDate.getMonth() === new Date().getMonth()
-            //     ? "today"
-            //     : ""
-            // }`}
-          >
-            <div className="grid-item" >{item.day}</div>
-          </div>
-        ))}
-      </div>
+          {days.map((item, index) => (
+            <div
+              key={index}
+              // className={`day-${item.type}-${
+              //   item.day === new Date().getDate() &&
+              //   currentDate.getMonth() === new Date().getMonth()
+              //     ? "today"
+              //     : ""
+              // }`}
+            >
+              <div className="grid-item" >{item.day}</div>
+            </div>
+          ))}
+        </div>
+        ):(
+          <div className="grid-container header1" style={{display:'flex'}}>
+          {getWeekDays().map((day, index) => (
+            <div key={index}>
+              <div 
+                className="grid-header-item"
+              >
+                <span className="day-name">{weekdays[index]}</span> &nbsp;
+                <span className="day-number">{day.getDate()}</span>
+              </div>
+              <div className="week-days"></div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
