@@ -344,33 +344,25 @@ function App() {
             </div>)}
           <Divider type='horizontal'/>
           <div style={{width:"100%"}} hidden={hideDashboard}>
-            <Row className='graph1'>
-              <Row>
-                <Col>
-                  <div style={{backgroundColor:'pink'}}> {statusCount["New"]} </div>
+            <Row className='status-track-icons'>
+                <Col className='status-icons'>
+                  <span style={{backgroundColor:'pink'}}> {statusCount["New"]} </span>
+                  <h3>New</h3>
                 </Col>
-                New
-              </Row>
-              <Row>
-                <Col >
-                  <div style={{backgroundColor:'lightBlue'}}> {statusCount["In-progress"]} </div>
+                <Col className='status-icons'>
+                  <span style={{backgroundColor:'lightBlue'}}> {statusCount["In-progress"]} </span>
+                  <h3>In_progress</h3>
                 </Col>
-                In_progress
-              </Row>
-              <Row>
-                <Col >
-                  <div style={{backgroundColor:'lightgreen'}}> {statusCount["Complete"]} </div>
+                <Col className='status-icons'>
+                  <span style={{backgroundColor:'lightgreen'}}> {statusCount["Complete"]} </span>
+                  <h3>Completed</h3>
                 </Col>
-                Completed
-              </Row>
-              <Row>
-                <Col >
-                  <div style={{backgroundColor:'rgba(256,0,0,0.7)'}}> {statusCount["Cancelled"]} </div>
+                <Col className='status-icons'>
+                  <span style={{backgroundColor:'rgba(256,0,0,0.7)'}}> {statusCount["Cancelled"]} </span>
+                  <h3>Cancelled</h3>
                 </Col>
-                Cancelled
-              </Row>
             </Row>
-             <Col style={{paddingTop:'20px'}}>
+             <Col style={{paddingTop:'0px'}}>
                 <Divider type='horizontal' ></Divider>
               </Col>
             <Row className='graph'>

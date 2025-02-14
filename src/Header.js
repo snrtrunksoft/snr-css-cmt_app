@@ -1,5 +1,5 @@
 import { Badge, Button, Card, Drawer, Space, Switch } from "antd";
-import { CalendarTwoTone, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
+import { CalendarTwoTone, HomeOutlined, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
 import React, { useState } from "react";
 import "./Header.css";
 
@@ -25,17 +25,14 @@ const Header = ({
                 <h1>CMT APP</h1>
             </div>
             <div className='header-right'>
-                <CalendarTwoTone 
-                    twoToneColor={openCalendarPage ? "" : "azure"}
-                    onClick={()=>setOpenCalendarPage(prev => !prev)}
-                    style={{fontSize:'32px',margin:'15px'}} 
-                    />
-                <Button style={{color:'white',backgroundColor:'inherit'}}>Todos</Button>
-                <div style={{padding:'0px 20px'}}>
+                <span className="header-icons">
+                    <Button icon={<HomeOutlined />} style={{backgroundColor:'transparent',color: !openCalendarPage ? "#1677ff":""}} onClick={() => setOpenCalendarPage(false)}></Button>
+                    <Button icon={<CalendarTwoTone twoToneColor={openCalendarPage ? "" : "azure"}/>} style={{backgroundColor:'transparent'}} onClick={()=>setOpenCalendarPage(true)}></Button>
+                    <Button style={{fontSize:'20px',padding:'0px 0px',backgroundColor:'transparent'}}>Todos</Button>
                     <Badge count={commentBox.length}>
-                        <Button icon={<InboxOutlined/>} style={{fontSize:'20px',backgroundColor:'inherit',color:'white'}} onClick={() => setHandleInboxDrawer(true)}></Button>
+                        <Button icon={<InboxOutlined/>}  style={{backgroundColor:'transparent'}} onClick={() => setHandleInboxDrawer(true)}></Button>
                     </Badge>
-                </div>
+                </span>
                 Status: {dropDownList}
                 {view +" View"}
                 <Switch
