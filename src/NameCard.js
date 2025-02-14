@@ -3,26 +3,36 @@ import "./NameCard.css";
 import { Badge, Button, Card, Drawer, Row, Space } from "antd";
 import TextArea from "antd/es/input/TextArea";
 
-const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicateData, commentBox, setCommentBox, }) => {
+const NameCard = ({ 
+    customerId, 
+    customerName,
+    phoneNumber, 
+    address, 
+    status, 
+    comments,
+    setDuplicateData, 
+    commentBox, 
+    setCommentBox,
+    }) => {
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
-    const addressKeys = Object.keys(address);
+    const addressKeys = Object.keys(address[0]);
     // console.log(addressKeys);
     const handleSend = () => {
         if(newComment){
             setDuplicateData(prevData =>
                 prevData.map(prev =>
-                    prev.id === Id ? {
+                    prev.customerId === customerId ? {
                         ...prev,
-                        Comments: [...prev.Comments, { 
+                        comments: [...prev.comments, { 
                             commentID : parseInt(comments[comments.length - 1]["commentId"]) + 1,
-                            commentMessage:newComment,
+                            message:newComment,
                             author:"TBD",
                         }]
                     } : prev)
             );
-            const existingData = commentBox.findIndex((person) => person.Name === Name);
+            const existingData = commentBox.findIndex((person) => person.customerName === customerName);
 
             if(existingData !== -1){
                 setCommentBox(prevComments => 
@@ -30,7 +40,7 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
                         index === existingData
                             ? { ...prev, comment: [...prev.comment, {
                                 commentId:prev.comment.length + 1,
-                                commentMessage:newComment,
+                                message:newComment,
                                 author:'TBD',
                             }] }
                             : prev
@@ -39,7 +49,7 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
             } else {
                 setCommentBox(prevComments => [
                     ...prevComments,
-                    { Name,color, comment: [{commentId:'1',commentMessage:newComment,author:'TBD'}] }
+                    { customerName,color, comment: [{commentId:'1',message:newComment,author:'TBD'}] }
                 ]);
             }
         }
@@ -49,16 +59,16 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
         setNewComment("");
     }
     let color = "red";
-    if(Status === "Complete"){
+    if(status === "Complete"){
         color = "lightgreen";
     }
-    if(Status === "New"){
+    if(status === "New"){
         color = "pink";
     }
-    if(Status === "In-progress"){
+    if(status === "In-progress"){
         color = "lightblue";
     }
-    if(Status === "Cancelled"){
+    if(status === "Cancelled"){
         color = "red";
     }
     return(
@@ -73,31 +83,31 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
                     transition:'box-shadow 0.3s ease'
                     }}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <h3>Name : { Name }</h3>
+                    <h3>Name : { customerName }</h3>
                     <div style={{width:'30px',height:'15px',backgroundColor:`${color}`,}}></div>
                 </div>
-                <p>Phone : { Phone }</p>
-                <p>Address : { address["city"] }, { address["state"] }, { address['Country'] }.</p>
-                <p>Status : { Status }</p>
+                <p>Phone : { phoneNumber }</p>
+                <p>Address : { address.map(prev => prev.city) }, { address.map(prev => prev.state) }, { address.map(prev => prev.country) }.</p>
+                <p>Status : { status }</p>
             </div>
             <Drawer
                 open={nameCardDrawer}
-                title = <h2>{Name} Details</h2>
+                title = <h2>{customerName} Details</h2>
                 width="40%"
                 onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
                 >
                 <div className="nameDrawer">
                     <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',margin:'0',height:'30px'}}>
-                        <h2>Name : { Name }, Age: { Age }</h2>
-                        <h2 style={{backgroundColor:`${color}`,borderRadius:'5px',padding:'0px 5px'}}>{Status}</h2>
+                        <h2>Name : { customerName }, Age: { "" }</h2>
+                        <h2 style={{backgroundColor:`${color}`,borderRadius:'5px',padding:'0px 5px'}}>{status}</h2>
                     </span>
-                    <h3>Phone : { Phone }</h3>
+                    <h3>Phone : { phoneNumber }</h3>
                     <h3 style={{marginBottom:'-10px'}}>Address : </h3> 
                     <h3> { addressKeys.map((item,index) => 
                         <span key={index}>
-                            {address[item]}{ item !== "Country" ? ", " : "." }
+                            {address[0][item]}{ item !== "country" ? ", " : "." }
                             {(item === "city") || (item === "state") ? "" : (<br/>) }
-                        </span>)} 
+                        </span>)}
                     </h3>
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
@@ -109,7 +119,7 @@ const NameCard = ({ Id, Name, Phone, Age, address, Status, comments, setDuplicat
                                 style={{
                                     width: '100%'}}>
                                     <Badge.Ribbon text={comment["author"]} color={color}>
-                                        <Card size="small">{comment["commentMessage"]}</Card>
+                                        <Card size="small">{comment["message"]}</Card>
                                     </Badge.Ribbon>
                             </Space>
                         ))}

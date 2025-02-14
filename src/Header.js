@@ -1,5 +1,5 @@
 import { Badge, Button, Card, Drawer, Space, Switch } from "antd";
-import { CalendarTwoTone, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
+import { CalendarTwoTone, HomeOutlined, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
 import React, { useState } from "react";
 import "./Header.css";
 
@@ -25,17 +25,14 @@ const Header = ({
                 <h1>CMT APP</h1>
             </div>
             <div className='header-right'>
-                <CalendarTwoTone 
-                    twoToneColor={openCalendarPage ? "" : "azure"}
-                    onClick={()=>setOpenCalendarPage(prev => !prev)}
-                    style={{fontSize:'32px',margin:'15px'}} 
-                    />
-                <Button style={{color:'white',backgroundColor:'inherit'}}>Todos</Button>
-                <div style={{padding:'0px 20px'}}>
-                    <Badge count={commentBox.length}>
-                        <Button icon={<InboxOutlined/>} style={{fontSize:'20px',backgroundColor:'inherit',color:'white'}} onClick={() => setHandleInboxDrawer(true)}></Button>
+                <span className="header-icons">
+                    <Button icon={<HomeOutlined />} style={{backgroundColor:'transparent',color: !openCalendarPage ? "#1677ff":""}} onClick={() => setOpenCalendarPage(false)}></Button>
+                    <Button icon={<CalendarTwoTone twoToneColor={openCalendarPage ? "" : "azure"}/>} style={{backgroundColor:'transparent'}} onClick={()=>setOpenCalendarPage(true)}></Button>
+                    <Button style={{fontSize:'20px',padding:'0px 0px',backgroundColor:'transparent'}}>Todos</Button>
+                    <Badge count={commentBox.length} offset={[-10,2]}>
+                        <Button icon={<InboxOutlined/>}  style={{backgroundColor:'transparent'}} onClick={() => setHandleInboxDrawer(true)}></Button>
                     </Badge>
-                </div>
+                </span>
                 Status: {dropDownList}
                 {view +" View"}
                 <Switch
@@ -69,9 +66,9 @@ const Header = ({
                         width: '100%',
                     }}
                     >
-                    <Badge.Ribbon text={item.comment[item.comment.length - 1]["author"]} color={item.color}>
-                        <Card title={item.Name} size="small">
-                        {item.comment[item.comment.length - 1]["commentMessage"]}
+                    <Badge.Ribbon text={item.comment[item.comment.length - 1].author} color={item.color}>
+                        <Card title={item.customerName} size="small">
+                        {item.comment[item.comment.length - 1].message}
                         </Card>
                     </Badge.Ribbon>
                 </Space>
