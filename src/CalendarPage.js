@@ -66,11 +66,19 @@ const CalendarPage = () => {
   };
 
   const handlePrevWeek = () => {
-    setCurrentDate((prev) => new Date(prev.setDate(prev.getDate() - 7)));
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(prev.getDate() - 7); 
+      return newDate;
+    });
   };
 
   const handleNextWeek = () => {
-    setCurrentDate((prev) => new Date(prev.setDate(prev.getDate() + 7)));
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(prev.getDate() + 7);
+      return newDate;
+    });
   };
 
   return (
@@ -83,9 +91,11 @@ const CalendarPage = () => {
                 <Button onClick={openWeekCalendar ? handleNextWeek : handleNextMonth}><ChevronRight/></Button>
             </Col>
             <Col>
-                <Button onClick={()=>{setOpenWeekCalendar(prev => !prev)}}
+                <Button>Daily</Button> &nbsp;
+                <Button onClick={()=>{setOpenWeekCalendar(true)}}
                  style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}>Week</Button> &nbsp;
-                <Button>Month</Button>
+                <Button onClick={()=>{setOpenWeekCalendar(false)}}
+                style={{backgroundColor: !openWeekCalendar ? "lightBlue" :"" }}>Month</Button>
             </Col>
         </Row>
         <Divider type="horizontal"></Divider>
@@ -120,6 +130,11 @@ const CalendarPage = () => {
             <div key={index}>
               <div 
                 className="grid-header-item"
+                style={{backgroundColor:(
+                currentDate.getFullYear() === new Date().getFullYear() &&
+                currentDate.getMonth() === new Date().getMonth() &&
+                day.getDate() === new Date().getDate()
+                 ) ? "lightblue" : "" }}
               >
                 <span className="day-name">{weekdays[index]}</span> &nbsp;
                 <span className="day-number">{day.getDate()}</span>
