@@ -1,6 +1,7 @@
-.calendar-container{
+.calendar-container {
     margin-top: 20px;
 }
+
 .date-header {
     text-align: left;
     font-size: 24px;
@@ -34,10 +35,12 @@
     font-weight: bold;
     background-color: #f0f0f0;
 }
-.calendar-header Button{
+
+.calendar-header Button {
     background-color: #ddd;
 }
-.disabled{
+
+.disabled {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -49,13 +52,53 @@
     opacity: 0.5;
     pointer-events: none;
 }
-.week-days{
-    padding: 100px 80px;
+
+.week-days {
+    justify-content: flex-start;
+    border: 1px solid #2222;
+    background-color: #f0f0f0;
+    width: 150px;
+    height: fit-content;
+}
+
+.time-section {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    border: 2px solid gray;
-    background-color: #f0f0f0;
-    margin: 1px;
-    gap: 3px;
+    justify-content: center;
+    background-color: white;
+    height: 40px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.day-view {
+    display: flex;
+    width: 500px;
+}
+
+.time-column {
+    display: flex;
+    flex-direction: column;
+    width: 80px;
+    background: #ececec;
+}
+
+.time-slot {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.event-column {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.event-slot {
+    height: 50px;
+    border-bottom: 1px solid #ddd;
+    background-color: white;
 }
