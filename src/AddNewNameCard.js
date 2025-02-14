@@ -7,7 +7,7 @@ const AddNewNameCard = ({
     data,
     setNewRecordName,
     setNewRecordPhone,
-    setNewRecordAge,
+    // setNewRecordAge,
     setNewRecordAddress,
     setNewRecordStatus,
     newRecordStatus,
@@ -21,7 +21,7 @@ const AddNewNameCard = ({
         reset();
         setNewRecordName("");
         setNewRecordPhone("");
-        setNewRecordAge("")
+        // setNewRecordAge("")
         setNewRecordAddress("");
         setNewRecordStatus("New");
     };
@@ -70,12 +70,12 @@ const AddNewNameCard = ({
                     <Col>
                         <h2>Age : </h2>
                     </Col>
-                    <Col>
+                    {/* <Col>
                         <h2><input
                             type="number" {...register("Age")}
                             onChange={(e) => {setNewRecordAge(e.target.value)}}
                         /></h2>
-                    </Col>
+                    </Col> */}
                 </Row>
                 <Row>
                     <Col>
