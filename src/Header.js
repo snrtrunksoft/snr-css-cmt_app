@@ -66,9 +66,9 @@ const Header = ({
                         width: '100%',
                     }}
                     >
-                    <Badge.Ribbon text={item.comment[item.comment.length - 1]["author"]} color={item.color}>
-                        <Card title={item.Name} size="small">
-                        {item.comment[item.comment.length - 1]["commentMessage"]}
+                    <Badge.Ribbon text={item.comment[item.comment.length - 1].author} color={item.color}>
+                        <Card title={item.customerName} size="small">
+                        {item.comment[item.comment.length - 1].message}
                         </Card>
                     </Badge.Ribbon>
                 </Space>

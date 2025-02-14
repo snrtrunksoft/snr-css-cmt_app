@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import NameCard from './NameCard';
 import Header from './Header';
@@ -16,104 +16,35 @@ function App() {
 
   const [ isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen ] = useState(false);
   const [ dataView, setDataView ] = useState("grid");
+  // const [ isInitialLoad, setIsInitialLoad ] = useRef(true);
   const [ newRecordName, setNewRecordName ] = useState('');
   const [ newRecordPhone, setNewRecordPhone ] = useState('');
-  const [ newRecordAge, setNewRecordAge ] = useState('');
   const [ newRecordAddress, setNewRecordAddress ] = useState('');
   const [ newRecordStatus, setNewRecordStatus ] = useState("New");
   const [ statusSelection, setStatusSelection ] = useState("All");
   const [ hideDashboard, setHideDashboard ] = useState(false);
   const [ openCalendarPage, setOpenCalendarPage ] = useState(false);
+  const [ data, setData]  = useState([]);
 
-  const [ data, setData]  = useState([
-      { id: 1, Name: "Test User 1", Phone:"9700697999", Age:20, Address: {
-        street1: 'test address st1',
-        stree2: 'test address st1',
-        aptNo: '1234',
-        city: 'Austin',
-        state: 'Tx',
-        Country: 'USA',
-      },
-        Status: "New",
-        Comments:[
-          {commentId:'1231',commentMessage:'hii',author:'Sandy'},
-          {commentId:'1232',commentMessage:'hello',author:'Sandy_2'},
-        ]},
-      { id: 2, Name: "Test User 2", Phone:"9767203040", Age:24, Address: {
-        street1: 'test address st2',
-        stree2: 'test address st2',
-        aptNo: '2235',
-        city: 'Dallas',
-        state: 'Tx',
-        Country: 'USA',
-      }, 
-        Status: "In-progress",
-        Comments:[
-           {commentId:'1331',commentMessage:'hii2',author:'author_2'},        
-        ]},
-      { id: 3, Name: "Test User 3", Phone:"9992344760", Age:14, Address: {
-        street1: 'test address st3',
-        stree2: 'test address st3',
-        aptNo: '3236',
-        city: 'Boston',
-        state: 'Tx',
-        Country: 'USA',
-      }, Status: "Complete",
-        Comments:[
-          {commentId:'1431',commentMessage:'hii3',author:'author_33'},        
-        ]},
-      { id: 4, Name: "Test User 4", Phone:"8324940232", Age:25, Address: {
-        street1: 'test address st4',
-        stree2: 'test address st4',
-        aptNo: '4237',
-        city: 'Houston',
-        state: 'Tx',
-        Country: 'USA',
-      }, Status: "New",
-      Comments:[
-        {commentId:'1531',commentMessage:'hii4',author:'author_25'},
-      ]},
-      { id: 5, Name: "Test User 5", Phone:"6304904959", Age:28, Address: {
-        street1: 'test address st5',
-        stree2: 'test address st5',
-        aptNo: '5238',
-        city: 'Florida',
-        state: 'Tx',
-        Country: 'USA',
-      }, Status: "New",Comments:[
-        {commentId:'1631',commentMessage:'hii5',author:'author_45'},        
-        ]},
-      { id: 6, Name: "Test User 6", Phone:"8121223412", Age:35, Address: {
-        street1: 'test address st6',
-        stree2: 'test address st6',
-        aptNo: '6239',
-        city: 'Forth Worh',
-        state: 'Tx',
-        Country: 'USA',
-      }, Status: "Complete",Comments:[
-        {commentId:'1731',commentMessage:'hii6',author:'author_18'},        
-        ]},
-      {id: 7, Name: "Test User 7", Phone:"6304904959", Age:28, Address: {
-        street1: 'test address st1',
-        stree2: 'test address st1',
-        aptNo: '1234',
-        city: 'Austin',
-        state: 'Tx',
-        Country: 'USA',
-      }, Status: "Cancelled",Comments:[
-        {commentId:'1831',commentMessage:'hii7',author:'author_07'},        
-        ]},
-      { id: 8, Name: "Test User 8", Phone:"8121223412", Age:35, Address: {
-        street1: 'test address st1',
-        stree2: 'test address st1',
-        aptNo: '1234',
-        city: 'Austin',
-        state: 'Tx',
-        Country: 'USA',
-      }, Status: "Cancelled",Comments:[
-        {commentId:'1931',commentMessage:'hii8',author:'author_63'},
-      ]},
-  ]);
+  useEffect(() =>{
+    console.log("initial loading, fetching data from the Database");
+    // if(isInitialLoad.current){
+      const fetchingData = async() => {
+        try{
+          const Data = await fetch("https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users");
+          const fetchedData = await Data.json();
+          console.log("fetching Data from database is complete");
+          console.log("Fetched Data:",fetchedData);
+          setData(fetchedData);
+        }catch(error){
+          console.log("fail in fetching Data");
+          console.error("Error while fetching Data",error);
+        }
+      }
+      fetchingData();
+      // isInitialLoad.current = false;
+    // }
+  },[]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
   const [ commentBox, setCommentBox ] = useState([]);
@@ -126,9 +57,10 @@ function App() {
   },[data]);
 
   const statusCount = data.reduce((acc,item) => {
-    acc[item.Status] = (acc[item.Status] || 0) + 1;
+    acc[item.status] = (acc[item.status] || 0) + 1;
     return acc;
   }, {});
+  console.log(statusCount);
 
   if(!("New" in statusCount)){
     statusCount["New"] = 0;
@@ -191,26 +123,19 @@ function App() {
   const columns = [
     {
       title:'Name',
-      dataIndex :'Name',
-      key:'Name',
+      dataIndex :'customerName',
+      key:'customerName',
       render: (text) => <a>{text}</a>,
     },
     {
       title:'Phone',
-      dataIndex:'Phone',
-      key:'Phone',
-    },
-    {
-      title:'Age',
-      dataIndex:'Age',
-      key:'Age',
-      sorter: (a, b) => a.Age - b.Age,
-      sortDirections : ['ascend', 'descend'],
+      dataIndex:'phoneNumber',
+      key:'phoneNumber',
     },
     {
       title:'Address',
-      dataIndex:"Address",
-      key:'Address',
+      dataIndex:"address",
+      key:'address',
       render: (address) => {
         return (
           <div
@@ -222,9 +147,9 @@ function App() {
               whiteSpace:'nowrap'
             }}
           >
-            {Object.keys(address).map((key, index) => (
+            {Object.keys(address[0]).map((key, index) => (
               <div key={index}>
-                {address[key]}
+                {address[0][key]}
               </div>
             ))}
           </div>
@@ -234,24 +159,23 @@ function App() {
     },
     {
       title:'Status',
-      dataIndex:'Status',
-      key:'Status',
-      sorter: (a, b) => a.Status.localeCompare(b.Status),  // Sorting by status alphabetically
+      dataIndex:'status',
+      key:'status',
+      sorter: (a, b) => a.status.localeCompare(b.status),  // Sorting by status alphabetically
       sortDirections: ['ascend','descend'],
     },
   ]
 
   const newRecord = {
-    id: parseInt(data[data.length - 1]['id']) + 1,
-    Name: newRecordName,
-    Phone: newRecordPhone,
-    Age: newRecordAge,
-    Address: newRecordAddress,
-    Status: newRecordStatus,
-    Comments:[],
+    customerId:parseInt(data.length) + 10,
+    customerName: newRecordName,
+    phonenumber: newRecordPhone,                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+    address: newRecordAddress || [{}],
+    status: newRecordStatus,
+    comments:[{}],
   }
   const handleAddNewNameCard = () =>{
-    setData(prevData => [...prevData, newRecord]);
+    setDuplicateData(prevData => [...prevData, newRecord]);
     setIsAddNewNameCardModalOpen(false);
   };
 
@@ -262,7 +186,7 @@ function App() {
       setDuplicateData(data);
       setHideDashboard(false);
     }else{
-      const filteredRecords = data.filter((prev)=> prev.Status === value);
+      const filteredRecords = data.filter((prev)=> prev.status === value);
       setDuplicateData(filteredRecords);
     };
   };
@@ -318,14 +242,13 @@ function App() {
             </div>) : (
             <div className='grid'>
               {duplicateData.map((item) => (
-                  <NameCard key={item.id}
-                    Id={item.id}
-                    Name={item.Name}
-                    Phone={item.Phone}
-                    Age={item.Age}
-                    address={item.Address}
-                    Status={item.Status}
-                    comments={item.Comments}
+                  <NameCard key={item.customerId}
+                    customerId={item.customerId}
+                    customerName={item.customerName}
+                    phoneNumber={item.phoneNumber}
+                    address={item.address}
+                    status={item.status}
+                    comments={item.comments}
                     setDuplicateData={setDuplicateData}
                     commentBox = {commentBox}
                     setCommentBox = {setCommentBox}
@@ -381,7 +304,7 @@ function App() {
               data={data}
               setNewRecordName={setNewRecordName}
               setNewRecordPhone={setNewRecordPhone}
-              setNewRecordAge={setNewRecordAge}
+              // setNewRecordAge={setNewRecordAge}
               setNewRecordAddress={setNewRecordAddress}
               setNewRecordStatus={setNewRecordStatus}
               newRecordStatus={newRecordStatus}
