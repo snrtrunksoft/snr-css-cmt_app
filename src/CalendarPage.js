@@ -8,7 +8,22 @@ const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const CalendarPage = () => {
   const [ currentDate, setCurrentDate] = useState(new Date());
   const [ openWeekCalendar, setOpenWeekCalendar ] = useState(false);
+  const [ openMonthCalendar, setOpenMonthCalendar ] = useState(true);
+  const [ openDailyCalendar, setOpenDailyCalendar ] = useState(false);
   const [ days, setDays ] = useState([]);
+
+  const hours = Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} AM`)
+    .concat(Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} PM`));
+
+  console.log("Hours Array:",hours);
+
+   const formattedDate = openDailyCalendar ? currentDate.toLocaleDateString("default", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    }) : currentDate.toLocaleString("default", { month: "long" });
+
+  console.log("formatted Date:",formattedDate);
 
   useEffect(() => {
     generateCalendar();
@@ -57,28 +72,32 @@ const CalendarPage = () => {
     });
   };
 
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const handlePrev = () => {
+    if(openMonthCalendar){
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    }else if(openWeekCalendar){
+      setCurrentDate((prev) => {
+        const newDate = new Date(prev);
+        newDate.setDate(prev.getDate() - 7); 
+        return newDate;
+      });
+    }else{
+      setCurrentDate((prev) => new Date(prev.setDate(prev.getDate() - 1)));
+    }
   };
 
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  };
-
-  const handlePrevWeek = () => {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setDate(prev.getDate() - 7); 
-      return newDate;
-    });
-  };
-
-  const handleNextWeek = () => {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setDate(prev.getDate() + 7);
-      return newDate;
-    });
+  const handleNext = () => {
+    if(openMonthCalendar){
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    }else if(openWeekCalendar){
+      setCurrentDate((prev) => {
+        const newDate = new Date(prev);
+        newDate.setDate(prev.getDate() + 7);
+        return newDate;
+      });
+    }else{
+      setCurrentDate((prev) => new Date(prev.setDate(prev.getDate() + 1)));
+    }
   };
 
   return (
@@ -87,23 +106,22 @@ const CalendarPage = () => {
         <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <Col style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
                 <Button onClick={() => setCurrentDate(new Date())}>Today</Button> &nbsp;&nbsp;
-                <Button onClick={openWeekCalendar ? handlePrevWeek : handlePrevMonth}><ChevronLeft/></Button> &nbsp;
-                <Button onClick={openWeekCalendar ? handleNextWeek : handleNextMonth}><ChevronRight/></Button>
+                <Button onClick={ handlePrev }><ChevronLeft/></Button> &nbsp;
+                <Button onClick={ handleNext }><ChevronRight/></Button>
             </Col>
             <Col>
-                <Button>Daily</Button> &nbsp;
-                <Button onClick={()=>{setOpenWeekCalendar(true)}}
-                 style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}>Week</Button> &nbsp;
-                <Button onClick={()=>{setOpenWeekCalendar(false)}}
-                style={{backgroundColor: !openWeekCalendar ? "lightBlue" :"" }}>Month</Button>
+                <Button onClick={()=>{setOpenDailyCalendar(true);setOpenWeekCalendar(false);setOpenMonthCalendar(false)}}
+                style={{backgroundColor: openDailyCalendar ? "lightBlue" :"" }}>Daily</Button> &nbsp;
+                <Button onClick={()=>{setOpenWeekCalendar(true);setOpenDailyCalendar(false);setOpenMonthCalendar(false);}}
+                style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}>Week</Button> &nbsp;
+                <Button onClick={()=>{setOpenMonthCalendar(true);setOpenWeekCalendar(false);setOpenDailyCalendar(false);}}
+                style={{backgroundColor: openMonthCalendar ? "lightBlue" :"" }}>Month</Button>
             </Col>
         </Row>
         <Divider type="horizontal"></Divider>
-        <h2>
-          {currentDate.toLocaleString("default", { month: "long" })} {currentDate.getFullYear()}
-        </h2>
+        <h2 >{formattedDate}, {currentDate.getFullYear()}</h2>
       </div>
-      {!openWeekCalendar ? (
+      {(openMonthCalendar) ? (
         <div className="grid-container header1">
         {weekdays.map((day, index) => (
           <div key={index} className="grid-header-item">
@@ -124,26 +142,64 @@ const CalendarPage = () => {
           </div>
         ))}
       </div>
-        ):(
-          <div className="grid-container header1" style={{display:'flex'}}>
-          {getWeekDays().map((day, index) => (
-            <div key={index}>
-              <div 
-                className="grid-header-item"
-                style={{backgroundColor:(
-                currentDate.getFullYear() === new Date().getFullYear() &&
-                currentDate.getMonth() === new Date().getMonth() &&
-                day.getDate() === new Date().getDate()
-                 ) ? "lightblue" : "" }}
-              >
-                <span className="day-name">{weekdays[index]}</span> &nbsp;
-                <span className="day-number">{day.getDate()}</span>
-              </div>
-              <div className="week-days"></div>
+        ):(openDailyCalendar ? (
+           <div className="day-view">
+            <div className="time-column">
+              {Array.from({ length: 24 }, (_, i) => (
+                <div key={i} className="time-slot">
+                  {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+            <div className="event-column">
+              {Array.from({ length: 24 }, (_, i) => (
+                <div key={i} className="event-slot"></div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="grid-container header1" style={{display:'flex'}}>
+            {getWeekDays().map((day, index) => (
+              <div key={index}>
+                <div 
+                  className="grid-header-item"
+                  style={{backgroundColor:(
+                  currentDate.getFullYear() === new Date().getFullYear() &&
+                  currentDate.getMonth() === new Date().getMonth() &&
+                  day.getDate() === new Date().getDate()
+                  ) ? "lightblue" : "" }}
+                >
+                  <span className="day-name">{weekdays[index]}</span> &nbsp;
+                  <span className="day-number">{day.getDate()}</span>
+                </div>
+                <div>
+                  <div hidden={weekdays[index]!=="Sun"} style={{position:"absolute",left:'177px',width:'80px'}} className="week-days">
+                  <div className="time-section" style={{borderBottom:'1px solid gray',backgroundColor:"#ececec"}}>all-day</div>
+                    {hours.map((hour, index) => (
+                      <div key={index} className="time-section" style={{backgroundColor:"#ececec"}}>
+                        {hour}
+                      </div>
+                    ))}
+                  </div>
+                  <div 
+                    className="week-days"
+                    style={currentDate.getFullYear() === new Date().getFullYear() &&
+                    currentDate.getMonth() === new Date().getMonth() &&
+                    day.getDate() === new Date().getDate() ?
+                    { border:'2px solid gray',marginTop:'-1px'}:{}}
+                      >
+                      <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
+                    {hours.map((hour, index) => (
+                      <div key={index} className="time-section">
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          )
+        )}
     </div>
   );
 };
