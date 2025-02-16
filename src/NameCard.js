@@ -83,11 +83,19 @@ const NameCard = ({
                     transition:'box-shadow 0.3s ease'
                     }}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <h3>Name : { customerName }</h3>
+                    <h3 style={{
+                    width:'200px',overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace:'nowrap'
+                    }}>Name : { customerName }</h3>
                     <div style={{width:'30px',height:'15px',backgroundColor:`${color}`,}}></div>
                 </div>
                 <p>Phone : { phoneNumber }</p>
-                <p>Address : { address.map(prev => prev.city) }, { address.map(prev => prev.state) }, { address.map(prev => prev.country) }.</p>
+                 <p style={{
+                    width:'200px',overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace:'nowrap'
+                    }}>Address : { address.map(prev => prev.city) }, { address.map(prev => prev.state) }, { address.map(prev => prev.country) }.</p>
                 <p>Status : { status }</p>
             </div>
             <Drawer
