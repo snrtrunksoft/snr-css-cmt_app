@@ -12,6 +12,8 @@ const Header = ({
     commentBox, 
     openCalendarPage, 
     setOpenCalendarPage,
+    setMembersPage,
+    setResourcePage,
     }) => {
 
     const [ view, setView ] = useState("Grid");
@@ -26,8 +28,8 @@ const Header = ({
             </div>
             <div className='header-right'>
                 <span className="header-icons">
-                    <Button icon={<HomeOutlined />} style={{backgroundColor:'transparent',color: !openCalendarPage ? "#1677ff":""}} onClick={() => setOpenCalendarPage(false)}></Button>
-                    <Button icon={<CalendarTwoTone twoToneColor={openCalendarPage ? "" : "azure"}/>} style={{backgroundColor:'transparent'}} onClick={()=>setOpenCalendarPage(true)}></Button>
+                    <Button icon={<HomeOutlined />} style={{backgroundColor:'transparent',color: !openCalendarPage ? "#1677ff":""}} onClick={() => {setOpenCalendarPage(false);setResourcePage(false);setMembersPage(true);}}></Button>
+                    <Button icon={<CalendarTwoTone twoToneColor={openCalendarPage ? "" : "azure"}/>} style={{backgroundColor:'transparent'}} onClick={()=>{setOpenCalendarPage(true);setResourcePage(false);setMembersPage(false);}}></Button>
                     <Button style={{fontSize:'20px',padding:'0px 0px',backgroundColor:'transparent'}}>Todos</Button>
                     <Badge count={commentBox.length} offset={[-10,2]}>
                         <Button icon={<InboxOutlined/>}  style={{backgroundColor:'transparent'}} onClick={() => setHandleInboxDrawer(true)}></Button>

@@ -105,17 +105,17 @@ const CalendarPage = () => {
       <div className="calendar-header">
         <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <Col style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
-                <Button onClick={() => setCurrentDate(new Date())}>Today</Button> &nbsp;&nbsp;
+                <Button onClick={() => setCurrentDate(new Date())}><h3>Today</h3></Button> &nbsp;&nbsp;
                 <Button onClick={ handlePrev }><ChevronLeft/></Button> &nbsp;
                 <Button onClick={ handleNext }><ChevronRight/></Button>
             </Col>
             <Col>
                 <Button onClick={()=>{setOpenDailyCalendar(true);setOpenWeekCalendar(false);setOpenMonthCalendar(false)}}
-                style={{backgroundColor: openDailyCalendar ? "lightBlue" :"" }}>Daily</Button> &nbsp;
+                style={{backgroundColor: openDailyCalendar ? "lightBlue" :"" }}><h3>Daily</h3></Button> &nbsp;
                 <Button onClick={()=>{setOpenWeekCalendar(true);setOpenDailyCalendar(false);setOpenMonthCalendar(false);}}
-                style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}>Week</Button> &nbsp;
+                style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}><h3>Week</h3></Button> &nbsp;
                 <Button onClick={()=>{setOpenMonthCalendar(true);setOpenWeekCalendar(false);setOpenDailyCalendar(false);}}
-                style={{backgroundColor: openMonthCalendar ? "lightBlue" :"" }}>Month</Button>
+                style={{backgroundColor: openMonthCalendar ? "lightBlue" :"" }}><h3>Month</h3></Button>
             </Col>
         </Row>
         <Divider type="horizontal"></Divider>
