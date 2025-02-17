@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./NameCard.css";
 import { Badge, Button, Card, Drawer, Row, Space } from "antd";
 import TextArea from "antd/es/input/TextArea";
+import { CalendarTwoTone } from "@ant-design/icons";
 
 const NameCard = ({ 
     customerId, 
@@ -100,7 +101,7 @@ const NameCard = ({
             </div>
             <Drawer
                 open={nameCardDrawer}
-                title = <h2>{customerName} Details</h2>
+                title = <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}><h2>{customerName} Details</h2><Button onClick={()=>{""}}><CalendarTwoTone/></Button></div>
                 width="40%"
                 onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
                 >
