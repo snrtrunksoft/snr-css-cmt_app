@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Col, Divider, Row } from "antd";
+import { Button, Col, Divider, Input, Row } from "antd";
+import TextArea from "antd/es/input/TextArea";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -133,6 +134,7 @@ const CalendarPage = () => {
           <div key={index}>
             <div 
               className={item.type === "current" ? "grid-item":"disabled"}
+              onClick={() => {setOpenMonthCalendar(false);setOpenDailyCalendar(true);setCurrentDate((prev) => new Date(prev.setDate(item.day)));}}
               style={{backgroundColor:(
                 currentDate.getFullYear() === new Date().getFullYear() &&
                 currentDate.getMonth() === new Date().getMonth() &&
@@ -153,7 +155,7 @@ const CalendarPage = () => {
             </div>
             <div className="event-column">
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="event-slot"></div>
+                <div key={i} className="event-slot"><Input style={{outline:'none',border:'transparent',fontSize:'20px'}}></Input></div>
               ))}
             </div>
           </div>
@@ -191,6 +193,7 @@ const CalendarPage = () => {
                       <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
                     {hours.map((hour, index) => (
                       <div key={index} className="time-section">
+                      <Input style={{border:'transparent',outline:'none'}}></Input>
                       </div>
                     ))}
                   </div>

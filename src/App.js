@@ -227,8 +227,8 @@ function App() {
           setResourcePage={setResourcePage}
           />
         <div hidden={isLoading} style={{position:'absolute',left:'30px',top:'125px',display:'flex',flexDirection:'column'}}>
-          <Button onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);}}><h3>Members</h3></Button>
-          <Button style={{marginTop:'10px'}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false)}}><h3>Resources</h3></Button>
+          <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);}}><h3>Members</h3></Button>
+          <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure',marginTop:'10px'}:{marginTop:'10px'}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false)}}><h3>Resources</h3></Button>
         </div>
       {isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
         (membersPage) ? (
