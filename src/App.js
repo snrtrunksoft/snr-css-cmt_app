@@ -4,6 +4,7 @@ import NameCard from './NameCard';
 import Header from './Header';
 import Footer from './Footer';
 import ResourcePage from './ResourcePage';
+import TodosPage from "./TodosPage";
 import AddNewNameCard from './AddNewNameCard';
 import { Button, Col, Divider, Modal, Row, Steps, Table, } from "antd";
 import CalendarPage from "./CalendarPage";
@@ -28,30 +29,59 @@ function App() {
   const [ openCalendarPage, setOpenCalendarPage ] = useState(false);
   const [ resourcePage, setResourcePage ] = useState(false);
   const [ membersPage, setMembersPage ] = useState(true);
+  const [ todosPage, setTodosPage ] = useState(false);
   const [ isLoading, setIsLoading ] = useState(true);
-  const [ data, setData]  = useState([]);
+  const [ data, setData]  = useState([
+    {
+        "customerId": "8",
+        "customerName": "SNR",
+        "phoneNumber": "8876543210",
+        "address": [
+            {
+                "street1": "test street5",
+                "street2": "test street6",
+                "city": "Test City",
+                "state": "TX",
+                "country": "USA"
+            }
+        ],
+        "comments": [
+            {
+                "commentId": "2034",
+                "message": "test Comment5",
+                "author": "SNR"
+            },
+            {
+                "commentId": "2346",
+                "message": "test comment 2",
+                "author": "SNR"
+            }
+        ],
+        "status": "Active"
+    },
+  ]);
 
-  useEffect(() =>{
-    console.log("initial loading, fetching data from the Database");
-    // if(isInitialLoad.current){
-      const fetchingData = async() => {
-        try{
-          const Data = await fetch("https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users");
-          const fetchedData = await Data.json();
-          console.log("fetching Data from database is complete");
-          console.log("Fetched Data:",fetchedData);
-          setData(fetchedData);
-        }catch(error){
-          console.log("fail in fetching Data");
-          console.error("Error while fetching Data",error);
-        }finally{
-          setIsLoading(false);
-        }
-      }
-      fetchingData();
-      // isInitialLoad.current = false;
-    // }
-  },[]);
+  // useEffect(() =>{
+  //   console.log("initial loading, fetching data from the Database");
+  //   // if(isInitialLoad.current){
+  //     const fetchingData = async() => {
+  //       try{
+  //         const Data = await fetch("https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users");
+  //         const fetchedData = await Data.json();
+  //         console.log("fetching Data from database is complete");
+  //         console.log("Fetched Data:",fetchedData);
+  //         setData(fetchedData);
+  //       }catch(error){
+  //         console.log("fail in fetching Data");
+  //         console.error("Error while fetching Data",error);
+  //       }finally{
+  //         setIsLoading(false);
+  //       }
+  //     }
+  //     fetchingData();
+  //     // isInitialLoad.current = false;
+  //   // }
+  // },[]);
 
   const [ duplicateData, setDuplicateData ] = useState(data);
   const [ commentBox, setCommentBox ] = useState([]);
@@ -187,7 +217,8 @@ function App() {
   };
 
   const handleStatusSelection = (value) =>{
-    setStatusSelection(value);
+   if(!resourcePage){
+     setStatusSelection(value);
     setHideDashboard(true);
     if(value === "All"){
       setDuplicateData(data);
@@ -196,6 +227,10 @@ function App() {
       const filteredRecords = data.filter((prev)=> prev.status === value);
       setDuplicateData(filteredRecords);
     };
+   }else{
+    const filteredRecords = data.filter((prev)=> prev.status === "All");
+    setDuplicateData(filteredRecords);
+   }
   };
 
   const dropDownList = (
@@ -225,12 +260,13 @@ function App() {
           setOpenCalendarPage={setOpenCalendarPage}
           setMembersPage={setMembersPage}
           setResourcePage={setResourcePage}
+          setTodosPage={setTodosPage}
           />
         <div hidden={isLoading} style={{position:'absolute',left:'30px',top:'125px',display:'flex',flexDirection:'column'}}>
-          <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);}}><h3>Members</h3></Button>
-          <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure',marginTop:'10px'}:{marginTop:'10px'}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false)}}><h3>Resources</h3></Button>
+          <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);setTodosPage(false);}}><h3>Members</h3></Button>
+          <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure',marginTop:'10px'}:{marginTop:'10px'}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false);setTodosPage(false);}}><h3>Resources</h3></Button>
         </div>
-      {isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
+      {!isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
         (membersPage) ? (
           <div>
             {dataView === "table" ? (
@@ -327,7 +363,13 @@ function App() {
                 />
             </Modal>
           </div>
-        ) : ((resourcePage) ? <ResourcePage data={duplicateData} setDuplicateData={setDuplicateData} commentBox = {commentBox} setCommentBox = {setCommentBox}/> : <CalendarPage/>)}
+        ) : (resourcePage ? 
+        <ResourcePage 
+          data={duplicateData} 
+          setDuplicateData={setDuplicateData}
+          commentBox = {commentBox} 
+          setCommentBox = {setCommentBox}
+          /> :openCalendarPage ? <CalendarPage/> : <TodosPage/>)}
         <Divider type='horizontal'/>
         {<Footer/>}
     </div>

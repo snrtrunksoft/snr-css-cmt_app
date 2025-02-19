@@ -69,6 +69,7 @@
     height: 40px;
     text-align: center;
     font-size: 14px;
+    border-bottom: 1px solid #ddd;
 }
 
 .day-view {
