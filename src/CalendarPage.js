@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Col, Divider, Input, Row } from "antd";
-import TextArea from "antd/es/input/TextArea";
+import { Button, Col, Divider, Input, Modal, Row, TimePicker } from "antd";
+import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -12,11 +12,82 @@ const CalendarPage = () => {
   const [ openMonthCalendar, setOpenMonthCalendar ] = useState(true);
   const [ openDailyCalendar, setOpenDailyCalendar ] = useState(false);
   const [ days, setDays ] = useState([]);
+  const [ openEventSlot, setOpenEventSlot ] = useState(false);
+  const [ timeSlot, setTimeSlot ] = useState(dayjs());
+
+  const [ sampleData, setSampleData ] = useState([
+        {
+            "month": "March",
+            "year": 2025,
+            "userId": "ABC123",
+            "1": {
+              events:[]
+            },
+            "2": {
+              events:[]
+            },
+            "3": {
+              events:[]
+            },
+            "4": {
+              events:[]
+            },
+            "5": {
+              events:[]
+            },
+            "19":{
+              events:[]
+            },
+            "10": {
+                "isCalendarFull": false,
+                "noOfEvents": 3,
+                events: [
+                    {
+                        "title": "Appointment 1",
+                        "from": 0,
+                        "to": 1,
+                        "notes": "appointment for dentist",
+                    },
+                    {
+                        "title": "Appointment 2",
+                        "from": 13,
+                        "to": 18,
+                        "notes": "appointment for dentist",
+                    },
+                ]
+            }
+        },
+        {
+          "month": "January",
+            "year": 2025,
+            "userId": "ABC133",
+            "1": {
+              events:[
+                  {
+                    "title": "Appointment 1",
+                    "from": 0,
+                    "to": 1,
+                    "notes": "appointment for dentist",
+                    },
+                    {
+                      "title": "Appointment 2",
+                      "from": 13,
+                      "to": 18,
+                      "notes": "appointment for dentist",
+                    },
+              ]
+            },
+        }
+      ]);
+
 
   const hours = Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} AM`)
     .concat(Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} PM`));
 
+  const monthName = currentDate.toLocaleDateString("defult",{month:"long"});
+
   console.log("Hours Array:",hours);
+  console.log(currentDate.getFullYear());
 
    const formattedDate = openDailyCalendar ? currentDate.toLocaleDateString("default", {
       weekday: "long",
@@ -155,7 +226,12 @@ const CalendarPage = () => {
             </div>
             <div className="event-column">
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="event-slot"><Input style={{outline:'none',border:'transparent',fontSize:'20px'}}></Input></div>
+                <div key={i} 
+                className="event-slot"
+                onClick={() => {setOpenEventSlot(true)}}
+                >
+                {sampleData.map(prev => (prev.month === monthName && prev.year === currentDate.getFullYear() && prev[currentDate.getDate()]) ? prev[currentDate.getDate()].events.map(item => (item.from <= i && i <= item.to) ? item.title : ""):"")}
+                </div>
               ))}
             </div>
           </div>
@@ -192,8 +268,8 @@ const CalendarPage = () => {
                       >
                       <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
                     {hours.map((hour, index) => (
-                      <div key={index} className="time-section">
-                      <Input style={{border:'transparent',outline:'none'}}></Input>
+                      <div key={index} className="time-section"
+                      onClick={() => {setOpenEventSlot(true)}}>
                       </div>
                     ))}
                   </div>
@@ -203,6 +279,21 @@ const CalendarPage = () => {
           </div>
           )
         )}
+        <Modal
+         open={openEventSlot}
+         onCancel={() =>setOpenEventSlot(false)}
+         onOk={() =>setOpenEventSlot(false)}
+         title={timeSlot +" Slot"}>
+          <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
+            <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
+            onChange={()=>""}
+            /></h2>
+            <h2>Notes :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
+            onChange={()=>""}
+            /></h2>
+            <h3>From :<TimePicker /> &nbsp;&nbsp; To :<TimePicker/></h3>
+          </div>
+         </Modal>
     </div>
   );
 };
