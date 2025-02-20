@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Col, Divider, Input, Modal, Row, TimePicker } from "antd";
+import { Button, Col, Divider, Modal, Row, TimePicker } from "antd";
 import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -13,7 +13,11 @@ const CalendarPage = () => {
   const [ openDailyCalendar, setOpenDailyCalendar ] = useState(false);
   const [ days, setDays ] = useState([]);
   const [ openEventSlot, setOpenEventSlot ] = useState(false);
-  const [ timeSlot, setTimeSlot ] = useState(dayjs());
+  const [ timeSlot, setTimeSlot ] = useState(null);
+  const [ eventTitle, setEventTitle ] = useState('');
+  const [ eventNotes, setEventNotes ] = useState('');
+  const [ fromTimeSlot, setFromTimeSlot ] = useState(null);
+  const [ toTimeSlot, setToTimeSlot ] = useState(null);
 
   const [ sampleData, setSampleData ] = useState([
         {
@@ -154,7 +158,11 @@ const CalendarPage = () => {
         return newDate;
       });
     }else{
-      setCurrentDate((prev) => new Date(prev.setDate(prev.getDate() - 1)));
+      setCurrentDate((prev) =>{
+        const newDate = new Date(prev);
+        newDate.setDate(prev.getDate() - 1);
+        return newDate;
+      });
     }
   };
 
@@ -168,8 +176,52 @@ const CalendarPage = () => {
         return newDate;
       });
     }else{
-      setCurrentDate((prev) => new Date(prev.setDate(prev.getDate() + 1)));
+      setCurrentDate((prev) =>{
+        const newDate = new Date(prev);
+        newDate.setDate(prev.getDate() + 1);
+        return newDate;
+      });
     }
+  };
+
+  const newEventRecord = {
+    month:currentDate.toLocaleDateString("default",{month:"long"}),
+    year:currentDate.getFullYear(),
+    userId:"ABC10!",
+    [currentDate.getDate()] : {
+      events : [{
+                "title": eventTitle,
+                "from": fromTimeSlot,
+                "to": toTimeSlot,
+                "notes": eventNotes,
+                },]},
+  }
+
+  const handleCalendarEvent = () => {
+    setSampleData(prev => prev.month === monthName && prev.year === currentDate.getFullYear() ? 
+    prev.currentDate.getDate() ? {[currentDate.getDate()] : {events: [...prev,{
+      "title": eventTitle,
+      "from": fromTimeSlot,
+      "to": toTimeSlot,
+      "notes": eventNotes,
+    }]}} : 
+    {[currentDate.getDate()] : {
+      events : [{
+                "title": eventTitle,
+                "from": fromTimeSlot,
+                "to": toTimeSlot,
+                "notes": eventNotes,
+                },]},}
+     : [...prev,newEventRecord]);
+    console.log(newEventRecord);
+    handleCloseEventSlot();
+  };
+  const handleCloseEventSlot = () =>{
+    setOpenEventSlot(false);
+    setFromTimeSlot(null);
+    setToTimeSlot(null);
+    setEventTitle("")
+    setEventNotes("");
   };
 
   return (
@@ -228,7 +280,14 @@ const CalendarPage = () => {
               {Array.from({ length: 24 }, (_, i) => (
                 <div key={i} 
                 className="event-slot"
-                onClick={() => {setOpenEventSlot(true)}}
+                style={{display:'flex',alignItems:'center',justifyContent:'center',backgroundColor:sampleData.some(prev => 
+                prev.month === monthName && 
+                prev.year === currentDate.getFullYear() && 
+                prev[currentDate.getDate()] &&
+                prev[currentDate.getDate()].events.some(item => (item.from <= i && i <= item.to))
+                ) ? "orange":""
+                }}
+                onClick={() => {setOpenEventSlot(true);setTimeSlot(i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`)}}
                 >
                 {sampleData.map(prev => (prev.month === monthName && prev.year === currentDate.getFullYear() && prev[currentDate.getDate()]) ? prev[currentDate.getDate()].events.map(item => (item.from <= i && i <= item.to) ? item.title : ""):"")}
                 </div>
@@ -269,7 +328,8 @@ const CalendarPage = () => {
                       <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
                     {hours.map((hour, index) => (
                       <div key={index} className="time-section"
-                      onClick={() => {setOpenEventSlot(true)}}>
+                      onClick={() => {setOpenEventSlot(true);setTimeSlot(hour);}}>
+                      
                       </div>
                     ))}
                   </div>
@@ -281,17 +341,30 @@ const CalendarPage = () => {
         )}
         <Modal
          open={openEventSlot}
-         onCancel={() =>setOpenEventSlot(false)}
-         onOk={() =>setOpenEventSlot(false)}
+         onCancel={handleCloseEventSlot}
+         onOk={handleCalendarEvent}
          title={timeSlot +" Slot"}>
           <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
             <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
-            onChange={()=>""}
+            onChange={(e)=>setEventTitle(e.target.value)}
+            value={eventTitle}
             /></h2>
             <h2>Notes :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
-            onChange={()=>""}
+            onChange={(e)=>setEventNotes(e.target.value)}
+            value={eventNotes}
             /></h2>
-            <h3>From :<TimePicker /> &nbsp;&nbsp; To :<TimePicker/></h3>
+            <h3>From :<TimePicker 
+                          format="h A" 
+                          use12Hours={false} 
+                          defaultValue={dayjs().hour(0).minute(0)}
+                          onChange={(e) => setFromTimeSlot(e.hour())}
+                          /> &nbsp;&nbsp; 
+                To :<TimePicker 
+                          format="h A" 
+                          use12Hours={false}
+                          defaultValue={dayjs().hour(0).minute(0)}
+                          onChange={(e) => setToTimeSlot(e.hour())}
+                          /></h3>
           </div>
          </Modal>
     </div>
