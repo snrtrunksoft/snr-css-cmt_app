@@ -18,6 +18,7 @@ const CalendarPage = () => {
   const [ eventNotes, setEventNotes ] = useState('');
   const [ fromTimeSlot, setFromTimeSlot ] = useState(null);
   const [ toTimeSlot, setToTimeSlot ] = useState(null);
+  const [ weekEventDate, setWeekEventDate ] = useState(null);
 
   const [ sampleData, setSampleData ] = useState([
         {
@@ -91,7 +92,7 @@ const CalendarPage = () => {
   const monthName = currentDate.toLocaleDateString("defult",{month:"long"});
 
   console.log("Hours Array:",hours);
-  console.log(currentDate.getFullYear());
+  console.log("current year:",currentDate.getFullYear());
 
    const formattedDate = openDailyCalendar ? currentDate.toLocaleDateString("default", {
       weekday: "long",
@@ -134,7 +135,6 @@ const CalendarPage = () => {
 
   const getStartOfWeek = (date) => {
     const startDate = new Date(date);
-    console.log(startDate);
     startDate.setDate(date.getDate() - date.getDay());
     return startDate;
   };
@@ -184,28 +184,29 @@ const CalendarPage = () => {
     }
   };
 
-  const newEventRecord = {
-    month:currentDate.toLocaleDateString("default",{month:"long"}),
-    year:currentDate.getFullYear(),
-    userId:"ABC10!",
-    [currentDate.getDate()] : {
-      events : [{
-                "title": eventTitle,
-                "from": fromTimeSlot,
-                "to": toTimeSlot,
-                "notes": eventNotes,
-                },]},
-  }
-
   const handleCalendarEvent = () => {
+    const newEventRecord = {
+      month:currentDate.toLocaleDateString("default",{month:"long"}),
+      year:currentDate.getFullYear(),
+      userId:"ABC10!",
+      [weekEventDate !== null ? weekEventDate : currentDate.getDate()] : {
+        events : [{
+                  "title": eventTitle,
+                  "from": fromTimeSlot,
+                  "to": toTimeSlot,
+                  "notes": eventNotes,
+                  },
+                ]
+        },
+    };
     setSampleData(prev => prev.month === monthName && prev.year === currentDate.getFullYear() ? 
-    prev.currentDate.getDate() ? {[currentDate.getDate()] : {events: [...prev,{
+    (weekEventDate !== null ? prev.weekEventDate : prev.currentDate.getDate()) ? {[( weekEventDate !== null ? weekEventDate : currentDate.getDate())] : {events: [...prev,{
       "title": eventTitle,
       "from": fromTimeSlot,
       "to": toTimeSlot,
       "notes": eventNotes,
     }]}} : 
-    {[currentDate.getDate()] : {
+    {[( weekEventDate !== null ? weekEventDate : currentDate.getDate())] : {
       events : [{
                 "title": eventTitle,
                 "from": fromTimeSlot,
@@ -220,9 +221,23 @@ const CalendarPage = () => {
     setOpenEventSlot(false);
     setFromTimeSlot(null);
     setToTimeSlot(null);
-    setEventTitle("")
+    setEventTitle("");
     setEventNotes("");
   };
+
+   const openAppointment = sampleData.some(prev => 
+    prev.month === monthName && 
+    prev.year === currentDate.getFullYear() &&
+    prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()] ?
+    prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()].events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") && dayjs(timeSlot,"h A").format("HH") <= item.to ? true : false ) : false );
+
+    console.log("openAppointment:",openAppointment);
+
+    const handleDailyCalendarEvent = (time) =>{
+      setWeekEventDate(null);
+      setOpenEventSlot(true);
+      setTimeSlot(time === 0 ? "12 AM" : time < 12 ? `${time} AM` : time === 12 ? "12 PM" : `${time - 12} PM`);
+  }
 
   return (
     <div className="calendar-container">
@@ -262,7 +277,7 @@ const CalendarPage = () => {
                 currentDate.getFullYear() === new Date().getFullYear() &&
                 currentDate.getMonth() === new Date().getMonth() &&
                 item.day === new Date().getDate()
-                 ) ? "lightblue" : "" }}
+                 ) ? "lightblue" : ""}}
               >{item.day}</div>
           </div>
         ))}
@@ -287,9 +302,15 @@ const CalendarPage = () => {
                 prev[currentDate.getDate()].events.some(item => (item.from <= i && i <= item.to))
                 ) ? "orange":""
                 }}
-                onClick={() => {setOpenEventSlot(true);setTimeSlot(i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`)}}
+                onClick={() => handleDailyCalendarEvent(i)}
                 >
-                {sampleData.map(prev => (prev.month === monthName && prev.year === currentDate.getFullYear() && prev[currentDate.getDate()]) ? prev[currentDate.getDate()].events.map(item => (item.from <= i && i <= item.to) ? item.title : ""):"")}
+                {sampleData.map(prev => (
+                  prev.month === monthName &&
+                  prev.year === currentDate.getFullYear() && 
+                  prev[currentDate.getDate()]
+                  ) ? prev[currentDate.getDate()].events.map(item => 
+                  (item.from <= i && i <= item.to) ? item.title : "")
+                  : "" )}
                 </div>
               ))}
             </div>
@@ -304,7 +325,10 @@ const CalendarPage = () => {
                   currentDate.getFullYear() === new Date().getFullYear() &&
                   currentDate.getMonth() === new Date().getMonth() &&
                   day.getDate() === new Date().getDate()
-                  ) ? "lightblue" : "" }}
+                  ) ? "lightblue" : "",
+                  opacity: day.getMonth() !== currentDate.getMonth() ? 0.5 : 1, 
+                  pointerEvents: day.getMonth() !== currentDate.getMonth() ? "none" : "auto" 
+                  }}
                 >
                   <span className="day-name">{weekdays[index]}</span> &nbsp;
                   <span className="day-number">{day.getDate()}</span>
@@ -328,8 +352,25 @@ const CalendarPage = () => {
                       <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
                     {hours.map((hour, index) => (
                       <div key={index} className="time-section"
-                      onClick={() => {setOpenEventSlot(true);setTimeSlot(hour);}}>
-                      
+                        style={{backgroundColor:sampleData.some(prev =>
+                          prev.month === monthName &&
+                          prev.year === currentDate.getFullYear() &&
+                          prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
+                          prev[day.getDate()].events.some(item =>
+                          (item.from <= dayjs(hour,"h A").format("HH")
+                          && dayjs(hour,"h A").format("HH") <= item.to)))
+                          ? "orange": "",
+                          opacity: day.getMonth() !== currentDate.getMonth() ? 0.5 : 1,
+                          pointerEvents: day.getMonth() !== currentDate.getMonth() ? "none" : "auto"
+                          }}
+                        onClick={() => {setOpenEventSlot(true);setTimeSlot(hour);setWeekEventDate(day.getDate());}}
+                      >
+                      {sampleData.map(prev => prev.month === monthName &&
+                        prev.year === currentDate.getFullYear() &&
+                        prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
+                        prev[day.getDate()].events.map(item => 
+                        (item.from <= dayjs(hour,"h A").format("HH") &&
+                          dayjs(hour,"h A").format("HH") <= item.to) ? item.title :""))}
                       </div>
                     ))}
                   </div>
@@ -344,27 +385,39 @@ const CalendarPage = () => {
          onCancel={handleCloseEventSlot}
          onOk={handleCalendarEvent}
          title={timeSlot +" Slot"}>
-          <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
-            <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
-            onChange={(e)=>setEventTitle(e.target.value)}
-            value={eventTitle}
-            /></h2>
-            <h2>Notes :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
-            onChange={(e)=>setEventNotes(e.target.value)}
-            value={eventNotes}
-            /></h2>
-            <h3>From :<TimePicker 
-                          format="h A" 
-                          use12Hours={false} 
-                          defaultValue={dayjs().hour(0).minute(0)}
-                          onChange={(e) => setFromTimeSlot(e.hour())}
-                          /> &nbsp;&nbsp; 
-                To :<TimePicker 
-                          format="h A" 
-                          use12Hours={false}
-                          defaultValue={dayjs().hour(0).minute(0)}
-                          onChange={(e) => setToTimeSlot(e.hour())}
-                          /></h3>
+          <div>
+            {!openAppointment ? 
+            <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
+              <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
+                  onChange={(e)=>setEventTitle(e.target.value)}
+                  value={eventTitle}
+                  /></h2>
+                  <h2>Notes :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
+                  onChange={(e)=>setEventNotes(e.target.value)}
+                  value={eventNotes}
+                  /></h2>
+                  <h3>From :<TimePicker 
+                                format="h A" 
+                                use12Hours={false}
+                                value={fromTimeSlot !== null ? dayjs().hour(fromTimeSlot) : null}
+                                onChange={(e) => setFromTimeSlot(e.hour())}
+                                /> &nbsp;&nbsp; 
+                      To :<TimePicker 
+                                format="h A" 
+                                use12Hours={false}
+                                value={toTimeSlot !== null ? dayjs().hour(toTimeSlot) : null}
+                                onChange={(e) => setToTimeSlot(e.hour())}
+                                /></h3>
+            </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
+              <center><h2>{sampleData.map(prev => 
+              prev.month === monthName &&
+              prev.year === currentDate.getFullYear() &&
+              prev[weekEventDate !== null ? weekEventDate : currentDate.getDate()] &&
+              prev[weekEventDate !== null ? weekEventDate : currentDate.getDate()].events.map(item => 
+              item.from <= dayjs(timeSlot,"h A").format("HH") &&
+              dayjs(timeSlot,"h A").format("HH") <= item.to ? item.title : "") 
+              )}</h2></center>
+            </div>}
           </div>
          </Modal>
     </div>
