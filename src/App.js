@@ -217,7 +217,6 @@ function App() {
   };
 
   const handleStatusSelection = (value) =>{
-   if(!resourcePage){
       setStatusSelection(value);
       setHideDashboard(true);
       if(value === "All"){
@@ -227,15 +226,12 @@ function App() {
         const filteredRecords = data.filter((prev)=> prev.status === value);
         setDuplicateData(filteredRecords);
       };
-    }else{
-      const filteredRecords = data.filter((prev)=> prev.status === "All");
-      setDuplicateData(filteredRecords);
-    }
   };
 
   const dropDownList = (
     <select
       value={statusSelection}
+      disabled={resourcePage}
       style={{borderRadius:'5px',padding:'5px',margin:'0px 10px',outline:'none'}}
       onChange={(e) => handleStatusSelection(e.target.value)}
     >
@@ -365,7 +361,7 @@ function App() {
           </div>
         ) : (resourcePage ? 
         <ResourcePage 
-          data={duplicateData} 
+          data={data} 
           setDuplicateData={setDuplicateData}
           commentBox = {commentBox} 
           setCommentBox = {setCommentBox}
