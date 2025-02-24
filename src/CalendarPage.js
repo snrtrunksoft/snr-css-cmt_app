@@ -138,6 +138,11 @@ const CalendarPage = () => {
     startDate.setDate(date.getDate() - date.getDay());
     return startDate;
   };
+    useEffect(() => {
+      const format24Hour = dayjs(timeSlot,"h A").hour();
+      setFromTimeSlot(format24Hour);
+      setToTimeSlot(format24Hour + 1);
+    },[timeSlot]);
 
   const getWeekDays = () => {
     const startOfWeek = getStartOfWeek(currentDate);
@@ -217,10 +222,9 @@ const CalendarPage = () => {
     console.log(newEventRecord);
     handleCloseEventSlot();
   };
+
   const handleCloseEventSlot = () =>{
     setOpenEventSlot(false);
-    setFromTimeSlot(null);
-    setToTimeSlot(null);
     setEventTitle("");
     setEventNotes("");
   };
@@ -295,13 +299,12 @@ const CalendarPage = () => {
               {Array.from({ length: 24 }, (_, i) => (
                 <div key={i} 
                 className="event-slot"
-                style={{display:'flex',alignItems:'center',justifyContent:'center',backgroundColor:sampleData.some(prev => 
+                style={sampleData.some(prev => 
                 prev.month === monthName && 
                 prev.year === currentDate.getFullYear() && 
                 prev[currentDate.getDate()] &&
                 prev[currentDate.getDate()].events.some(item => (item.from <= i && i <= item.to))
-                ) ? "orange":""
-                }}
+                ) ? {backgroundColor:'orange',borderBottom:'1px solid orange'} :{}}
                 onClick={() => handleDailyCalendarEvent(i)}
                 >
                 {sampleData.map(prev => (
@@ -359,7 +362,13 @@ const CalendarPage = () => {
                           prev[day.getDate()].events.some(item =>
                           (item.from <= dayjs(hour,"h A").format("HH")
                           && dayjs(hour,"h A").format("HH") <= item.to)))
-                          ? "orange": "",
+                          ? "orange": "",borderBottom:sampleData.some(prev =>
+                          prev.month === monthName &&
+                          prev.year === currentDate.getFullYear() &&
+                          prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
+                          prev[day.getDate()].events.some(item =>
+                          (item.from <= dayjs(hour,"h A").format("HH")
+                          && dayjs(hour,"h A").format("HH") <= item.to))) ? "1px solid orange":"",
                           opacity: day.getMonth() !== currentDate.getMonth() ? 0.5 : 1,
                           pointerEvents: day.getMonth() !== currentDate.getMonth() ? "none" : "auto"
                           }}
@@ -397,19 +406,19 @@ const CalendarPage = () => {
                   value={eventNotes}
                   /></h2>
                   <h3>From :<TimePicker 
-                                format="h A" 
-                                use12Hours={false}
-                                value={fromTimeSlot !== null ? dayjs().hour(fromTimeSlot) : null}
+                                format="h A"
+                                value={Number.isInteger(fromTimeSlot) ? dayjs().hour(fromTimeSlot) : fromTimeSlot}
                                 onChange={(e) => setFromTimeSlot(e.hour())}
-                                /> &nbsp;&nbsp; 
-                      To :<TimePicker 
-                                format="h A" 
-                                use12Hours={false}
-                                value={toTimeSlot !== null ? dayjs().hour(toTimeSlot) : null}
+                                needConfirm={false}
+                                /> &nbsp;&nbsp;
+                      To :<TimePicker
+                                format="h A"
+                                value={Number.isInteger(toTimeSlot) ? dayjs().hour(toTimeSlot) : toTimeSlot}
                                 onChange={(e) => setToTimeSlot(e.hour())}
+                                needConfirm={false}
                                 /></h3>
             </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
-              <center><h2>{sampleData.map(prev => 
+              <center><h2>{sampleData.map(prev =>
               prev.month === monthName &&
               prev.year === currentDate.getFullYear() &&
               prev[weekEventDate !== null ? weekEventDate : currentDate.getDate()] &&
