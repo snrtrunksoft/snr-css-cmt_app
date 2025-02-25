@@ -10,7 +10,9 @@ const Header = ({
     setHideDashboard, 
     hideDashboard, 
     commentBox, 
+    membersPage,
     openCalendarPage, 
+    todosPage,
     setOpenCalendarPage,
     setMembersPage,
     setResourcePage,
@@ -29,11 +31,11 @@ const Header = ({
             </div>
             <div className='header-right'>
                 <span className="header-icons">
-                    <Button icon={<HomeOutlined />} style={{backgroundColor:'transparent',color: !openCalendarPage ? "#1677ff":""}} onClick={() => {setOpenCalendarPage(false);setResourcePage(false);setMembersPage(true);setTodosPage(false);}}></Button>
+                    <Button icon={<HomeOutlined />} style={{backgroundColor:'transparent',color: membersPage ? "#1677ff":""}} onClick={() => {setOpenCalendarPage(false);setResourcePage(false);setMembersPage(true);setTodosPage(false);}}></Button>
                     <Button icon={<CalendarTwoTone twoToneColor={openCalendarPage ? "" : "azure"}/>} style={{backgroundColor:'transparent'}} onClick={()=>{setOpenCalendarPage(true);setResourcePage(false);setMembersPage(false);setTodosPage(false);}}></Button>
-                    <Button style={{fontSize:'20px',padding:'0px 0px',backgroundColor:'transparent'}} onClick={() => {setOpenCalendarPage(false);setResourcePage(false);setMembersPage(false);setTodosPage(true);}}>Todos</Button>
+                    <Button style={{fontSize:'20px',padding:'0px 0px',backgroundColor:'transparent',color: todosPage ? "#1677ff":""}} onClick={() => {setOpenCalendarPage(false);setResourcePage(false);setMembersPage(false);setTodosPage(true);}}>Todos</Button>
                     <Badge count={commentBox.length} offset={[-10,2]}>
-                        <Button icon={<InboxOutlined/>}  style={{backgroundColor:'transparent'}} onClick={() => setHandleInboxDrawer(true)}></Button>
+                        <Button icon={<InboxOutlined/>}  style={{backgroundColor:'transparent',}} onClick={() => setHandleInboxDrawer(true)}></Button>
                     </Badge>
                 </span>
                 Status: {dropDownList}

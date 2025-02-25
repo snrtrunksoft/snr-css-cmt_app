@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const CalendarPage = () => {
+const CalendarPage = ({sampleData,setSampleData}) => {
   const [ currentDate, setCurrentDate] = useState(new Date());
   const [ openWeekCalendar, setOpenWeekCalendar ] = useState(false);
   const [ openMonthCalendar, setOpenMonthCalendar ] = useState(true);
@@ -19,72 +19,6 @@ const CalendarPage = () => {
   const [ fromTimeSlot, setFromTimeSlot ] = useState(null);
   const [ toTimeSlot, setToTimeSlot ] = useState(null);
   const [ weekEventDate, setWeekEventDate ] = useState(null);
-
-  const [ sampleData, setSampleData ] = useState([
-        {
-            "month": "March",
-            "year": 2025,
-            "userId": "ABC123",
-            "1": {
-              events:[]
-            },
-            "2": {
-              events:[]
-            },
-            "3": {
-              events:[]
-            },
-            "4": {
-              events:[]
-            },
-            "5": {
-              events:[]
-            },
-            "19":{
-              events:[]
-            },
-            "10": {
-                "isCalendarFull": false,
-                "noOfEvents": 3,
-                events: [
-                    {
-                        "title": "Appointment 1",
-                        "from": 0,
-                        "to": 1,
-                        "notes": "appointment for dentist",
-                    },
-                    {
-                        "title": "Appointment 2",
-                        "from": 13,
-                        "to": 18,
-                        "notes": "appointment for dentist",
-                    },
-                ]
-            }
-        },
-        {
-          "month": "January",
-            "year": 2025,
-            "userId": "ABC133",
-            "1": {
-              events:[
-                  {
-                    "title": "Appointment 1",
-                    "from": 0,
-                    "to": 1,
-                    "notes": "appointment for dentist",
-                    },
-                    {
-                      "title": "Appointment 2",
-                      "from": 13,
-                      "to": 18,
-                      "notes": "appointment for dentist",
-                    },
-              ]
-            },
-        }
-      ]);
-
 
   const hours = Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} AM`)
     .concat(Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} PM`));
@@ -233,7 +167,9 @@ const CalendarPage = () => {
     prev.month === monthName && 
     prev.year === currentDate.getFullYear() &&
     prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()] ?
-    prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()].events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") && dayjs(timeSlot,"h A").format("HH") <= item.to ? true : false ) : false );
+    prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()].events.some(item => 
+      item.from <= dayjs(timeSlot,"h A").format("HH") &&
+      dayjs(timeSlot,"h A").format("HH") <= item.to ? true : false ) : false );
 
     console.log("openAppointment:",openAppointment);
 
