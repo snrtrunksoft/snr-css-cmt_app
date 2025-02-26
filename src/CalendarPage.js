@@ -280,7 +280,8 @@ const CalendarPage = () => {
               style={{backgroundColor:(
                 currentDate.getFullYear() === new Date().getFullYear() &&
                 currentDate.getMonth() === new Date().getMonth() &&
-                item.day === new Date().getDate()
+                item.day === new Date().getDate() &&
+                item.type === "current"
                  ) ? "lightblue" : ""}}
               >{item.day}</div>
           </div>
@@ -304,16 +305,41 @@ const CalendarPage = () => {
                 prev.year === currentDate.getFullYear() && 
                 prev[currentDate.getDate()] &&
                 prev[currentDate.getDate()].events.some(item => (item.from <= i && i <= item.to))
-                ) ? {backgroundColor:'orange',borderBottom:'1px solid orange'} :{}}
+                ) ? {backgroundColor:'orange',borderBottom:'1px solid transparent',borderRight:'2px solid gray',borderLeft:"2px solid gray",
+                borderTop:sampleData.some(prev => 
+                prev.month === monthName && 
+                prev.year === currentDate.getFullYear() && 
+                prev[currentDate.getDate()] &&
+                prev[currentDate.getDate()].events.some(item => i === item.from)
+                ) ? 'solid gray' : "transparent",
+                marginTop: sampleData.some(prev => 
+                prev.month === monthName && 
+                prev.year === currentDate.getFullYear() && 
+                prev[currentDate.getDate()] &&
+                prev[currentDate.getDate()].events.some(item => i === item.from)
+                ) ? '-2px' : "",
+                borderBottom:sampleData.some(prev => 
+                prev.month === monthName && 
+                prev.year === currentDate.getFullYear() && 
+                prev[currentDate.getDate()] &&
+                prev[currentDate.getDate()].events.some(item => i === item.to)
+                ) ? 'solid gray' : "transparent",
+                } :{}}
                 onClick={() => handleDailyCalendarEvent(i)}
                 >
-                {sampleData.map(prev => (
-                  prev.month === monthName &&
-                  prev.year === currentDate.getFullYear() && 
-                  prev[currentDate.getDate()]
-                  ) ? prev[currentDate.getDate()].events.map(item => 
-                  (item.from <= i && i <= item.to) ? item.title : "")
-                  : "" )}
+                {sampleData.map(prev => {
+                  if (
+                    prev.month === monthName &&
+                    prev.year === currentDate.getFullYear() &&
+                    prev[currentDate.getDate()]
+                  ) {
+                    return prev[currentDate.getDate()].events.map(item => {
+                      const midpoint = Math.ceil((item.from + item.to) / 2);
+                      return i === midpoint ? item.title : "";
+                    });
+                  }
+                  return "";
+                })}
                 </div>
               ))}
             </div>
@@ -377,7 +403,7 @@ const CalendarPage = () => {
                       {sampleData.map(prev => prev.month === monthName &&
                         prev.year === currentDate.getFullYear() &&
                         prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
-                        prev[day.getDate()].events.map(item => 
+                        prev[day.getDate()].events.map(item =>
                         (item.from <= dayjs(hour,"h A").format("HH") &&
                           dayjs(hour,"h A").format("HH") <= item.to) ? item.title :""))}
                       </div>
