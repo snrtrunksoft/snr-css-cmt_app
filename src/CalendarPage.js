@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const CalendarPage = () => {
+const CalendarPage = ({sampleData,setSampleData}) => {
   const [ currentDate, setCurrentDate] = useState(new Date());
   const [ openWeekCalendar, setOpenWeekCalendar ] = useState(false);
   const [ openMonthCalendar, setOpenMonthCalendar ] = useState(true);
@@ -19,72 +19,18 @@ const CalendarPage = () => {
   const [ fromTimeSlot, setFromTimeSlot ] = useState(null);
   const [ toTimeSlot, setToTimeSlot ] = useState(null);
   const [ weekEventDate, setWeekEventDate ] = useState(null);
+  const [currentHour, setCurrentHour] = useState(dayjs().hour());
 
-  const [ sampleData, setSampleData ] = useState([
-        {
-            "month": "March",
-            "year": 2025,
-            "userId": "ABC123",
-            "1": {
-              events:[]
-            },
-            "2": {
-              events:[]
-            },
-            "3": {
-              events:[]
-            },
-            "4": {
-              events:[]
-            },
-            "5": {
-              events:[]
-            },
-            "19":{
-              events:[]
-            },
-            "10": {
-                "isCalendarFull": false,
-                "noOfEvents": 3,
-                events: [
-                    {
-                        "title": "Appointment 1",
-                        "from": 0,
-                        "to": 1,
-                        "notes": "appointment for dentist",
-                    },
-                    {
-                        "title": "Appointment 2",
-                        "from": 13,
-                        "to": 18,
-                        "notes": "appointment for dentist",
-                    },
-                ]
-            }
-        },
-        {
-          "month": "January",
-            "year": 2025,
-            "userId": "ABC133",
-            "1": {
-              events:[
-                  {
-                    "title": "Appointment 1",
-                    "from": 0,
-                    "to": 1,
-                    "notes": "appointment for dentist",
-                    },
-                    {
-                      "title": "Appointment 2",
-                      "from": 13,
-                      "to": 18,
-                      "notes": "appointment for dentist",
-                    },
-              ]
-            },
-        }
-      ]);
+  useEffect(() => {
+    const updateHour = () => {
+      setCurrentHour(dayjs().hour());
+    };
 
+    updateHour();
+    const interval = setInterval(updateHour, 3600000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const hours = Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} AM`)
     .concat(Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} PM`));
@@ -233,7 +179,9 @@ const CalendarPage = () => {
     prev.month === monthName && 
     prev.year === currentDate.getFullYear() &&
     prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()] ?
-    prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()].events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") && dayjs(timeSlot,"h A").format("HH") <= item.to ? true : false ) : false );
+    prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()].events.some(item => 
+      item.from <= dayjs(timeSlot,"h A").format("HH") &&
+      dayjs(timeSlot,"h A").format("HH") < item.to ? true : false ) : false );
 
     console.log("openAppointment:",openAppointment);
 
@@ -296,7 +244,7 @@ const CalendarPage = () => {
                 </div>
               ))}
             </div>
-            <div className="event-column">
+            <div className="event-column" style={{ position: "relative" }}>
               {Array.from({ length: 24 }, (_, i) => (
                 <div key={i} 
                 className="event-slot"
@@ -340,6 +288,20 @@ const CalendarPage = () => {
                   }
                   return "";
                 })}
+                  {currentHour === i && (
+                    <div
+                      className="current-time-line"
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        width: "100%",
+                        height: "2px",
+                        backgroundColor: "violet",
+                        top: 35,
+                      }}
+                    />
+                  )}
+                  
                 </div>
               ))}
             </div>
@@ -387,14 +349,14 @@ const CalendarPage = () => {
                           prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
                           prev[day.getDate()].events.some(item =>
                           (item.from <= dayjs(hour,"h A").format("HH")
-                          && dayjs(hour,"h A").format("HH") <= item.to)))
+                          && dayjs(hour,"h A").format("HH") < item.to)))
                           ? "orange": "",borderBottom:sampleData.some(prev =>
                           prev.month === monthName &&
                           prev.year === currentDate.getFullYear() &&
                           prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
                           prev[day.getDate()].events.some(item =>
                           (item.from <= dayjs(hour,"h A").format("HH")
-                          && dayjs(hour,"h A").format("HH") <= item.to))) ? "1px solid orange":"",
+                          && dayjs(hour,"h A").format("HH") < item.to))) ? "1px solid orange":"",
                           opacity: day.getMonth() !== currentDate.getMonth() ? 0.5 : 1,
                           pointerEvents: day.getMonth() !== currentDate.getMonth() ? "none" : "auto"
                           }}
@@ -405,7 +367,21 @@ const CalendarPage = () => {
                         prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
                         prev[day.getDate()].events.map(item =>
                         (item.from <= dayjs(hour,"h A").format("HH") &&
-                          dayjs(hour,"h A").format("HH") <= item.to) ? item.title :""))}
+                          dayjs(hour,"h A").format("HH") < item.to) ? item.title :""))}
+                      {currentHour == dayjs(hour, "h A").format("HH") && (
+                        <div
+                          className="current-time-line"
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            width: "100%",
+                            height: "2px",
+                            backgroundColor: "violet",
+                            top: 30,
+                          }}
+                        />
+                      )}
+
                       </div>
                     ))}
                   </div>
