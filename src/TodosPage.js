@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 const TodosPage = ({sampleData}) =>{
     const [ currentDate, setCurrentDate ] = useState(dayjs());
     const colors = ["lightblue", "lightgreen", "pink",];
-    console.log(sampleData)
+    console.log(sampleData);
     console.log(currentDate);
     return(
         <div className="list"> 
@@ -17,7 +17,10 @@ const TodosPage = ({sampleData}) =>{
                 <div className="list-item" style={{boxShadow:`0px 2px 5px ${colors[index % colors.length]}`}}>
                     <span>{dayjs().hour(item.from).format("h A")} - {dayjs().hour(item.to).format("h A")}</span>
                     <span>{item.title}</span>
-                </div> : ""):"")}
+                </div> : <div className="list-item" style={{boxShadow:`0px 2px 5px gray`}}>
+                    <span>{dayjs().hour(item.from).format("h A")} - {dayjs().hour(item.to).format("h A")}</span>
+                    <span>{item.title}</span>
+                </div> ):"")}
         </div>
     );
 };
