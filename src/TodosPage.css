@@ -1,7 +1,7 @@
 .list {
     width: 100%;
     max-width: 500px;
-    padding: 20px;
+    min-height: 75vh;
 }
 
 .list-item {
@@ -13,5 +13,4 @@
     margin-bottom: 10px;
     text-align: center;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
