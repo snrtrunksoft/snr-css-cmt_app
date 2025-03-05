@@ -66,7 +66,7 @@ const NameCard = ({
     if(status === "New"){
         color = "pink";
     }
-    if(status === "In-progress"){
+    if(status === "In_Progress"){
         color = "lightblue";
     }
     if(status === "Cancelled"){

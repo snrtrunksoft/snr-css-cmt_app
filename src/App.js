@@ -209,7 +209,7 @@ function App() {
     statusCount["New"] = 0;
   };
   if(!("In-progress" in statusCount)){
-    statusCount["In-progress"] = 0;
+    statusCount["In_Progress"] = 0;
   };
   if(!("Complete" in statusCount)){
     statusCount["Complete"] = 0;
@@ -222,7 +222,7 @@ function App() {
 
   const legendLabels = {
     "New": "New Status",
-    "In-progress": "In Progress Status",
+    "In_Progress": "In Progress Status",
     "Complete": "Completed Status"
   };
   
@@ -343,7 +343,7 @@ function App() {
     >
       <option value="All">All</option>
       <option value="New">New</option>
-      <option value="In-progress">In-progress</option>
+      <option value="In_Progress">In-progress</option>
       <option value="Complete">Complete</option>
       <option value="Cancelled">Cancelled</option>
     </select>
@@ -427,7 +427,7 @@ function App() {
                     <h3>New</h3>
                   </Col>
                   <Col className='status-icons'>
-                    <span style={{backgroundColor:'lightBlue'}}> {statusCount["In-progress"]} </span>
+                    <span style={{backgroundColor:'lightBlue'}}> {statusCount["In_Progress"]} </span>
                     <h3>In_progress</h3>
                   </Col>
                   <Col className='status-icons'>
@@ -469,11 +469,10 @@ function App() {
           </div>
         ) : (resourcePage ? 
         <ResourcePage 
-          data={data} 
-          setDuplicateData={setDuplicateData}
-          commentBox = {commentBox} 
+          setDuplicateData = {setDuplicateData}
+          commentBox = {commentBox}
           setCommentBox = {setCommentBox}
-          /> :openCalendarPage ? <CalendarPage sampleData={sampleData} setSampleData={setSampleData}/> : <TodosPage sampleData={sampleData}/>)}
+        /> :openCalendarPage ? <CalendarPage sampleData={sampleData} setSampleData={setSampleData}/> : <TodosPage sampleData={sampleData}/>)}
         <Divider type='horizontal'/>
         {<Footer/>}
     </div>
