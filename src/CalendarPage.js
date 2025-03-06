@@ -136,38 +136,35 @@ const CalendarPage = ({sampleData,setSampleData}) => {
   };
 
   const handleCalendarEvent = () => {
-    const newEventRecord = {
-      month:currentDate.toLocaleDateString("default",{month:"long"}),
-      year:currentDate.getFullYear(),
-      userId:"ABC10!",
-      [weekEventDate !== null ? weekEventDate : currentDate.getDate()] : {
-        events : [{
-                  "title": eventTitle,
-                  "from": fromTimeSlot,
-                  "to": toTimeSlot,
-                  "notes": eventNotes,
-                  },
-                ]
-        },
+
+    const newEvent = {
+      title: eventTitle,
+      from: fromTimeSlot,
+      to: toTimeSlot,
+      notes: eventNotes,
     };
-    setSampleData(prev => prev.month === monthName && prev.year === currentDate.getFullYear() ? 
-    (weekEventDate !== null ? prev.weekEventDate : prev.currentDate.getDate()) ? {[( weekEventDate !== null ? weekEventDate : currentDate.getDate())] : {events: [...prev,{
-      "title": eventTitle,
-      "from": fromTimeSlot,
-      "to": toTimeSlot,
-      "notes": eventNotes,
-    }]}} : 
-    {[( weekEventDate !== null ? weekEventDate : currentDate.getDate())] : {
-      events : [{
-                "title": eventTitle,
-                "from": fromTimeSlot,
-                "to": toTimeSlot,
-                "notes": eventNotes,
-                },]},}
-     : [...prev,newEventRecord]);
-    console.log(newEventRecord);
+
+    setSampleData((prevData) =>
+    prevData.map((monthData) => {
+      if (monthData.month === monthName) {
+        return {
+          ...monthData,
+          [weekEventDate !== null ? weekEventDate : currentDate.getDate()]: {
+            ...monthData[weekEventDate !== null ? weekEventDate : currentDate.getDate()],
+            events: [...(monthData[weekEventDate !== null ? weekEventDate : currentDate.getDate()]?.events || []), newEvent].sort(
+              (a, b) => a.from - b.from
+            ),
+          },
+        };
+      }
+      return monthData;
+    })
+  );
+    console.log(newEvent);
     handleCloseEventSlot();
   };
+
+  console.log(sampleData);
 
   const handleCloseEventSlot = () =>{
     setOpenEventSlot(false);
@@ -252,7 +249,7 @@ const CalendarPage = ({sampleData,setSampleData}) => {
                 prev.month === monthName && 
                 prev.year === currentDate.getFullYear() && 
                 prev[currentDate.getDate()] &&
-                prev[currentDate.getDate()].events.some(item => (item.from <= i && i <= item.to))
+                prev[currentDate.getDate()].events.some(item => (item.from <= i && i < item.to))
                 ) ? {backgroundColor:'orange',borderBottom:'1px solid transparent',borderRight:'2px solid gray',borderLeft:"2px solid gray",
                 borderTop:sampleData.some(prev => 
                 prev.month === monthName && 
@@ -270,8 +267,14 @@ const CalendarPage = ({sampleData,setSampleData}) => {
                 prev.month === monthName && 
                 prev.year === currentDate.getFullYear() && 
                 prev[currentDate.getDate()] &&
-                prev[currentDate.getDate()].events.some(item => i === item.to)
+                prev[currentDate.getDate()].events.some(item => i === item.to - 1)
                 ) ? 'solid gray' : "transparent",
+                 marginBottom: sampleData.some(prev => 
+                prev.month === monthName && 
+                prev.year === currentDate.getFullYear() && 
+                prev[currentDate.getDate()] &&
+                prev[currentDate.getDate()].events.some(item => i === item.to - 1)
+                ) ? '-1px' : "",
                 } :{}}
                 onClick={() => handleDailyCalendarEvent(i)}
                 >
@@ -282,7 +285,7 @@ const CalendarPage = ({sampleData,setSampleData}) => {
                     prev[currentDate.getDate()]
                   ) {
                     return prev[currentDate.getDate()].events.map(item => {
-                      const midpoint = Math.ceil((item.from + item.to) / 2);
+                      const midpoint = Math.floor((item.from + item.to) / 2);
                       return i === midpoint ? item.title : "";
                     });
                   }
