@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Drawer, Row, Space } from "antd";
+import { Badge, Button, Card, Col, Drawer, Row, Space } from "antd";
+import maleAvatar from "./assets/male_avatar.jpg";
+import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { CalendarTwoTone } from "@ant-design/icons";
 
@@ -18,6 +20,11 @@ const NameCard = ({
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
+    const [ punchCards, setPunchCards ] = useState([1,2,3,4,5,6]);
+    const addNewPunchCArd = () =>{
+        setPunchCards(prevData => [...prevData,parseInt(prevData.length + 1)]);
+    };
+
     const addressKeys = Object.keys(address[0]);
     // console.log(addressKeys);
     const handleSend = () => {
@@ -101,23 +108,37 @@ const NameCard = ({
             </div>
             <Drawer
                 open={nameCardDrawer}
+                style={{backgroundColor:'whitesmoke'}}
                 title = <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}><h2>{customerName} Details</h2><Button onClick={()=>{""}}><CalendarTwoTone/></Button></div>
                 width="40%"
                 onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
                 >
                 <div className="nameDrawer">
-                    <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',margin:'0',height:'30px'}}>
-                        <h2>Name : { customerName }, Age: { "" }</h2>
-                        <h2 style={{backgroundColor:`${color}`,borderRadius:'5px',padding:'0px 5px'}}>{status}</h2>
-                    </span>
-                    <h3>Phone : { phoneNumber }</h3>
-                    <h3 style={{marginBottom:'-10px'}}>Address : </h3> 
-                    <h3> { addressKeys.map((item,index) => 
-                        <span key={index}>
-                            {address[0][item]}{ item !== "country" ? ", " : "." }
-                            {(item === "city") || (item === "state") ? "" : (<br/>) }
-                        </span>)}
-                    </h3>
+                    <div className="personalNameCard">
+                        <Row >
+                            <Col style={{width:'35%',padding:'10px'}}>
+                                <img src={maleAvatar} height={180} style={{borderRadius:"10px"}}/>
+                            </Col>
+                            <Col style={{width:'65%'}}>
+                                <h2> {customerName} </h2>
+                                <h3 style={{marginTop:'-10px'}}>{ phoneNumber }</h3>
+                                <h3 style={{marginRight:"10px",borderRadius:'5px',backgroundColor:'lightgrey',padding:'5px'}}> Address : { addressKeys.map((item,index) => 
+                                    <span key={index}>
+                                        {address[0][item]}{ item !== "country" ? ", " : "." }
+                                        {(item === "city") || (item === "state") ? "" : (<br/>) }
+                                    </span>)}
+                                </h3>
+                            </Col>
+                        </Row>
+                    </div>
+                    <h2>Punch cards:</h2>
+                    <div className="punchCards" style={{backgroundColor:`${color}`}}>
+                        {punchCards.map((card,index) => 
+                        <div key={index} className="individualCards">
+                        {card}
+                        </div>)}
+                        <span className="individualCards" onClick={()=>addNewPunchCArd()}>{"+"}</span>
+                    </div>
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
                         {comments.map((comment,index) =>(
