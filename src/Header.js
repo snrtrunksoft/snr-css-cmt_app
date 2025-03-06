@@ -38,7 +38,8 @@ const Header = ({
                         <Button icon={<InboxOutlined/>}  style={{backgroundColor:'transparent',}} onClick={() => setHandleInboxDrawer(true)}></Button>
                     </Badge>
                 </span>
-                Status: {dropDownList}
+                <span hidden={openCalendarPage || todosPage}>
+                    Status: {dropDownList}
                 {view +" View"}
                 <Switch
                     style={{margin:'0px 10px'}}
@@ -54,6 +55,7 @@ const Header = ({
                     onClick={() => setHideDashboard((prev) => !prev)}
                     >
                 </Switch>
+                </span>
                 <Button icon={<LogoutOutlined/>} style={{margin:"15px",backgroundColor:'inherit',color:'white'}}></Button>
             </div>
             <Drawer

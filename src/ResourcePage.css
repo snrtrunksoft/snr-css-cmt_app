@@ -1,10 +1,7 @@
 .resource-app {
     min-height: 75vh;
-    display: flex;
     margin-top: 100px;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
     background-color: #f0f0f0;
     margin: 0;
 }
