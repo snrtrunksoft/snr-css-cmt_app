@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Row, Space } from "antd";
+import { Badge, Button, Card, Checkbox, Col, Drawer, Row, Space } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
 import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
-import { CalendarTwoTone } from "@ant-design/icons";
 
 const NameCard = ({ 
     customerId, 
@@ -20,9 +19,55 @@ const NameCard = ({
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
-    const [ punchCards, setPunchCards ] = useState([1,2,3,4,5,6]);
-    const addNewPunchCArd = () =>{
-        setPunchCards(prevData => [...prevData,parseInt(prevData.length + 1)]);
+    const [ punchCards, setPunchCards ] = useState([
+        {
+            "id": "001",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-02-2023",
+            "completedDate": "Feb-20-2024"
+ 
+        },
+        {
+            "id": "002",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-30-2024",
+            "completedDate": "Jan-20-2025"
+ 
+        },
+        {
+            "id": "003",
+            "status": "Active",
+            "noOfServicesLeft": "9",
+            "noOfServicesCompleted": "1",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Jan-30-2025"
+        },
+    ]);
+
+    const [ checkedCount, setCheckedCount ] = useState(0);
+    const handleSave = (value) => {
+        setPunchCards((prevCards) =>
+        prevCards.map((prev)=> 
+            prev.id === value.id ? {
+                ...prev,
+                noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
+                noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
+            } : prev
+        ));
+        handleSend();
+        setCheckedCount(0);
+    };
+
+    const handleCheckboxChange = (e,value) => {
+        const count = e.target.checked ? checkedCount + 1 : checkedCount - 1;
+        setCheckedCount(count);
+        setNewComment(count > 0 ?"Subscription ID: "+value.id +", selected Cards: "+count:"");
     };
 
     const addressKeys = Object.keys(address[0]);
@@ -33,7 +78,7 @@ const NameCard = ({
                 prevData.map(prev =>
                     prev.customerId === customerId ? {
                         ...prev,
-                        comments: [...prev.comments, { 
+                        comments: [...prev.comments, {
                             commentID : parseInt(comments[comments.length - 1]["commentId"]) + 1,
                             message:newComment,
                             author:"TBD",
@@ -109,7 +154,8 @@ const NameCard = ({
             <Drawer
                 open={nameCardDrawer}
                 style={{backgroundColor:'whitesmoke'}}
-                title = <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}><h2>{customerName} Details</h2><Button onClick={()=>{""}}><CalendarTwoTone/></Button></div>
+                title={null}
+                // closable={false}
                 width="40%"
                 onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
                 >
@@ -132,12 +178,23 @@ const NameCard = ({
                         </Row>
                     </div>
                     <h2>Punch cards:</h2>
-                    <div className="punchCards" style={{backgroundColor:`${color}`}}>
-                        {punchCards.map((card,index) => 
-                        <div key={index} className="individualCards">
-                        {card}
-                        </div>)}
-                        <span className="individualCards" onClick={()=>addNewPunchCArd()}>{"+"}</span>
+                    <div className="" >
+                        {punchCards.filter((card) => card.status === "Active")
+                        .map((card) => (
+                            <div key={card.id} className="punch-card">
+                                <div className="punchCards" style={{backgroundColor:`${color}`}}>
+                                    {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
+                                    .reverse()
+                                    .map((index) => (
+                                        <div key={index} className="individualCards">
+                                            {/* <div style={{width:'35px',backgroundColor:'pink',height:'25px'}}></div> */}
+                                            <Checkbox onChange={(e)=>handleCheckboxChange(e,card)} width={50}></Checkbox>   
+                                        </div>
+                                    ))}
+                                </div>
+                                {checkedCount?<center style={{padding:'5px'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></center>:""}
+                            </div>
+                            ))}
                     </div>
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
