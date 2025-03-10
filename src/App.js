@@ -6,7 +6,7 @@ import Footer from './Footer';
 import ResourcePage from './ResourcePage';
 import TodosPage from "./TodosPage";
 import AddNewNameCard from './AddNewNameCard';
-import { Button, Col, Divider, Modal, Row, Steps, Table, } from "antd";
+import { Button, Col, Divider, Input, Modal, Row, Table, } from "antd";
 import CalendarPage from "./CalendarPage";
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
@@ -31,6 +31,7 @@ function App() {
   const [ membersPage, setMembersPage ] = useState(true);
   const [ todosPage, setTodosPage ] = useState(false);
   const [ isLoading, setIsLoading ] = useState(true);
+  const [ searchText, setSearchText ] = useState("");
   const [ data, setData]  = useState([
     // {
     //     "customerId": "8",
@@ -334,6 +335,12 @@ function App() {
       };
   };
 
+  const handleSearchText = (value) => {
+    setSearchText(value);
+    const filterData = data.filter(prev => (prev.customerName.toLowerCase().includes(value.toLowerCase()) || prev.phoneNumber.includes(value)));
+    setDuplicateData(filterData);
+  };
+
   const dropDownList = (
     <select
       value={statusSelection}
@@ -370,6 +377,7 @@ function App() {
           <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);setTodosPage(false);}}><h3>Members</h3></Button>
           <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure',marginTop:'10px'}:{marginTop:'10px'}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false);setTodosPage(false);}}><h3>Resources</h3></Button>
         </div>
+        <center hidden={!membersPage}><Input placeholder='Search Name or Ph no.' value={searchText} onChange={(e) => handleSearchText(e.target.value)}></Input></center>
       {isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
         (membersPage) ? (
           <div>
