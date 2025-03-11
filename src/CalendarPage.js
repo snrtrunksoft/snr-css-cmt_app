@@ -145,23 +145,19 @@ const CalendarPage = ({sampleData,setSampleData}) => {
     };
     const newEventRecord = {
       month:currentDate.toLocaleDateString("default",{month:"long"}),
-      year:currentDate.getFullYear(),
+      year:currentDate.getFullYear().toString(),
       userId:"ABC10!",
-      [weekEventDate !== null ? weekEventDate : currentDate.getDate()] : {
-        events : [newEvent,]
-        },
+      date: (weekEventDate !== null ? weekEventDate : currentDate.getDate()).toString(),
+      events : [newEvent,]
     };
 
     setSampleData((prevData) => {
-      if (prevData.month === monthName) {
+      if (prevData.month === monthName && parseInt(prevData.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate())) {
         return {
           ...prevData,
-          [weekEventDate !== null ? weekEventDate : currentDate.getDate()]: {
-            ...prevData[weekEventDate !== null ? weekEventDate : currentDate.getDate()],
-            events: [...(prevData[weekEventDate !== null ? weekEventDate : currentDate.getDate()]?.events || []), newEvent].sort(
+            events: [...(prevData.events || []), newEvent].sort(
               (a, b) => a.from - b.from
             ),
-          },
         };
       }
       return [...prevData,newEventRecord];
@@ -181,11 +177,10 @@ const CalendarPage = ({sampleData,setSampleData}) => {
 
    const openAppointment = sampleData.some(prev => 
     prev.month === monthName && 
-    prev.year === currentDate.getFullYear() &&
-    prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()] ?
-    prev[ weekEventDate !== null ? weekEventDate : currentDate.getDate()].events.some(item => 
-      item.from <= dayjs(timeSlot,"h A").format("HH") &&
-      dayjs(timeSlot,"h A").format("HH") < item.to ? true : false ) : false );
+    parseInt(prev.year) === currentDate.getFullYear() &&
+    parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
+    prev.events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") &&
+      dayjs(timeSlot,"h A").format("HH") < item.to ? true : false ));
 
     console.log("openAppointment:",openAppointment);
 
@@ -257,25 +252,25 @@ const CalendarPage = ({sampleData,setSampleData}) => {
                   className="event-slot"
                   style={sampleData.some(prev => 
                   prev.month === monthName && 
-                  prev.year === currentDate.getFullYear() && 
-                  prev[currentDate.getDate()] &&
-                  prev[currentDate.getDate()].events.some(item => (item.from <= i && i < item.to))
+                  parseInt(prev.year) === currentDate.getFullYear() && 
+                  parseInt(prev.date) === currentDate.getDate() &&
+                  prev.events.some(item => (item.from <= i && i < item.to))
                   ) ? {backgroundColor:'orange',borderRight:'2px solid gray',borderLeft:"2px solid gray",
                   borderBottom:sampleData.some(prev => 
                   prev.month === monthName && 
-                  prev.year === currentDate.getFullYear() && 
-                  prev[currentDate.getDate()] &&
-                  prev[currentDate.getDate()].events.some(item => i === item.to - 1)) ? "1px solid gray" :"1px solid transparent",
+                  parseInt(prev.year) === currentDate.getFullYear() && 
+                  parseInt(prev.date) === currentDate.getDate() &&
+                  prev.events.some(item => i === item.to - 1)) ? "1px solid gray" :"1px solid transparent",
                   } :{}}
                   onClick={() => handleDailyCalendarEvent(i)}
                   >
                   {sampleData.map(prev => {
                     if(
                       prev.month === monthName &&
-                      prev.year === currentDate.getFullYear() &&
-                      prev[currentDate.getDate()]
+                      parseInt(prev.year) === currentDate.getFullYear() &&
+                      parseInt(prev.date) === currentDate.getDate()
                     ){
-                      return prev[currentDate.getDate()].events.map(item => {
+                      return prev.events.map(item => {
                         const midpoint = Math.floor((item.from + item.to) / 2);
                         return i === midpoint ? item.title : "";
                       });
@@ -338,27 +333,27 @@ const CalendarPage = ({sampleData,setSampleData}) => {
                           <div key={index} className="time-section"
                             style={sampleData.some(prev =>
                               prev.month === monthName &&
-                              prev.year === currentDate.getFullYear() &&
-                              prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
-                              prev[day.getDate()].events.some(item =>
+                              parseInt(prev.year) === currentDate.getFullYear() &&
+                              parseInt(prev.date) === day.getDate() &&
+                              prev.events.some(item =>
                               (item.from <= dayjs(hour,"h A").format("HH")
                               && dayjs(hour,"h A").format("HH") < item.to)))
                               ? {backgroundColor:'orange',
                               borderBottom:sampleData.some(prev =>
                               prev.month === monthName &&
-                              prev.year === currentDate.getFullYear() &&
-                              prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1] &&
-                              prev[day.getDate()].events.some(item => dayjs(hour,"h A").format("HH") == item.to - 1)) ? "1px solid gray" : "1px solid transparent"
+                              parseInt(prev.year) === currentDate.getFullYear() &&
+                              parseInt(prev.date) === day.getDate() &&
+                              prev.events.some(item => dayjs(hour,"h A").format("HH") == item.to - 1)) ? "1px solid gray" : "1px solid transparent"
                               } : {}}
                             onClick={() => {setOpenEventSlot(true);setTimeSlot(hour);setWeekEventDate(day.getDate());}}
                           >
                           {sampleData.map((prev) => {
                             if (
                               prev.month === monthName &&
-                              prev.year === currentDate.getFullYear() &&
-                              prev[day.getMonth() === currentDate.getMonth() ? day.getDate() : -1]
+                              parseInt(prev.year) === currentDate.getFullYear() &&
+                              parseInt(prev.date) === day.getDate()
                             ) {
-                              return prev[day.getDate()].events.map((item) => {
+                              return prev.events.map((item) => {
                                 const fromTime = parseInt(item.from, 10);
                                 const toTime = parseInt(item.to, 10);
                                 const midpoint = Math.floor((fromTime + toTime) / 2); // Midpoint calculation
@@ -421,9 +416,9 @@ const CalendarPage = ({sampleData,setSampleData}) => {
             </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
               <center><h2>{sampleData.map(prev =>
               prev.month === monthName &&
-              prev.year === currentDate.getFullYear() &&
-              prev[weekEventDate !== null ? weekEventDate : currentDate.getDate()] &&
-              prev[weekEventDate !== null ? weekEventDate : currentDate.getDate()].events.map(item => 
+              parseInt(prev.year) === currentDate.getFullYear() &&
+              parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
+              prev.events.map(item => 
               item.from <= dayjs(timeSlot,"h A").format("HH") &&
               dayjs(timeSlot,"h A").format("HH") <= item.to ? item.title : "") 
               )}</h2></center>
