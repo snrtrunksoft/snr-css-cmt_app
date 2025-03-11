@@ -12,6 +12,7 @@ const NameCard = ({
     address, 
     status, 
     comments,
+    subscriptions,
     setDuplicateData, 
     commentBox, 
     setCommentBox,
@@ -19,37 +20,14 @@ const NameCard = ({
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
-    const [ punchCards, setPunchCards ] = useState([
-        {
-            "id": "001",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-02-2023",
-            "completedDate": "Feb-20-2024"
- 
-        },
-        {
-            "id": "002",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-30-2024",
-            "completedDate": "Jan-20-2025"
- 
-        },
-        {
-            "id": "003",
-            "status": "Active",
-            "noOfServicesLeft": "9",
-            "noOfServicesCompleted": "1",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Jan-30-2025"
-        },
-    ]);
+    const [ punchCardsState, setPunchCardsState ] = useState("Active");
+    const [ flipped, setFlipped ] = useState(false);
 
+    const toggleFlip = () => {
+        setFlipped((prev) => !prev);
+    };
+
+    const [ punchCards, setPunchCards ] = useState(subscriptions);
     const [ checkedCount, setCheckedCount ] = useState(0);
     const handleSave = (value) => {
         setPunchCards((prevCards) =>
@@ -179,22 +157,39 @@ const NameCard = ({
                     </div>
                     <h2>Punch cards:</h2>
                     <div className="" >
-                        {punchCards.filter((card) => card.status === "Active")
+                        {punchCards.filter((card) => card.status === punchCardsState)
                         .map((card) => (
                             <div key={card.id} className="punch-card">
-                                <div className="punchCards" style={{backgroundColor:`${color}`}}>
-                                    {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
-                                    .reverse()
-                                    .map((index) => (
-                                        <div key={index} className="individualCards">
-                                            {/* <div style={{width:'35px',backgroundColor:'pink',height:'25px'}}></div> */}
-                                            <Checkbox onChange={(e)=>handleCheckboxChange(e,card)} width={50}></Checkbox>   
-                                        </div>
-                                    ))}
-                                </div>
+                                    <div className="punchCards" style={{backgroundColor:`${color}`}}>
+                                        {Array.from({ length: Number(card.noOfServicesCompleted) }, (_, index) => 
+                                            <div key={index} className={`individualCards ${flipped ? "flipped" : ""}`}>
+                                                { flipped ? <Row style={{transform:"rotateY(180deg)",display:'flex',flexDirection:'row'}}>
+                                                    <span>purchasedDate :{card.purchasedDate}</span>
+                                                    <span>completedDate :{card.completedDate}</span>
+                                                </Row> : <Checkbox checked width={50}></Checkbox>}
+                                            </div>
+                                        )}
+                                        {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
+                                        .reverse()
+                                        .map((index) => (
+                                            <div key={index} className={`individualCards ${flipped ? "flipped" : ""}`}>
+                                                {/* <div style={{width:'35px',backgroundColor:'pink',height:'25px'}}></div> */}
+                                               { flipped ? <Row style={{transform:"rotateY(180deg)",display:'flex',flexDirection:'row'}}>
+                                                    <span>Id: {card.id}</span>
+                                                    <span>Completed:{card.noOfServicesCompleted}</span>
+                                                    <span>Active: {card.noOfServicesLeft}</span>
+                                                </Row> :  <Checkbox onChange={(e)=>handleCheckboxChange(e,card)} width={50}></Checkbox> }
+                                            </div>
+                                        ))}
+                                    </div>
                                 {checkedCount?<center style={{padding:'5px'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></center>:""}
                             </div>
                             ))}
+                            <Row>
+                                <Button onClick={() => toggleFlip()}>Flip Cards</Button> &nbsp;
+                                <Button onClick={() => {setPunchCardsState("Complete");setFlipped(false);}}>Completed</Button> &nbsp;
+                                <Button onClick={() => setPunchCardsState("Active")}>Active</Button>
+                            </Row>
                     </div>
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
