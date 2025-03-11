@@ -411,6 +411,7 @@ function App() {
                       address={item.address}
                       status={item.status}
                       comments={item.comments}
+                      subscriptions={item.subscriptions}
                       setDuplicateData={setDuplicateData}
                       commentBox = {commentBox}
                       setCommentBox = {setCommentBox}
