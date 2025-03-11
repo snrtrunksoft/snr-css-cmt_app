@@ -37,6 +37,7 @@ const ResourcePage = ({ setDuplicateData, commentBox, setCommentBox }) =>{
                     address={item.address}
                     status={item.status}
                     comments={item.comments}
+                    subscriptions={item.subscriptions}
                     setDuplicateData={setDuplicateData}
                     commentBox = {commentBox}
                     setCommentBox = {setCommentBox}

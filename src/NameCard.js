@@ -156,7 +156,7 @@ const NameCard = ({
                         </Row>
                     </div>
                     <h2>Punch cards:</h2>
-                    <div className="" >
+                    {punchCards ? <div className="" >
                         {punchCards.filter((card) => card.status === punchCardsState)
                         .map((card) => (
                             <div key={card.id} className="punch-card">
@@ -190,7 +190,7 @@ const NameCard = ({
                                 <Button onClick={() => {setPunchCardsState("Complete");setFlipped(false);}}>Completed</Button> &nbsp;
                                 <Button onClick={() => setPunchCardsState("Active")}>Active</Button>
                             </Row>
-                    </div>
+                    </div> : <center><h3 style={{color:'red'}}>No Punch card Available</h3></center>}
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
                         {comments.map((comment,index) =>(
