@@ -28,7 +28,7 @@
 
 .punchCards {
     width: fit-content;
-    min-width: 80%;
+    min-width: 95%;
     min-height: 150px;
     border-radius: 10px;
     display: grid;
@@ -40,9 +40,9 @@
 .individualCards{
     background-color: #f4f4f4;
     padding: 20px;
-    text-align: center;
+    text-align: left;
     /* min-width: 50px; */
-    min-height: 25px;
+    /* min-height: 25px; */
     max-width: fit-content;
     max-height: fit-content;
     border-radius: 10px; 
@@ -54,4 +54,12 @@
 }
 .flipped {
     transform: rotateY(180deg);
+}
+.punch-card{
+    padding: 10px;
+    flex-direction: column; 
+    /* margin-left: 10px; */
+    /* display: flex;
+    align-items: center;
+    justify-content: flex-start; */
 }

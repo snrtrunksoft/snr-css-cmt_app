@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Col, Divider, Modal, Row, TimePicker } from "antd";
+import { Button, Col, Divider, Dropdown, Modal, Row, TimePicker } from "antd";
 import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -20,6 +20,7 @@ const CalendarPage = ({sampleData,setSampleData}) => {
   const [ toTimeSlot, setToTimeSlot ] = useState(null);
   const [ weekEventDate, setWeekEventDate ] = useState(null);
   const [currentHour, setCurrentHour] = useState(dayjs().hour());
+  const [ calendarUserId, setCalendarUserId ]  = useState(null);
 
   useEffect(() => {
     const updateHour = () => {
@@ -174,6 +175,15 @@ const CalendarPage = ({sampleData,setSampleData}) => {
     setEventTitle("");
     setEventNotes("");
   };
+  const dropDownList = (
+    <select 
+      value={calendarUserId}
+      onChange={(e) => setCalendarUserId(e.target.value)}
+      style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px'}}>
+      {sampleData.map(prevData => 
+      <option>{prevData.userId}</option>)}
+    </select>
+  );
 
    const openAppointment = sampleData.some(prev => 
     prev.month === monthName && 
@@ -193,6 +203,9 @@ const CalendarPage = ({sampleData,setSampleData}) => {
   return (
     <div className="calendar-container">
       <div className="calendar-header">
+        <Row style={{display:'flex',alignItems:'center',justifyContent:'flex-start',padding:'5px'}}>
+          {dropDownList}
+        </Row>
         <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <Col style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
                 <Button onClick={() => setCurrentDate(new Date())}><h3>Today</h3></Button> &nbsp;&nbsp;
