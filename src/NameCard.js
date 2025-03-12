@@ -4,6 +4,7 @@ import { Badge, Button, Card, Checkbox, Col, Drawer, Row, Space } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
 import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
+import { SwapOutlined } from "@ant-design/icons";
 
 const NameCard = ({ 
     customerId, 
@@ -31,12 +32,25 @@ const NameCard = ({
     const [ checkedCount, setCheckedCount ] = useState(0);
     const handleSave = (value) => {
         setPunchCards((prevCards) =>
-        prevCards.map((prev)=> 
-            prev.id === value.id ? {
-                ...prev,
-                noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
-                noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
-            } : prev
+        prevCards.map((prev) => {
+            if(prev.id === value.id) {
+                const servicesLeft = Math.max(0, prev.noOfServicesLeft - checkedCount);
+                if(servicesLeft === 0){
+                    return {
+                        ...prev,
+                        noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
+                        noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
+                        status:'Complete'
+                    }
+                }
+                return {
+                    ...prev,
+                    noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
+                    noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
+                }
+            } 
+            return prev;
+        }
         ));
         handleSend();
         setCheckedCount(0);
@@ -157,6 +171,10 @@ const NameCard = ({
                     </div>
                     <h2>Punch cards:</h2>
                     {punchCards ? <div className="" >
+                        <Row style={{marginLeft:'10px'}}>
+                            <Button onClick={() => toggleFlip()} icon={<SwapOutlined/>}>Flip</Button> &nbsp;
+                            <Button onClick={() => {setFlipped(false);setPunchCardsState((prev) => prev === "Complete" ? "Active": "Complete")}}>showing {punchCardsState}</Button> &nbsp;
+                        </Row>
                         {punchCards.filter((card) => card.status === punchCardsState)
                         .map((card) => (
                             <div key={card.id} className="punch-card">
@@ -164,9 +182,13 @@ const NameCard = ({
                                         {Array.from({ length: Number(card.noOfServicesCompleted) }, (_, index) => 
                                             <div key={index} className={`individualCards ${flipped ? "flipped" : ""}`}>
                                                 { flipped ? <Row style={{transform:"rotateY(180deg)",display:'flex',flexDirection:'row'}}>
-                                                    <span>purchasedDate :{card.purchasedDate}</span>
-                                                    <span>completedDate :{card.completedDate}</span>
-                                                </Row> : <Checkbox checked width={50}></Checkbox>}
+                                                    <span>Id:{card.id}</span>
+                                                    <span>purchased:{card.purchasedDate}</span>
+                                                    <span>completed:{card.completedDate}</span>
+                                                    <span>totalNumberOfService:{card.totalNumberOfServices}</span>
+                                                    <span>noOfServicesLeft:{card.noOfServicesLeft}</span>
+                                                    <span>noOfServicesCompleted:{card.noOfServicesCompleted}</span>
+                                                </Row> : <Checkbox checked></Checkbox>}
                                             </div>
                                         )}
                                         {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
@@ -175,21 +197,19 @@ const NameCard = ({
                                             <div key={index} className={`individualCards ${flipped ? "flipped" : ""}`}>
                                                 {/* <div style={{width:'35px',backgroundColor:'pink',height:'25px'}}></div> */}
                                                { flipped ? <Row style={{transform:"rotateY(180deg)",display:'flex',flexDirection:'row'}}>
-                                                    <span>Id: {card.id}</span>
-                                                    <span>Completed:{card.noOfServicesCompleted}</span>
-                                                    <span>Active: {card.noOfServicesLeft}</span>
+                                                    <span>Id:{card.id}</span>
+                                                    <span>purchased:{card.purchasedDate}</span>
+                                                    <span>completed:{card.completedDate}</span>
+                                                    <span>totalNumberOfService:{card.totalNumberOfServices}</span>
+                                                    <span>noOfServicesLeft:{card.noOfServicesLeft}</span>
+                                                    <span>noOfServicesCompleted:{card.noOfServicesCompleted}</span>
                                                 </Row> :  <Checkbox onChange={(e)=>handleCheckboxChange(e,card)} width={50}></Checkbox> }
                                             </div>
                                         ))}
                                     </div>
-                                {checkedCount?<center style={{padding:'5px'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></center>:""}
+                                {checkedCount?<Row style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></Row>:""}
                             </div>
                             ))}
-                            <Row>
-                                <Button onClick={() => toggleFlip()}>Flip Cards</Button> &nbsp;
-                                <Button onClick={() => {setPunchCardsState("Complete");setFlipped(false);}}>Completed</Button> &nbsp;
-                                <Button onClick={() => setPunchCardsState("Active")}>Active</Button>
-                            </Row>
                     </div> : <center><h3 style={{color:'red'}}>No punch cards Available</h3></center>}
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
