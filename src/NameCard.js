@@ -21,7 +21,7 @@ const NameCard = ({
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
-    const [ punchCardsState, setPunchCardsState ] = useState("Active");
+    const [ punchCardsState, setPunchCardsState ] = useState("Complete");
     const [ flipped, setFlipped ] = useState(false);
 
     const toggleFlip = () => {
@@ -172,41 +172,37 @@ const NameCard = ({
                     <h2>Punch cards:</h2>
                     {punchCards ? <div className="" >
                         <Row style={{marginLeft:'10px'}}>
-                            <Button onClick={() => toggleFlip()} icon={<SwapOutlined/>}>Flip</Button> &nbsp;
-                            <Button onClick={() => {setFlipped(false);setPunchCardsState((prev) => prev === "Complete" ? "Active": "Complete")}}>showing {punchCardsState}</Button> &nbsp;
+                            <Button onClick={() => {setFlipped(false);setPunchCardsState((prev) => prev === "Complete" ? "Active": "Complete")}}>View {punchCardsState}</Button> &nbsp;
                         </Row>
-                        {punchCards.filter((card) => card.status === punchCardsState)
+                        {punchCards.filter((card) => card.status !== punchCardsState)
                         .map((card) => (
-                            <div key={card.id} className="punch-card">
-                                    <div className="punchCards" style={{backgroundColor:`${color}`}}>
-                                        {Array.from({ length: Number(card.noOfServicesCompleted) }, (_, index) => 
-                                            <div key={index} className={`individualCards ${flipped ? "flipped" : ""}`}>
-                                                { flipped ? <Row style={{transform:"rotateY(180deg)",display:'flex',flexDirection:'row'}}>
-                                                    <span>Id:{card.id}</span>
-                                                    <span>purchased:{card.purchasedDate}</span>
-                                                    <span>completed:{card.completedDate}</span>
-                                                    <span>totalNumberOfService:{card.totalNumberOfServices}</span>
-                                                    <span>noOfServicesLeft:{card.noOfServicesLeft}</span>
-                                                    <span>noOfServicesCompleted:{card.noOfServicesCompleted}</span>
-                                                </Row> : <Checkbox checked></Checkbox>}
+                            <div>
+                                <div key={card.id} className="punch-card" style={{backgroundColor:`${color}`}}>
+                                    <Col className="punchCards">
+                                        {flipped ? <Row className={`${flipped ? "flipped" : ""}`}>
+                                                <span>name: {customerName}</span>
+                                                <span>purchased: {card.purchasedDate}</span>
+                                                <span>completed: {card.completedDate}</span>
+                                                <span>totalNumberOfService: {card.totalNumberOfServices}</span>
+                                                <span>noOfServicesLeft: {card.noOfServicesLeft}</span>
+                                                <span>noOfServicesCompleted: {card.noOfServicesCompleted}</span>
+                                                </Row>  : Array.from({ length: Number(card.noOfServicesCompleted) }, (_, index) => 
+                                            <div key={index} className="individualCards">
+                                                 <Checkbox checked></Checkbox>
                                             </div>
                                         )}
                                         {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
                                         .reverse()
                                         .map((index) => (
-                                            <div key={index} className={`individualCards ${flipped ? "flipped" : ""}`}>
-                                                {/* <div style={{width:'35px',backgroundColor:'pink',height:'25px'}}></div> */}
-                                               { flipped ? <Row style={{transform:"rotateY(180deg)",display:'flex',flexDirection:'row'}}>
-                                                    <span>Id:{card.id}</span>
-                                                    <span>purchased:{card.purchasedDate}</span>
-                                                    <span>completed:{card.completedDate}</span>
-                                                    <span>totalNumberOfService:{card.totalNumberOfServices}</span>
-                                                    <span>noOfServicesLeft:{card.noOfServicesLeft}</span>
-                                                    <span>noOfServicesCompleted:{card.noOfServicesCompleted}</span>
-                                                </Row> :  <Checkbox onChange={(e)=>handleCheckboxChange(e,card)} width={50}></Checkbox> }
+                                            <div key={index} hidden={flipped} className={`${flipped ? "" : "individualCards"}`}>
+                                                <Checkbox onChange={(e)=>handleCheckboxChange(e,card)} width={50}></Checkbox>
                                             </div>
                                         ))}
-                                    </div>
+                                    </Col>
+                                    <Col style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
+                                        <Button onClick={() => toggleFlip()} icon={<SwapOutlined/>}>Flip</Button> &nbsp;
+                                    </Col>
+                            </div>
                                 {checkedCount?<Row style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></Row>:""}
                             </div>
                             ))}

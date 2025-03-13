@@ -32,6 +32,7 @@ function App() {
   const [ todosPage, setTodosPage ] = useState(false);
   const [ isLoading, setIsLoading ] = useState(true);
   const [ searchText, setSearchText ] = useState("");
+  const [ resourceData, setResourceData ] = useState([]);
   const [ data, setData]  = useState([
     // {
     //     "customerId": "8",
@@ -187,13 +188,24 @@ function App() {
         try{
           const calendarData = await fetch("https://nrv8108ak6.execute-api.us-east-2.amazonaws.com/Calendar/user/ABC123/month/March/year/2025/");
           const fetchedCalendarData = await calendarData.json();
-          console.log("fetching Data from database is complete");
-          console.log("Fetched Data:",fetchedCalendarData);
+          console.log("fetching Calendar Data from database is complete");
+          console.log("Fetched Calendar Data:",fetchedCalendarData);
           setSampleData(fetchedCalendarData);
         }catch(error){
-          console.log("fail in fetching Data");
-          console.error("Error while fetching Data",error);
-        }finally{
+          console.log("fail in fetching Calendar Data");
+          console.error("Error while fetching Calendar Data",error);
+        }
+        try{
+          const Data = await fetch("https://yk216g0lxb.execute-api.us-east-2.amazonaws.com/resources");
+          const fetchedData = await Data.json();
+          console.log("fetching Resource Data from database is complete");
+          console.log("Fetched Resource Data:",fetchedData);
+          setResourceData(fetchedData);
+        }catch(error){
+          console.log("fail in fetching resource Data");
+          console.error("Error while fetching resource Data",error);
+        }
+        finally{
           setIsLoading(false);
         }
       }
@@ -356,7 +368,6 @@ function App() {
   const dropDownList = (
     <select
       value={statusSelection}
-      disabled={!membersPage}
       style={{borderRadius:'5px',padding:'5px',margin:'0px 10px',outline:'none'}}
       onChange={(e) => handleStatusSelection(e.target.value)}
     >
@@ -380,6 +391,7 @@ function App() {
           membersPage={membersPage}
           openCalendarPage={openCalendarPage}
           todosPage={todosPage}
+          resourcePage={resourcePage}
           setOpenCalendarPage={setOpenCalendarPage}
           setMembersPage={setMembersPage}
           setResourcePage={setResourcePage}
@@ -490,10 +502,11 @@ function App() {
           </div>
         ) : (resourcePage ? 
         <ResourcePage 
+          resourceData={resourceData}
           setDuplicateData = {setDuplicateData}
           commentBox = {commentBox}
           setCommentBox = {setCommentBox}
-        /> :openCalendarPage ? <CalendarPage sampleData={sampleData} setSampleData={setSampleData}/> : <TodosPage sampleData={sampleData}/>)}
+        /> :openCalendarPage ? <CalendarPage sampleData={sampleData} setSampleData={setSampleData} duplicateData={duplicateData} resourceData={resourceData}/> : <TodosPage sampleData={sampleData}/>)}
         <Divider type='horizontal'/>
         {<Footer/>}
     </div>

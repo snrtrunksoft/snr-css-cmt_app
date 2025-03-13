@@ -13,6 +13,7 @@ const Header = ({
     membersPage,
     openCalendarPage, 
     todosPage,
+    resourcePage,
     setOpenCalendarPage,
     setMembersPage,
     setResourcePage,
@@ -38,7 +39,7 @@ const Header = ({
                         <Button icon={<InboxOutlined/>}  style={{backgroundColor:'transparent',}} onClick={() => setHandleInboxDrawer(true)}></Button>
                     </Badge>
                 </span>
-                <span hidden={openCalendarPage || todosPage}>
+                <span hidden={openCalendarPage || todosPage || resourcePage }>
                     Status: {dropDownList}
                 {view +" View"}
                 <Switch
