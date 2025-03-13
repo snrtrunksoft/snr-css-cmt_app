@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Col, Divider, Dropdown, Modal, Row, TimePicker } from "antd";
+import { Button, Col, Divider, Dropdown, Menu, Modal, Row, TimePicker } from "antd";
 import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const CalendarPage = ({sampleData,setSampleData}) => {
+const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData}) => {
   const [ currentDate, setCurrentDate] = useState(new Date());
   const [ openWeekCalendar, setOpenWeekCalendar ] = useState(false);
   const [ openMonthCalendar, setOpenMonthCalendar ] = useState(true);
@@ -21,6 +21,8 @@ const CalendarPage = ({sampleData,setSampleData}) => {
   const [ weekEventDate, setWeekEventDate ] = useState(null);
   const [currentHour, setCurrentHour] = useState(dayjs().hour());
   const [ calendarUserId, setCalendarUserId ]  = useState(null);
+  const [ memberName, setMemberName ] = useState("");
+  const [ resourceName, setResourceName ] = useState("");
 
   useEffect(() => {
     const updateHour = () => {
@@ -175,13 +177,43 @@ const CalendarPage = ({sampleData,setSampleData}) => {
     setEventTitle("");
     setEventNotes("");
   };
+
+  const handleMembersDropDown = (value) => {
+    setMemberName(value);
+  };
+
+  const handleResourceDropDown = (value) => {
+    setResourceName(value);
+  };
+
+  const handleMembersMenu = (e) => {
+    setMemberName(e.domEvent.target.textContent);
+  };
+
+  const filterMembers = duplicateData.filter((prev) => prev.customerName.toLowerCase().includes(memberName.toLowerCase()));
+  const membersMenu = (
+  <Menu onClick={handleMembersMenu}>
+    {filterMembers.map((prev) => (<Menu.Item key={prev.customerId}>{prev.customerName}</Menu.Item>))}
+  </Menu>);
+
+  const handleResourceMenu = (e) => {
+    setResourceName(e.domEvent.target.textContent);
+  }
+
+  const filterResources = resourceData.filter((prev) => prev.resourceName.toLowerCase().includes(resourceName.toLowerCase()));
+  const resourceMenu = (
+  <Menu onClick={handleResourceMenu}>
+    {filterResources.map((prev) =>(<Menu.Item key={prev.resourceId}>{prev.resourceName}</Menu.Item>))}
+  </Menu>);
+  
   const dropDownList = (
     <select 
       value={calendarUserId}
       onChange={(e) => setCalendarUserId(e.target.value)}
-      style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px'}}>
-      {sampleData.map(prevData => 
-      <option>{prevData.userId}</option>)}
+      style={{borderRadius:'5px',padding:'5px',fontSize:'15px',position:'absolute',left:'35px',top:'215px',outline:'none'}}>
+      <option value="All">All</option>
+      {resourceData.map(prevData => 
+      <option>{prevData.resourceName}</option>)}
     </select>
   );
 
@@ -203,7 +235,7 @@ const CalendarPage = ({sampleData,setSampleData}) => {
   return (
     <div className="calendar-container">
       <div className="calendar-header">
-        <Row style={{display:'flex',alignItems:'center',justifyContent:'flex-start',padding:'5px'}}>
+        <Row hidden={!CalendarPage} style={{display:'flex',alignItems:'center',justifyContent:'center',}}>
           {dropDownList}
         </Row>
         <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
@@ -325,8 +357,8 @@ const CalendarPage = ({sampleData,setSampleData}) => {
                   <span className="day-name">{weekdays[index]}</span> &nbsp;
                   <span className="day-number">{day.getDate()}</span>
                 </div>
-                <div>
-                  <div hidden={weekdays[index]!=="Sun"} style={{position:"absolute",left:'177px',width:'80px'}} className="week-days">
+                <div style={{position:'relative'}}>
+                  <div hidden={weekdays[index]!=="Sun"} style={{position:"absolute",left:'-80px',width:'80px'}} className="week-days">
                   <div className="time-section" style={{borderBottom:'1px solid gray',backgroundColor:"#ececec"}}>all-day</div>
                     {hours.map((hour, index) => (
                       <div key={index} className="time-section" style={{backgroundColor:"#ececec"}}>
@@ -406,6 +438,22 @@ const CalendarPage = ({sampleData,setSampleData}) => {
           <div>
             {!openAppointment ? 
             <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
+              <Row>
+                <Dropdown overlay={membersMenu} trigger={["click"]}>
+                  <input
+                    style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold',marginRight:'5px'}}
+                    placeholder="Search for members"
+                    value={memberName}
+                    onChange={(e)=> handleMembersDropDown(e.target.value)}></input>
+                </Dropdown>
+                <Dropdown overlay={resourceMenu} trigger={["click"]}>
+                  <input
+                    style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold'}}
+                    placeholder="Search for resource"
+                    value={resourceName}
+                    onChange={(e)=> handleResourceDropDown(e.target.value)}></input>
+                </Dropdown>
+              </Row>
               <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
                   onChange={(e)=>setEventTitle(e.target.value)}
                   value={eventTitle}
