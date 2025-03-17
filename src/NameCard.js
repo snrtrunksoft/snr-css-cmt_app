@@ -62,6 +62,45 @@ const NameCard = ({
         setNewComment(count > 0 ?"Subscription ID: "+value.id +", selected Cards: "+count:"");
     };
 
+    const filterActiveSubscription = punchCards.filter((prev) => prev.status === "Active");
+
+    const addNewSubscription = () => {
+        
+        const updateSubscriptionData = async() =>{
+            try{
+                const response = await fetch(`https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users/${customerId}`);
+                const customerData = await response.json();
+                const newSub = {
+                    id: "TBD",
+                    status: "Active",
+                    noOfServicesLeft: "10",
+                    noOfServicesCompleted: "0",
+                    totalNumberOfServices: "10",
+                    purchasedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                    completedDate: "",
+                    };
+                console.log(customerData.subscriptions.length);
+                const updatedCustomer = {
+                    ...customerData,
+                    subscriptions: [...customerData.subscriptions, newSub], // appending new subscription
+                };
+                await fetch(`https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users/${customerId}`,{
+                    method:'PUT',
+                    headers: {
+                        "Content-Type" : "application/json",
+                    },
+                    body:JSON.stringify(updatedCustomer)
+                })
+                .then(response => response.json())
+                .then(data => console.log("updated Data:",data))
+                setPunchCards((prev) => [...prev, newSub]);
+            }catch(error){
+                console.error("unable to update the record",error);
+            }
+        }
+        updateSubscriptionData();
+    };
+
     const addressKeys = Object.keys(address[0]);
     // console.log(addressKeys);
     const handleSend = () => {
@@ -188,7 +227,7 @@ const NameCard = ({
                                                 <span>noOfServicesCompleted: {card.noOfServicesCompleted}</span>
                                                 </Row>  : Array.from({ length: Number(card.noOfServicesCompleted) }, (_, index) => 
                                             <div key={index} className="individualCards">
-                                                 <Checkbox checked></Checkbox>
+                                                <Checkbox checked></Checkbox>
                                             </div>
                                         )}
                                         {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
@@ -206,7 +245,9 @@ const NameCard = ({
                                 {checkedCount?<Row style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></Row>:""}
                             </div>
                             ))}
-                    </div> : <center><h3 style={{color:'red'}}>No punch cards Available</h3></center>}
+                            <span>{filterActiveSubscription.length === 0 ? 
+                            <center><Button onClick={() => addNewSubscription()}>Add Active Subscrition</Button></center> : ""}</span>
+                    </div> : <center><h3 style={{color:'red'}}>No punch cards Available</h3></center>}      
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
                         {comments.map((comment,index) =>(
