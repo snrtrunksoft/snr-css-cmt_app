@@ -180,14 +180,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
       notes: eventNotes,
     };
 
-    const newEventRecord = {
-      month:currentDate.toLocaleDateString("default",{month:"long"}),
-      year:currentDate.getFullYear().toString(),
-      userId:"ABC10!",
-      date: (weekEventDate !== null ? weekEventDate : currentDate.getDate()).toString(),
-      events : [eventDetails,]
-    };
-
     const updateEventSlot = async () =>{
       try{
         await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${valueToSet.id}`,{
@@ -214,20 +206,32 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
     const addEventSlot = async () =>{
         try{
-          await fetch("https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/",{
+          const response = await fetch("https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/",{
             method:"POST",
             headers:{
               'Content-Type' : "application/json"
             },
             body:JSON.stringify(eventDetails)
           })
-          .then(responce => responce.json())
-          .then(data => console.log("New event Data added:",data))
+          const postData = await response.json();
+          console.log("postData:",postData);
+          const updatedRecord = {
+            ...eventDetails,
+            id:postData.eventId
+          }
+          console.log("new event record:",updatedRecord);
+          const newEventRecord = {
+            month:currentDate.toLocaleDateString("default",{month:"long"}),
+            year:currentDate.getFullYear().toString(),
+            userId:"ABC10!",
+            date: (weekEventDate !== null ? weekEventDate : currentDate.getDate()).toString(),
+            events : [updatedRecord,]
+          };
           setSampleData((prevData) => {
             if (prevData.month === monthName && parseInt(prevData.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate())) {
               return {
                 ...prevData,
-                  events: [...(prevData.events || []),eventDetails].sort(
+                  events: [...(prevData.events || []),updatedRecord].sort(
                     (a, b) => a.from - b.from
                   ),
               };
