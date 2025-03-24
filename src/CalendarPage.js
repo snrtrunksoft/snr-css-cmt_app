@@ -21,8 +21,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ weekEventDate, setWeekEventDate ] = useState(null);
   const [currentHour, setCurrentHour] = useState(dayjs().hour());
   const [ calendarUserId, setCalendarUserId ]  = useState(null);
-  const [ memberName, setMemberName ] = useState("");
-  const [ resourceName, setResourceName ] = useState("");
+  const [ selectedMemberId, setSelectedMemberId ] = useState("");
+  const [ selectedResourceId, setSelectedResourceId ] = useState("");
+  const [ openAppointment, setOpenAppoinment ] = useState(false);  
 
   useEffect(() => {
     const updateHour = () => {
@@ -34,6 +35,16 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(()=>{
+    setOpenAppoinment(sampleData.some(prev => 
+      prev.month === monthName && 
+      parseInt(prev.year) === currentDate.getFullYear() &&
+      parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
+      prev.events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") &&
+        dayjs(timeSlot,"h A").format("HH") < item.to ? true : false )));
+      },[currentDate,timeSlot])
+  console.log("openAppointment:",openAppointment);
 
   const hours = Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} AM`)
     .concat(Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} PM`));
@@ -138,74 +149,178 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     }
   };
 
+  let valueToSet = "";
+
+  const filteredEvents = sampleData.flatMap(prev =>
+    prev.month === monthName &&
+    parseInt(prev.year) === currentDate.getFullYear() &&
+    parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate())
+      ? prev.events.filter(item => {
+          if (item.from <= dayjs(timeSlot, "h A").format("HH") && dayjs(timeSlot, "h A").format("HH") < item.to) {
+            valueToSet = item;
+            return true;
+          }
+          return false;
+        })
+      : []
+  );
+  console.log("selected Event Item:",valueToSet);
+
   const handleCalendarEvent = () => {
 
-    const newEvent = {
+    const eventDetails = {
+      memberId:selectedMemberId,
+      resourceId:selectedResourceId,
+      date:currentDate.getDate().toString(),
+      month:monthName,
+      year:currentDate.getFullYear().toString(),
       title: eventTitle,
       from: fromTimeSlot,
       to: toTimeSlot,
       notes: eventNotes,
     };
+
     const newEventRecord = {
       month:currentDate.toLocaleDateString("default",{month:"long"}),
       year:currentDate.getFullYear().toString(),
       userId:"ABC10!",
       date: (weekEventDate !== null ? weekEventDate : currentDate.getDate()).toString(),
-      events : [newEvent,]
+      events : [eventDetails,]
     };
 
-    setSampleData((prevData) => {
-      if (prevData.month === monthName && parseInt(prevData.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate())) {
-        return {
-          ...prevData,
-            events: [...(prevData.events || []), newEvent].sort(
-              (a, b) => a.from - b.from
-            ),
-        };
+    const updateEventSlot = async () =>{
+      try{
+        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${valueToSet.id}`,{
+          method: "PUT",
+          headers: {
+            "Content-Type" : "application/json"
+          },
+          body:JSON.stringify(eventDetails)
+        })
+        .then(responce  => responce.json())
+        .then(data => console.log("updated event data:",data))
+        setSampleData(prev =>
+          prev.map(day => ({
+            ...day,
+            events:day.events.map(event =>
+              event.id === valueToSet.id ? { ...event,...eventDetails}: event
+            )
+          })
+          ))
+      }catch(error){
+        console.log("unable to update the record",error);
       }
-      return [...prevData,newEventRecord];
+    };
+
+    const addEventSlot = async () =>{
+        try{
+          await fetch("https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/",{
+            method:"POST",
+            headers:{
+              'Content-Type' : "application/json"
+            },
+            body:JSON.stringify(eventDetails)
+          })
+          .then(responce => responce.json())
+          .then(data => console.log("New event Data added:",data))
+          setSampleData((prevData) => {
+            if (prevData.month === monthName && parseInt(prevData.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate())) {
+              return {
+                ...prevData,
+                  events: [...(prevData.events || []),eventDetails].sort(
+                    (a, b) => a.from - b.from
+                  ),
+              };
+            }
+            return [...prevData,newEventRecord];
+          }
+        );
+        }catch(error){
+          console.log("unable to create new event:",error);
+        }
+      };
+
+    if(valueToSet !== ""){
+      updateEventSlot();
+    }else{
+      addEventSlot();
     }
-  );
-    console.log(newEvent);
+    console.log(eventDetails);
     handleCloseEventSlot();
   };
 
-  console.log(sampleData);
+  const deleteEvent = () =>{
+    const deleteExistingEvent = async() => {
+      try{
+        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${valueToSet.id}`,{
+          method: "DELETE",
+          headers: {
+            "Content-Type" : "application/json"
+          }
+        })
+        .then(responce => responce.json())
+        .then(data => console.log("Deleted event Successfully",data))
+        setSampleData((prevData) => 
+        prevData.map(prev => ({
+          ...prev,
+          events: prev.events.filter(event => event.id !== valueToSet.id)
+        })));
+      }catch(error){
+        console.log("unable to delete Event",error);
+      }
+    }
+    deleteExistingEvent();
+  }
+
+  console.log("sample Data:",sampleData);
 
   const handleCloseEventSlot = () =>{
     setOpenEventSlot(false);
+    setSelectedMemberId("");
+    setSelectedResourceId("");
     setEventTitle("");
     setEventNotes("");
+    setTimeSlot("");  
   };
 
   const handleMembersDropDown = (value) => {
-    setMemberName(value);
+    setSelectedMemberId(value);
   };
 
   const handleResourceDropDown = (value) => {
-    setResourceName(value);
+    setSelectedResourceId(value);
   };
 
   const handleMembersMenu = (e) => {
-    setMemberName(e.domEvent.target.textContent);
+    setSelectedMemberId(e.domEvent.target.textContent);
   };
 
-  const filterMembers = duplicateData.filter((prev) => prev.customerName.toLowerCase().includes(memberName.toLowerCase()));
+  const filterMembers = duplicateData.filter((prev) => prev.customerName.toLowerCase().includes(selectedMemberId.toLowerCase()));
   const membersMenu = (
   <Menu onClick={handleMembersMenu}>
     {filterMembers.map((prev) => (<Menu.Item key={prev.customerId}>{prev.customerName}</Menu.Item>))}
   </Menu>);
 
   const handleResourceMenu = (e) => {
-    setResourceName(e.domEvent.target.textContent);
+    setSelectedResourceId(e.domEvent.target.textContent);
   }
 
-  const filterResources = resourceData.filter((prev) => prev.resourceName.toLowerCase().includes(resourceName.toLowerCase()));
+  const filterResources = resourceData.filter((prev) => prev.resourceName.toLowerCase().includes(selectedResourceId.toLowerCase()));
   const resourceMenu = (
   <Menu onClick={handleResourceMenu}>
     {filterResources.map((prev) =>(<Menu.Item key={prev.resourceId}>{prev.resourceName}</Menu.Item>))}
   </Menu>);
-  
+
+  const handleUpdateExistingEventDetails = (event) => {
+    setOpenAppoinment(false);
+    setSelectedMemberId(event.memberId);
+    setSelectedResourceId(event.resourceId);
+    setEventTitle(event.title);
+    setEventNotes(event.notes);
+    setFromTimeSlot(fromTimeSlot);
+    setToTimeSlot(toTimeSlot);
+  };
+
   const dropDownList = (
     <select 
       value={calendarUserId}
@@ -217,14 +332,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     </select>
   );
 
-   const openAppointment = sampleData.some(prev => 
-    prev.month === monthName && 
-    parseInt(prev.year) === currentDate.getFullYear() &&
-    parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
-    prev.events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") &&
-      dayjs(timeSlot,"h A").format("HH") < item.to ? true : false ));
-
-    console.log("openAppointment:",openAppointment);
 
     const handleDailyCalendarEvent = (time) =>{
       setWeekEventDate(null);
@@ -432,9 +539,16 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         )}
         <Modal
          open={openEventSlot}
+         title={timeSlot +" Slot"}
          onCancel={handleCloseEventSlot}
-         onOk={handleCalendarEvent}
-         title={timeSlot +" Slot"}>
+         footer={openAppointment ? 
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                    <Button onClick={()=> handleUpdateExistingEventDetails(valueToSet)}>update</Button>
+                    <Button danger onClick={()=> deleteEvent()}>Delete</Button>
+                  </div> : <div>
+                      <Button type="primary" onClick={handleCalendarEvent}>Ok</Button>
+                    </div>}
+         >
           <div>
             {!openAppointment ? 
             <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
@@ -443,14 +557,14 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                   <input
                     style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold',marginRight:'5px'}}
                     placeholder="Search for members"
-                    value={memberName}
+                    value={selectedMemberId}
                     onChange={(e)=> handleMembersDropDown(e.target.value)}></input>
                 </Dropdown>
                 <Dropdown overlay={resourceMenu} trigger={["click"]}>
                   <input
                     style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold'}}
                     placeholder="Search for resource"
-                    value={resourceName}
+                    value={selectedResourceId}
                     onChange={(e)=> handleResourceDropDown(e.target.value)}></input>
                 </Dropdown>
               </Row>
@@ -475,14 +589,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                                 needConfirm={false}
                                 /></h3>
             </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
-              <center><h2>{sampleData.map(prev =>
-              prev.month === monthName &&
-              parseInt(prev.year) === currentDate.getFullYear() &&
-              parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
-              prev.events.map(item => 
-              item.from <= dayjs(timeSlot,"h A").format("HH") &&
-              dayjs(timeSlot,"h A").format("HH") <= item.to ? item.title : "") 
-              )}</h2></center>
+              {filteredEvents.map(item => (
+                <center key={item.title}>
+                  <h2 onClick={() => handleUpdateExistingEventDetails(item)}>{item.title}</h2>
+                </center>
+              ))}
             </div>}
           </div>
          </Modal>

@@ -62,7 +62,7 @@ const NameCard = ({
         setNewComment(count > 0 ?"Subscription ID: "+value.id +", selected Cards: "+count:"");
     };
 
-    const filterActiveSubscription = punchCards.filter((prev) => prev.status === "Active");
+    const filterActiveSubscription = punchCards !== "" ? punchCards.filter((prev) => prev.status === "Active") : "";
 
     const addNewSubscription = () => {
         
@@ -247,7 +247,7 @@ const NameCard = ({
                             ))}
                             <span>{filterActiveSubscription.length === 0 ? 
                             <center><Button onClick={() => addNewSubscription()}>Add Active Subscrition</Button></center> : ""}</span>
-                    </div> : <center><h3 style={{color:'red'}}>No punch cards Available</h3></center>}      
+                    </div> : <center><h3 style={{color:'red'}}>No punch cards Available</h3></center>}
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
                         {comments.map((comment,index) =>(
