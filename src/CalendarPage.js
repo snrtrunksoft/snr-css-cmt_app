@@ -403,51 +403,63 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
               ))}
             </div>
             <div className="event-column" style={{ position: "relative" }}>
-              {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} 
-                  className="event-slot"
-                  style={sampleData.some(prev => 
-                  prev.month === monthName && 
-                  parseInt(prev.year) === currentDate.getFullYear() && 
-                  parseInt(prev.date) === currentDate.getDate() &&
-                  prev.events.some(item => (item.from <= i && i < item.to))
-                  ) ? {backgroundColor:'orange',borderRight:'2px solid gray',borderLeft:"2px solid gray",
-                  borderBottom:sampleData.some(prev => 
-                  prev.month === monthName && 
-                  parseInt(prev.year) === currentDate.getFullYear() && 
-                  parseInt(prev.date) === currentDate.getDate() &&
-                  prev.events.some(item => i === item.to - 1)) ? "1px solid gray" :"1px solid transparent",
-                  } :{}}
-                  onClick={() => handleDailyCalendarEvent(i)}
-                  >
-                  {sampleData.map(prev => {
-                    if(
-                      prev.month === monthName &&
-                      parseInt(prev.year) === currentDate.getFullYear() &&
-                      parseInt(prev.date) === currentDate.getDate()
-                    ){
-                      return prev.events.map(item => {
-                        const midpoint = Math.floor((item.from + item.to) / 2);
-                        return i === midpoint ? item.title : "";
-                      });
-                    }
-                    return "";
-                  })}
-                    {currentHour === i && (
-                      <div
-                        className="current-time-line"
-                        style={{
-                          position: "absolute",
-                          left: 0,
-                          width: "100%",
-                          height: "2px",
-                          backgroundColor: "violet",
-                          top: 35,
-                        }}
-                      />
-                    )}
-                  </div>
-              ))}
+              {Array.from({ length: 24 }, (_, i) =>{
+                const eventsAtTimeSlot = sampleData.filter(prev =>
+                  prev.month === monthName &&
+                  parseInt(prev.year) === currentDate.getFullYear() &&
+                  parseInt(prev.date) === currentDate.getDate()
+                )
+                .flatMap(prev => prev.events.filter(item => item.from <= i && i < item.to));
+                let backgroundColor = "";
+                if (eventsAtTimeSlot.length === 1) backgroundColor = "green";
+                else if(eventsAtTimeSlot.length === 2) backgroundColor = "orange";
+                else if(eventsAtTimeSlot.length === 3) backgroundColor = "red";
+
+                return (
+                  <div key={i} 
+                    className="event-slot"
+                    style={sampleData.some(prev => 
+                    prev.month === monthName && 
+                    parseInt(prev.year) === currentDate.getFullYear() && 
+                    parseInt(prev.date) === currentDate.getDate() &&
+                    prev.events.some(item => (item.from <= i && i < item.to))
+                    ) ? {backgroundColor,borderRight:'2px solid gray',borderLeft:"2px solid gray",
+                    borderBottom:sampleData.some(prev => 
+                    prev.month === monthName && 
+                    parseInt(prev.year) === currentDate.getFullYear() && 
+                    parseInt(prev.date) === currentDate.getDate() &&
+                    prev.events.some(item => i === item.to - 1)) ? "1px solid gray" :"1px solid transparent",
+                    } :{}}
+                    onClick={() => handleDailyCalendarEvent(i)}
+                    >
+                    {sampleData.map(prev => {
+                      if(
+                        prev.month === monthName &&
+                        parseInt(prev.year) === currentDate.getFullYear() &&
+                        parseInt(prev.date) === currentDate.getDate()
+                      ){
+                        return prev.events.map(item => {
+                          const midpoint = Math.floor((item.from + item.to) / 2);
+                          return i === midpoint ? item.title + ", " : "";
+                        });
+                      }
+                      return "";
+                    })}
+                      {currentHour === i && (
+                        <div
+                          className="current-time-line"
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            width: "100%",
+                            height: "2px",
+                            backgroundColor: "violet",
+                            top: 35,
+                          }}
+                        />
+                      )}
+                    </div>
+              )})}
             </div>
           </div>
         ) : (
