@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Col, Divider, Dropdown, Menu, Modal, Row, TimePicker } from "antd";
+import { Button, Col, Divider, Dropdown, Menu, Modal, Pagination, Row, TimePicker } from "antd";
 import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -24,6 +24,22 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ selectedMemberId, setSelectedMemberId ] = useState("");
   const [ selectedResourceId, setSelectedResourceId ] = useState("");
   const [ openAppointment, setOpenAppoinment ] = useState(false);  
+  const [ bookSameSlot, setBookSameSlot ] = useState(false);
+
+  const [ allEventsOnDay, setAllEventsOnDay ] = useState(Object.fromEntries(
+      Array.from({ length: 24 }, (_, i) => [
+        i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`,
+        3
+      ])
+    )
+);
+
+  const decrement = () => {
+    setAllEventsOnDay(prev => ({
+      ...prev,
+      [timeSlot]:Math.max(0,(prev[timeSlot] || 0) - 1)
+    }));
+  }
 
   useEffect(() => {
     const updateHour = () => {
@@ -32,9 +48,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
     updateHour();
     const interval = setInterval(updateHour, 3600000);
-
     return () => clearInterval(interval);
   }, []);
+
+  console.log("allEventsOnDay:",allEventsOnDay);
+  console.log("time Slot:",timeSlot);
 
   useEffect(()=>{
     setOpenAppoinment(sampleData.some(prev => 
@@ -164,7 +182,13 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         })
       : []
   );
+  console.log("filteredEvents:",filteredEvents);
   console.log("selected Event Item:",valueToSet);
+
+  const [ currentPage, setCurrentPage ] = useState(1);
+  const itemsForPage = 1;
+  const startIndex = (currentPage - 1) * itemsForPage;
+  const paginateEvents = filteredEvents.slice(startIndex,startIndex + itemsForPage);
 
   const handleCalendarEvent = () => {
 
@@ -182,7 +206,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
     const updateEventSlot = async () =>{
       try{
-        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${valueToSet.id}`,{
+        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${filteredEvents[currentPage - 1].id}`,{
           method: "PUT",
           headers: {
             "Content-Type" : "application/json"
@@ -195,7 +219,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
           prev.map(day => ({
             ...day,
             events:day.events.map(event =>
-              event.id === valueToSet.id ? { ...event,...eventDetails}: event
+              event.id === filteredEvents[currentPage - 1].id ? { ...event,...eventDetails}: event
             )
           })
           ))
@@ -220,6 +244,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             id:postData.eventId
           }
           console.log("new event record:",updatedRecord);
+          decrement();
           const newEventRecord = {
             month:currentDate.toLocaleDateString("default",{month:"long"}),
             year:currentDate.getFullYear().toString(),
@@ -244,10 +269,15 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         }
       };
 
-    if(valueToSet !== ""){
+    if(valueToSet !== "" && bookSameSlot){
       updateEventSlot();
     }else{
-      addEventSlot();
+      if(allEventsOnDay[timeSlot] >=1){
+        addEventSlot();
+        console.log("slot is available");
+      }else{
+        console.log("slot is not available");
+      }
     }
     console.log(eventDetails);
     handleCloseEventSlot();
@@ -256,7 +286,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const deleteEvent = () =>{
     const deleteExistingEvent = async() => {
       try{
-        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${valueToSet.id}`,{
+        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${filteredEvents[currentPage - 1].id}`,{
           method: "DELETE",
           headers: {
             "Content-Type" : "application/json"
@@ -267,7 +297,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         setSampleData((prevData) => 
         prevData.map(prev => ({
           ...prev,
-          events: prev.events.filter(event => event.id !== valueToSet.id)
+          events: prev.events.filter(event => event.id !== filteredEvents[currentPage - 1].id)
         })));
       }catch(error){
         console.log("unable to delete Event",error);
@@ -559,7 +589,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
          onCancel={handleCloseEventSlot}
          footer={openAppointment ? 
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <Button onClick={()=> handleUpdateExistingEventDetails(valueToSet)}>update</Button>
+                    <Button disabled={allEventsOnDay[timeSlot] === 0 } onClick={() => {valueToSet = "";setBookSameSlot(false);setOpenAppoinment(false);}}>Book new Event</Button>
+                    <Button onClick={()=> {handleUpdateExistingEventDetails(filteredEvents[currentPage - 1]);setBookSameSlot(true)}}>update</Button>
                     <Button danger onClick={()=> deleteEvent()}>Delete</Button>
                   </div> : <div>
                       <Button type="primary" onClick={handleCalendarEvent}>Ok</Button>
@@ -605,11 +636,20 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                                 needConfirm={false}
                                 /></h3>
             </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
-              {filteredEvents.map(item => (
-                <center key={item.title}>
-                  <h2 onClick={() => handleUpdateExistingEventDetails(item)}>{item.title}</h2>
-                </center>
-              ))}
+                {paginateEvents.map(item => (
+                  <center key={item.title}>
+                    <h2 onClick={() => {handleUpdateExistingEventDetails(filteredEvents[currentPage - 1]);setBookSameSlot(true)}}>{item.title}</h2>
+                  </center>
+                ))}
+              <Pagination
+                current={currentPage}
+                pageSize={itemsForPage}
+                onChange={page => setCurrentPage(page)}
+                total={filteredEvents.length}
+                showSizeChanger={false}
+                simple={true}
+                style={{ marginTop: "10px", textAlign: "center" }}>
+              </Pagination>
             </div>}
           </div>
          </Modal>
