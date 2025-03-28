@@ -20,7 +20,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ toTimeSlot, setToTimeSlot ] = useState(null);
   const [ weekEventDate, setWeekEventDate ] = useState(null);
   const [currentHour, setCurrentHour] = useState(dayjs().hour());
-  const [ calendarUserId, setCalendarUserId ]  = useState(null);
+  const [ calendarUserId, setCalendarUserId ]  = useState("All");
   const [ selectedMemberId, setSelectedMemberId ] = useState("");
   const [ selectedResourceId, setSelectedResourceId ] = useState("");
   const [ openAppointment, setOpenAppoinment ] = useState(false);  
@@ -55,12 +55,14 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   console.log("time Slot:",timeSlot);
 
   useEffect(()=>{
-    setOpenAppoinment(sampleData.some(prev => 
-      prev.month === monthName && 
-      parseInt(prev.year) === currentDate.getFullYear() &&
-      parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
-      prev.events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") &&
-        dayjs(timeSlot,"h A").format("HH") < item.to ? true : false )));
+    if(calendarUserId !== "All"){
+      setOpenAppoinment(sampleData.some(prev => 
+        prev.month === monthName && 
+        parseInt(prev.year) === currentDate.getFullYear() &&
+        parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
+        prev.events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") &&
+          dayjs(timeSlot,"h A").format("HH") < item.to ? true : false )));
+    }
       },[currentDate,timeSlot])
   console.log("openAppointment:",openAppointment);
 
@@ -83,6 +85,29 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   useEffect(() => {
     generateCalendar();
   }, [currentDate]);
+
+  // useEffect(() => {
+  //   if(calendarUserId !== "All"){
+  //     const filteredData = sampleData.filter(day => ({
+  //         events: day.events.filter(event => event.resourceId === calendarUserId) // Remove only matching events
+  //     }));
+  //     console.log("filteredData:",filteredData);
+  //   }else{
+  //      const fetchSampleData = async() =>{
+  //       try{
+  //         const calendarData = await fetch("https://nrv8108ak6.execute-api.us-east-2.amazonaws.com/Calendar/user/ABC123/month/March/year/2025/");
+  //         const fetchedCalendarData = await calendarData.json();
+  //         console.log("fetching Calendar Data from database is complete");
+  //         console.log("Fetched Calendar Data:",fetchedCalendarData);
+  //         setSampleData(fetchedCalendarData);
+  //       }catch(error){
+  //         console.log("fail in fetching Calendar Data");
+  //         console.error("Error while fetching Calendar Data",error);
+  //       }
+  //      }
+  //      fetchSampleData();
+  //   }
+  // },[calendarUserId]);
 
   const generateCalendar = () => {
     const year = currentDate.getFullYear();
@@ -340,9 +365,26 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   }
 
   const filterResources = resourceData.filter((prev) => prev.resourceName.toLowerCase().includes(selectedResourceId.toLowerCase()));
+
+  const filterOutAvailableResource = filterResources.flatMap(prev => prev.resourceName).filter(resourceName => {
+    return sampleData
+      .filter(prev =>
+        prev.month === monthName &&
+        parseInt(prev.year) === currentDate.getFullYear() &&
+        parseInt(prev.date) === currentDate.getDate()
+      )
+      .flatMap(prev =>
+        prev.events.filter(item => 
+          item.from <= dayjs(timeSlot, "h A").format("HH") &&
+          dayjs(timeSlot, "h A").format("HH") < item.to
+        )
+      )
+      .every(event => event.resourceId !== resourceName);
+  });
+  console.log("filterOutAvailableResource:",filterOutAvailableResource);
   const resourceMenu = (
   <Menu onClick={handleResourceMenu}>
-    {filterResources.map((prev) =>(<Menu.Item key={prev.resourceId}>{prev.resourceName}</Menu.Item>))}
+    {filterOutAvailableResource.map((prev,index) =>(<Menu.Item key={index}>{prev}</Menu.Item>))}
   </Menu>);
 
   const handleUpdateExistingEventDetails = (event) => {
@@ -366,11 +408,20 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     </select>
   );
 
-
-    const handleDailyCalendarEvent = (time) =>{
+  const handleDailyCalendarEvent = (time) =>{
+    time = (time === 0 ? "12 AM" : time < 12 ? `${time} AM` : time === 12 ? "12 PM" : `${time - 12} PM`);
+    if(allEventsOnDay[time] > 0){
       setWeekEventDate(null);
       setOpenEventSlot(true);
-      setTimeSlot(time === 0 ? "12 AM" : time < 12 ? `${time} AM` : time === 12 ? "12 PM" : `${time - 12} PM`);
+      setTimeSlot(time);
+    };
+  }
+  const handleWeeklyCalendarEvent = (hour,date) =>{
+    if(allEventsOnDay[hour] > 0){
+      setOpenEventSlot(true);
+      setTimeSlot(hour);
+      setWeekEventDate(date);
+    }
   }
 
   return (
@@ -462,7 +513,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                     } :{}}
                     onClick={() => handleDailyCalendarEvent(i)}
                     >
-                    {sampleData.map(prev => {
+                    {calendarUserId !== "All" ? sampleData.map(prev => {
                       if(
                         prev.month === monthName &&
                         parseInt(prev.year) === currentDate.getFullYear() &&
@@ -474,7 +525,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                         });
                       }
                       return "";
-                    })}
+                    }) : ""}
                       {currentHour === i && (
                         <div
                           className="current-time-line"
@@ -527,7 +578,19 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                     { border:'2px solid gray',marginTop:'-1px'}:{}}
                       >
                       <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
-                        {hours.map((hour, index) => (
+                        {hours.map((hour, index) => { 
+                          const eventsAtTimeSlot = sampleData.filter(prev =>
+                            prev.month === monthName &&
+                            parseInt(prev.year) === currentDate.getFullYear() &&
+                            parseInt(prev.date) === day.getDate()
+                          )
+                          .flatMap(prev => prev.events.filter(item => item.from <= dayjs(hour,"h A").format("HH")
+                           && dayjs(hour,"h A").format("HH") < item.to));
+                          let backgroundColor = "";
+                          if (eventsAtTimeSlot.length === 1) backgroundColor = "green";
+                          else if(eventsAtTimeSlot.length === 2) backgroundColor = "orange";
+                          else if(eventsAtTimeSlot.length === 3) backgroundColor = "red";
+                          return (
                           <div key={index} className="time-section"
                             style={sampleData.some(prev =>
                               prev.month === monthName &&
@@ -536,16 +599,16 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                               prev.events.some(item =>
                               (item.from <= dayjs(hour,"h A").format("HH")
                               && dayjs(hour,"h A").format("HH") < item.to)))
-                              ? {backgroundColor:'orange',
+                              ? {backgroundColor,
                               borderBottom:sampleData.some(prev =>
                               prev.month === monthName &&
                               parseInt(prev.year) === currentDate.getFullYear() &&
                               parseInt(prev.date) === day.getDate() &&
                               prev.events.some(item => dayjs(hour,"h A").format("HH") == item.to - 1)) ? "1px solid gray" : "1px solid transparent"
                               } : {}}
-                            onClick={() => {setOpenEventSlot(true);setTimeSlot(hour);setWeekEventDate(day.getDate());}}
+                            onClick={() => {handleWeeklyCalendarEvent(hour,day.getDate())}}
                           >
-                          {sampleData.map((prev) => {
+                          {calendarUserId !== "All" ? sampleData.map((prev) => {
                             if (
                               prev.month === monthName &&
                               parseInt(prev.year) === currentDate.getFullYear() &&
@@ -556,11 +619,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                                 const toTime = parseInt(item.to, 10);
                                 const midpoint = Math.floor((fromTime + toTime) / 2); // Midpoint calculation
 
-                                return dayjs(hour, "h A").format("HH") == midpoint ? item.title : ""; // Show only at midpoint
+                                return dayjs(hour, "h A").format("HH") == midpoint ? item.title + ", " : ""; // Show only at midpoint
                               });
                             }
                             return "";
-                          })}
+                          }):""}
                           {currentHour == dayjs(hour, "h A").format("HH") && (
                             <div
                               className="current-time-line"
@@ -575,7 +638,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                             />
                           )}
                           </div>
-                        ))}
+                        )})}
                   </div>
                 </div>
               </div>
