@@ -25,6 +25,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ selectedResourceId, setSelectedResourceId ] = useState("");
   const [ openAppointment, setOpenAppoinment ] = useState(false);  
   const [ bookSameSlot, setBookSameSlot ] = useState(false);
+  const [ resourceCalendar, setResourceCalendar ] = useState("");
 
   const [ allEventsOnDay, setAllEventsOnDay ] = useState(Object.fromEntries(
       Array.from({ length: 24 }, (_, i) => [
@@ -86,28 +87,27 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     generateCalendar();
   }, [currentDate]);
 
-  // useEffect(() => {
-  //   if(calendarUserId !== "All"){
-  //     const filteredData = sampleData.filter(day => ({
-  //         events: day.events.filter(event => event.resourceId === calendarUserId) // Remove only matching events
-  //     }));
-  //     console.log("filteredData:",filteredData);
-  //   }else{
-  //      const fetchSampleData = async() =>{
-  //       try{
-  //         const calendarData = await fetch("https://nrv8108ak6.execute-api.us-east-2.amazonaws.com/Calendar/user/ABC123/month/March/year/2025/");
-  //         const fetchedCalendarData = await calendarData.json();
-  //         console.log("fetching Calendar Data from database is complete");
-  //         console.log("Fetched Calendar Data:",fetchedCalendarData);
-  //         setSampleData(fetchedCalendarData);
-  //       }catch(error){
-  //         console.log("fail in fetching Calendar Data");
-  //         console.error("Error while fetching Calendar Data",error);
-  //       }
-  //      }
-  //      fetchSampleData();
-  //   }
-  // },[calendarUserId]);
+  useEffect(() => {
+    if(calendarUserId !== "All"){
+      const filteredData = sampleData
+        .filter(record => record.events.some(event => event.resourceId === calendarUserId)) // Keep records where at least one event has "SNR_2"
+        .map(record => ({
+            ...record,
+            events: record.events.filter(event => event.resourceId === calendarUserId) // Keep only events with "SNR_2"
+        }));
+      console.log("filteredData:",filteredData);
+      setResourceCalendar(filteredData);
+    }else{
+      const filteredData = sampleData
+        .filter(record => record.events.some(event => event.resourceId !== "")) // Keep records where at least one event has "SNR_2"
+        .map(record => ({
+            ...record,
+            events: record.events.filter(event => event.resourceId !== "" ) // Keep only events with "SNR_2"
+        }));
+      console.log("filteredData:",filteredData);
+      setResourceCalendar(filteredData);
+    }
+  },[calendarUserId]);
 
   const generateCalendar = () => {
     const year = currentDate.getFullYear();
@@ -194,7 +194,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
   let valueToSet = "";
 
-  const filteredEvents = sampleData.flatMap(prev =>
+  const filteredEvents = (calendarUserId !== "All" ? resourceCalendar: sampleData ).flatMap(prev =>
     prev.month === monthName &&
     parseInt(prev.year) === currentDate.getFullYear() &&
     parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate())
@@ -255,18 +255,18 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
     const addEventSlot = async () =>{
         try{
-          const response = await fetch("https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/",{
-            method:"POST",
-            headers:{
-              'Content-Type' : "application/json"
-            },
-            body:JSON.stringify(eventDetails)
-          })
-          const postData = await response.json();
-          console.log("postData:",postData);
+          // const response = await fetch("https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/",{
+          //   method:"POST",
+          //   headers:{
+          //     'Content-Type' : "application/json"
+          //   },
+          //   body:JSON.stringify(eventDetails)
+          // })
+          // const postData = await response.json();
+          // console.log("postData:",postData);
           const updatedRecord = {
             ...eventDetails,
-            id:postData.eventId
+            // id:postData.eventId
           }
           console.log("new event record:",updatedRecord);
           decrement();
@@ -485,7 +485,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             </div>
             <div className="event-column" style={{ position: "relative" }}>
               {Array.from({ length: 24 }, (_, i) =>{
-                const eventsAtTimeSlot = sampleData.filter(prev =>
+                const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData).filter(prev =>
                   prev.month === monthName &&
                   parseInt(prev.year) === currentDate.getFullYear() &&
                   parseInt(prev.date) === currentDate.getDate()
@@ -499,13 +499,13 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                 return (
                   <div key={i} 
                     className="event-slot"
-                    style={sampleData.some(prev => 
+                    style={(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev => 
                     prev.month === monthName && 
                     parseInt(prev.year) === currentDate.getFullYear() && 
                     parseInt(prev.date) === currentDate.getDate() &&
                     prev.events.some(item => (item.from <= i && i < item.to))
                     ) ? {backgroundColor,borderRight:'2px solid gray',borderLeft:"2px solid gray",
-                    borderBottom:sampleData.some(prev => 
+                    borderBottom:(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev => 
                     prev.month === monthName && 
                     parseInt(prev.year) === currentDate.getFullYear() && 
                     parseInt(prev.date) === currentDate.getDate() &&
@@ -513,7 +513,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                     } :{}}
                     onClick={() => handleDailyCalendarEvent(i)}
                     >
-                    {calendarUserId !== "All" ? sampleData.map(prev => {
+                    {calendarUserId !== "All" ? resourceCalendar.map(prev => {
                       if(
                         prev.month === monthName &&
                         parseInt(prev.year) === currentDate.getFullYear() &&
