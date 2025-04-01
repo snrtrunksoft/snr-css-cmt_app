@@ -26,6 +26,16 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ openAppointment, setOpenAppoinment ] = useState(false);  
   const [ bookSameSlot, setBookSameSlot ] = useState(false);
   const [ resourceCalendar, setResourceCalendar ] = useState("");
+  const [ newErrors, setNewErrors ] = useState({});
+
+  const validateFields = () => {
+    let fieldError = {};
+    if (!selectedMemberId) fieldError.selectedMemberId = "please enter member Id";
+    if (!selectedResourceId) fieldError.selectedResourceId = "please enter resource Id";
+    if (!eventTitle) fieldError.eventTitle = "Title required...!"
+    setNewErrors(fieldError);
+    return Object.keys(fieldError).length === 0;
+  };
 
   const [ allEventsOnDay, setAllEventsOnDay ] = useState(Object.fromEntries(
       Array.from({ length: 24 }, (_, i) => [
@@ -293,19 +303,22 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
           console.log("unable to create new event:",error);
         }
       };
-
-    if(valueToSet !== "" && bookSameSlot){
-      updateEventSlot();
+    if(!selectedMemberId || !selectedResourceId || !eventTitle){
+      validateFields();
     }else{
-      if(allEventsOnDay[timeSlot] >=1){
-        addEventSlot();
-        console.log("slot is available");
+      if(valueToSet !== "" && bookSameSlot){
+        updateEventSlot();
       }else{
-        console.log("slot is not available");
+        if(allEventsOnDay[timeSlot] >=1){
+          addEventSlot();
+          console.log("slot is available");
+        }else{
+          console.log("slot is not available");
+        }
       }
+    handleCloseEventSlot();
     }
     console.log(eventDetails);
-    handleCloseEventSlot();
   };
 
   const deleteEvent = () =>{
@@ -339,7 +352,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     setSelectedResourceId("");
     setEventTitle("");
     setEventNotes("");
-    setTimeSlot("");  
+    setTimeSlot("");
+    setNewErrors({});
   };
 
   const handleMembersDropDown = (value) => {
@@ -521,7 +535,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                       ){
                         return prev.events.map(item => {
                           const midpoint = Math.floor((item.from + item.to) / 2);
-                          return i === midpoint ? item.title + ", " : "";
+                          return i === midpoint ? item.title : "";
                         });
                       }
                       return "";
@@ -579,7 +593,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                       >
                       <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
                         {hours.map((hour, index) => { 
-                          const eventsAtTimeSlot = sampleData.filter(prev =>
+                          const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData).filter(prev =>
                             prev.month === monthName &&
                             parseInt(prev.year) === currentDate.getFullYear() &&
                             parseInt(prev.date) === day.getDate()
@@ -592,7 +606,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                           else if(eventsAtTimeSlot.length === 3) backgroundColor = "red";
                           return (
                           <div key={index} className="time-section"
-                            style={sampleData.some(prev =>
+                            style={(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev =>
                               prev.month === monthName &&
                               parseInt(prev.year) === currentDate.getFullYear() &&
                               parseInt(prev.date) === day.getDate() &&
@@ -600,7 +614,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                               (item.from <= dayjs(hour,"h A").format("HH")
                               && dayjs(hour,"h A").format("HH") < item.to)))
                               ? {backgroundColor,
-                              borderBottom:sampleData.some(prev =>
+                              borderBottom:(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev =>
                               prev.month === monthName &&
                               parseInt(prev.year) === currentDate.getFullYear() &&
                               parseInt(prev.date) === day.getDate() &&
@@ -608,7 +622,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                               } : {}}
                             onClick={() => {handleWeeklyCalendarEvent(hour,day.getDate())}}
                           >
-                          {calendarUserId !== "All" ? sampleData.map((prev) => {
+                          {calendarUserId !== "All" ? resourceCalendar.map((prev) => {
                             if (
                               prev.month === monthName &&
                               parseInt(prev.year) === currentDate.getFullYear() &&
@@ -619,7 +633,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                                 const toTime = parseInt(item.to, 10);
                                 const midpoint = Math.floor((fromTime + toTime) / 2); // Midpoint calculation
 
-                                return dayjs(hour, "h A").format("HH") == midpoint ? item.title + ", " : ""; // Show only at midpoint
+                                return dayjs(hour, "h A").format("HH") == midpoint ? item.title : ""; // Show only at midpoint
                               });
                             }
                             return "";
@@ -662,26 +676,29 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
           <div>
             {!openAppointment ? 
             <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
-              <Row>
+              <Row style={{position:'relative'}}>
                 <Dropdown overlay={membersMenu} trigger={["click"]}>
                   <input
-                    style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold',marginRight:'5px'}}
+                    style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold',marginRight:'5px',border: !selectedMemberId ? "2px solid red": ""}}
                     placeholder="Search for members"
                     value={selectedMemberId}
                     onChange={(e)=> handleMembersDropDown(e.target.value)}></input>
                 </Dropdown>
+                {newErrors.selectedMemberId && <span style={{color:"red",position:'absolute',top:'30px'}}>{newErrors.selectedMemberId}</span>}
                 <Dropdown overlay={resourceMenu} trigger={["click"]}>
                   <input
-                    style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold'}}
+                    style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold',border:!selectedResourceId ? '2px solid red':""}}
                     placeholder="Search for resource"
                     value={selectedResourceId}
                     onChange={(e)=> handleResourceDropDown(e.target.value)}></input>
                 </Dropdown>
+                {newErrors.selectedResourceId && <span style={{color:"red",position:'absolute',top:'30px',left:'220px'}}>{newErrors.selectedResourceId}</span>}
               </Row>
               <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
                   onChange={(e)=>setEventTitle(e.target.value)}
                   value={eventTitle}
-                  /></h2>
+                  />
+                  {newErrors.eventTitle &&  <span style={{color:"red"}}>*</span>}</h2>
                   <h2>Notes :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
                   onChange={(e)=>setEventNotes(e.target.value)}
                   value={eventNotes}
