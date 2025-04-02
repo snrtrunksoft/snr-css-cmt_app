@@ -33,80 +33,24 @@ function App() {
   const [ isLoading, setIsLoading ] = useState(true);
   const [ searchText, setSearchText ] = useState("");
   const [ resourceData, setResourceData ] = useState([]);
-  const [ data, setData]  = useState([{
-        "customerId": "8",
-        "customerName": "SNR",
-        "phoneNumber": "8876543210",
-        "address": [
-            {
-                "street1": "test street5",
-                "street2": "test street6",
-                "city": "Test City",
-                "state": "TX",
-                "country": "USA"
-            }
-        ],
-        "comments": [
-            {
-                "commentId": "2034",
-                "message": "test Comment5",
-                "author": "SNR"
-            },
-            {
-                "commentId": "2346",
-                "message": "test comment 2",
-                "author": "SNR"
-            }
-        ],
-        "status": "Active",
-        "subscriptions": [
-        {
-            "id": "001",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-02-2023",
-            "compltedData": "Feb-20-2024"
- 
-        },
-        {
-            "id": "002",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-30-2024",
-            "compltedData": "Jan-20-2025"
- 
-        },
-        {
-            "id": "003",
-            "status": "Complete",
-            "noOfServicesLeft": "9",
-            "noOfServicesCompleted": "1",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Jan-30-2025"
-        }
-    ],
-    },]);
+  const [ data, setData]  = useState([]);
 
-    const [ sampleData, setSampleData ] = useState();
+  const [ sampleData, setSampleData ] = useState();
 
   useEffect(() =>{
     console.log("initial loading, fetching data from the Database");
     // if(isInitialLoad.current){
       const fetchingData = async() => {
-        // try{
-        //   const Data = await fetch("https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users");
-        //   const fetchedData = await Data.json();
-        //   console.log("fetching Data from database is complete");
-        //   console.log("Fetched Data:",fetchedData);
-        //   setData(fetchedData);
-        // }catch(error){
-        //   console.log("fail in fetching Data");
-        //   console.error("Error while fetching Data",error);
-        // }
+        try{
+          const Data = await fetch("https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users");
+          const fetchedData = await Data.json();
+          console.log("fetching Data from database is complete");
+          console.log("Fetched Data:",fetchedData);
+          setData(fetchedData);
+        }catch(error){
+          console.log("fail in fetching Data");
+          console.error("Error while fetching Data",error);
+        }
         try{
           const calendarData = await fetch("https://nrv8108ak6.execute-api.us-east-2.amazonaws.com/Calendar/user/ABC123/month/March/year/2025/");
           const fetchedCalendarData = await calendarData.json();
@@ -428,7 +372,13 @@ function App() {
           setDuplicateData = {setDuplicateData}
           commentBox = {commentBox}
           setCommentBox = {setCommentBox}
-        /> :openCalendarPage ? <CalendarPage sampleData={sampleData} setSampleData={setSampleData} duplicateData={duplicateData} resourceData={resourceData}/> : <TodosPage sampleData={sampleData}/>)}
+        /> :openCalendarPage ? 
+        <CalendarPage 
+          sampleData={sampleData} 
+          setSampleData={setSampleData} 
+          duplicateData={duplicateData} 
+          resourceData={resourceData} 
+          /> : <TodosPage sampleData={sampleData}/>)}
         <Divider type='horizontal'/>
         {<Footer/>}
     </div>

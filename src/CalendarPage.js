@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Col, Divider, Dropdown, Menu, Modal, Pagination, Row, TimePicker } from "antd";
+import { Button, Checkbox, Col, Divider, Dropdown, Menu, Modal, Pagination, Row, TimePicker } from "antd";
 import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -27,6 +27,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ bookSameSlot, setBookSameSlot ] = useState(false);
   const [ resourceCalendar, setResourceCalendar ] = useState("");
   const [ newErrors, setNewErrors ] = useState({});
+  const [ memberDropDown, setMemberDropDown ] = useState(true);
 
   const validateFields = () => {
     let fieldError = {};
@@ -98,12 +99,21 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   }, [currentDate]);
 
   useEffect(() => {
-    if(calendarUserId !== "All"){
+    if(calendarUserId !== "All" && !memberDropDown){
       const filteredData = sampleData
         .filter(record => record.events.some(event => event.resourceId === calendarUserId)) // Keep records where at least one event has "SNR_2"
         .map(record => ({
             ...record,
             events: record.events.filter(event => event.resourceId === calendarUserId) // Keep only events with "SNR_2"
+        }));
+      console.log("filteredData:",filteredData);
+      setResourceCalendar(filteredData);
+    }else if(calendarUserId !== "All" && memberDropDown){
+      const filteredData = sampleData
+        .filter(record => record.events.some(event => event.memberId === calendarUserId)) // Keep records where at least one event has "SNR_2"
+        .map(record => ({
+            ...record,
+            events: record.events.filter(event => event.memberId === calendarUserId) // Keep only events with "SNR_2"
         }));
       console.log("filteredData:",filteredData);
       setResourceCalendar(filteredData);
@@ -415,10 +425,12 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     <select 
       value={calendarUserId}
       onChange={(e) => setCalendarUserId(e.target.value)}
-      style={{borderRadius:'5px',padding:'5px',fontSize:'15px',position:'absolute',left:'35px',top:'215px',outline:'none'}}>
+      style={{borderRadius:'5px',padding:'5px',fontSize:'15px',outline:'none'}}>
       <option value="All">All</option>
-      {resourceData.map(prevData => 
-      <option>{prevData.resourceName}</option>)}
+      {!memberDropDown ? resourceData.map(prevData => 
+      <option>{prevData.resourceName}</option>) : 
+      duplicateData.map(prevData => 
+      <option>{prevData.customerName}</option>)}
     </select>
   );
 
@@ -441,8 +453,14 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   return (
     <div className="calendar-container">
       <div className="calendar-header">
-        <Row hidden={!CalendarPage} style={{display:'flex',alignItems:'center',justifyContent:'center',}}>
-          {dropDownList}
+        <Row hidden={!CalendarPage} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'absolute',left:'35px',top:'215px'}}>
+          <Col style={{fontWeight:'bold'}}>
+            <Checkbox checked={memberDropDown} onClick={() =>setMemberDropDown(true)}>Member</Checkbox>
+            <Checkbox checked={!memberDropDown} onClick={() =>setMemberDropDown(false)}>Resource</Checkbox>
+          </Col>
+          <Col style={{marginLeft:'-60px',padding:'10px'}}>
+            {dropDownList}
+          </Col>
         </Row>
         <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <Col style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
