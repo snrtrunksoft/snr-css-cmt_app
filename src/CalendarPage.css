@@ -30,7 +30,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 40px 70px;
+    padding: 10px 10px;
     border: 1px solid gray;
     font-size: 18px;
     font-weight: bold;
@@ -45,7 +45,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 40px 70px;
+    padding: 10px 10px;
     border: 1px solid gray;
     font-size: 18px;
     font-weight: bold;
@@ -58,7 +58,6 @@
     justify-content: flex-start;
     border: 1px solid #2222;
     background-color: #f0f0f0;
-    width: 150px;
     height: fit-content;
     position: relative;
 }
@@ -77,13 +76,13 @@
 
 .day-view {
     display: flex;
-    width: 500px;
+    width: 400px;
 }
 
 .time-column {
     display: flex;
     flex-direction: column;
-    width: 80px;
+    width: 60px;
     background: #ececec;
 }
 

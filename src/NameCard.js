@@ -168,15 +168,15 @@ const NameCard = ({
                     }}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                     <h3 style={{
-                    width:'200px',overflow: 'hidden',
+                    width:'100px',overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace:'nowrap'
-                    }}>Name : { customerName }</h3>
+                    }}>{ customerName }</h3>
                     <div style={{width:'30px',height:'15px',backgroundColor:`${color}`,}}></div>
                 </div>
-                <p>Phone : { phoneNumber }</p>
+                <p>{ phoneNumber }</p>
                  <p style={{
-                    width:'200px',overflow: 'hidden',
+                    width:'100px',overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace:'nowrap'
                     }}>Address : { address.map(prev => prev.city) }, { address.map(prev => prev.state) }, { address.map(prev => prev.country) }.</p>
@@ -187,19 +187,24 @@ const NameCard = ({
                 style={{backgroundColor:'whitesmoke'}}
                 title={null}
                 // closable={false}
-                width="40%"
+                width="100%"
                 onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
                 >
                 <div className="nameDrawer">
                     <div className="personalNameCard">
-                        <Row >
-                            <Col style={{width:'35%',padding:'10px'}}>
+                        <Row style={{position:'relative'}}>
+                            <Col style={{width:'25%',padding:'10px'}}>
                                 <img src={maleAvatar} height={180} style={{borderRadius:"10px"}}/>
                             </Col>
-                            <Col style={{width:'65%'}}>
+                            <Col style={{width:'55%',position:'absolute',left:'185px'}}>
                                 <h2> {customerName} </h2>
                                 <h3 style={{marginTop:'-10px'}}>{ phoneNumber }</h3>
-                                <h3 style={{marginRight:"10px",borderRadius:'5px',backgroundColor:'lightgrey',padding:'5px'}}> Address : { addressKeys.map((item,index) => 
+                                <h3 style={{marginRight:"10px",borderRadius:'5px',backgroundColor:'lightgrey',padding:'5px',width:'85%',
+                                        height: '80px',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'normal', 
+                                        wordWrap: 'break-word'}}> Address : { addressKeys.map((item,index) => 
                                     <span key={index}>
                                         {address[0][item]}{ item !== "country" ? ", " : "." }
                                         {(item === "city") || (item === "state") ? "" : (<br/>) }
@@ -220,6 +225,7 @@ const NameCard = ({
                                     <Col className="punchCards">
                                         {flipped ? <Row className={`${flipped ? "flipped" : ""}`}>
                                                 <span>name: {customerName}</span>
+                                                <span>id: {card.id}</span>
                                                 <span>purchased: {card.purchasedDate}</span>
                                                 <span>completed: {card.completedDate}</span>
                                                 <span>totalNumberOfService: {card.totalNumberOfServices}</span>
@@ -238,8 +244,9 @@ const NameCard = ({
                                             </div>
                                         ))}
                                     </Col>
-                                    <Col style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
-                                        <Button onClick={() => toggleFlip()} icon={<SwapOutlined/>}>Flip</Button> &nbsp;
+                                    <Col style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column'}}>
+                                        <Button onClick={() => toggleFlip(card.id)} icon={<SwapOutlined/>}>Flip</Button> &nbsp;
+                                        {/* <Button onClick={() => deleteSubscription(card.id)}>Delete</Button> */}
                                     </Col>
                             </div>
                                 {checkedCount?<Row style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></Row>:""}

@@ -17,11 +17,6 @@
     flex-direction: row;
     color: aliceblue;
 }
-.header-right{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
 .header-icons{
     display: flex;
     flex-direction: row;
