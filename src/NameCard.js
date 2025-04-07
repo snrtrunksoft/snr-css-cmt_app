@@ -168,18 +168,18 @@ const NameCard = ({
                     }}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                     <h3 style={{
-                    width:'200px',overflow: 'hidden',
+                    width:'100%',overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace:'nowrap'
-                    }}>Name : { customerName }</h3>
-                    <div style={{width:'30px',height:'15px',backgroundColor:`${color}`,}}></div>
+                    }}>{ customerName }</h3>
+                    <div style={{width:'30%',height:'15px',backgroundColor:`${color}`,}}></div>
                 </div>
-                <p>Phone : { phoneNumber }</p>
+                <p>{ phoneNumber }</p>
                  <p style={{
-                    width:'200px',overflow: 'hidden',
+                    width:'100%',overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace:'nowrap'
-                    }}>Address : { address.map(prev => prev.city) }, { address.map(prev => prev.state) }, { address.map(prev => prev.country) }.</p>
+                    }}>{ address.map(prev => prev.city) }, { address.map(prev => prev.state) }, { address.map(prev => prev.country) }.</p>
                 <p>Status : { status }</p>
             </div>
             <Drawer

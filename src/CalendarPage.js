@@ -453,7 +453,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   return (
     <div className="calendar-container">
       <div className="calendar-header">
-        <Row hidden={!CalendarPage} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'absolute',left:'35px',top:'215px'}}>
+        <Row hidden={!CalendarPage} className="filterCalendar">
           <Col style={{fontWeight:'bold'}}>
             <Checkbox checked={memberDropDown} onClick={() =>setMemberDropDown(true)}>Member</Checkbox>
             <Checkbox checked={!memberDropDown} onClick={() =>setMemberDropDown(false)}>Resource</Checkbox>
@@ -462,14 +462,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             {dropDownList}
           </Col>
         </Row>
-        <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-            <Col style={{display:'flex',justifyContent:'center',alignItems:'center'}}>
-                <Button onClick={() => setCurrentDate(new Date())}><h3>Today</h3></Button> &nbsp;&nbsp;
-                <Button onClick={ handlePrev }><ChevronLeft/></Button> &nbsp;
-                <Button onClick={ handleNext }><ChevronRight/></Button>
-            </Col>
+        <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:'40px'}}>
             <Col>
-              <h2 hidden={openDailyCalendar}>{formattedDate}, {currentDate.getFullYear()}</h2>
+                <Button onClick={() => setCurrentDate(new Date())}><h3>Today</h3></Button> &nbsp;
             </Col>
             <Col>
                 <Button onClick={()=>{setOpenDailyCalendar(true);setOpenWeekCalendar(false);setOpenMonthCalendar(false)}}
@@ -481,8 +476,13 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             </Col>
         </Row>
         <Divider type="horizontal"></Divider>
-        <h2 hidden={!openDailyCalendar}>{formattedDate}, {currentDate.getFullYear()}</h2>
       </div>
+      <Row style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:'-20px'}}>
+          <Button onClick={ handlePrev }><ChevronLeft/></Button>
+          <h2 hidden={!openDailyCalendar}>{formattedDate}, {currentDate.getFullYear()}</h2>
+          <h2 hidden={openDailyCalendar}>{formattedDate}, {currentDate.getFullYear()}</h2>
+          <Button onClick={ handleNext }><ChevronRight/></Button>
+        </Row>
       {(openMonthCalendar) ? (
         <div className="grid-container header1">
         {weekdays.map((day, index) => (
@@ -697,20 +697,22 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
               <Row style={{position:'relative'}}>
                 <Dropdown overlay={membersMenu} trigger={["click"]}>
                   <input
-                    style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold',marginRight:'5px',border: !selectedMemberId ? "2px solid red": ""}}
+                    style={{border: !selectedMemberId ? "2px solid red": ""}}
+                    className="memberResourceInput"
                     placeholder="Search for members"
                     value={selectedMemberId}
                     onChange={(e)=> handleMembersDropDown(e.target.value)}></input>
                 </Dropdown>
-                {newErrors.selectedMemberId && <span style={{color:"red",position:'absolute',top:'30px'}}>{newErrors.selectedMemberId}</span>}
+                {newErrors.selectedMemberId && <span className="inputError1">{newErrors.selectedMemberId}</span>}
                 <Dropdown overlay={resourceMenu} trigger={["click"]}>
                   <input
-                    style={{outline:'none',borderRadius:'5px',padding:'5px',fontSize:'15px',fontWeight:'bold',border:!selectedResourceId ? '2px solid red':""}}
+                    style={{border:!selectedResourceId ? '2px solid red':""}}
+                    className="memberResourceInput"
                     placeholder="Search for resource"
                     value={selectedResourceId}
                     onChange={(e)=> handleResourceDropDown(e.target.value)}></input>
                 </Dropdown>
-                {newErrors.selectedResourceId && <span style={{color:"red",position:'absolute',top:'30px',left:'220px'}}>{newErrors.selectedResourceId}</span>}
+                {newErrors.selectedResourceId && <span className="inputError2">{newErrors.selectedResourceId}</span>}
               </Row>
               <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
                   onChange={(e)=>setEventTitle(e.target.value)}
@@ -723,12 +725,14 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                   /></h2>
                   <h3>From :<TimePicker 
                                 format="h A"
+                                style={{width:'100px'}}
                                 value={Number.isInteger(fromTimeSlot) ? dayjs().hour(fromTimeSlot) : fromTimeSlot}
                                 onChange={(e) => setFromTimeSlot(e.hour())}
                                 needConfirm={false}
                                 /> &nbsp;&nbsp;
                       To :<TimePicker
                                 format="h A"
+                                style={{width:'100px'}}
                                 value={Number.isInteger(toTimeSlot) ? dayjs().hour(toTimeSlot) : toTimeSlot}
                                 onChange={(e) => setToTimeSlot(e.hour())}
                                 needConfirm={false}

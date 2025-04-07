@@ -14,3 +14,24 @@
     width: 100%;
     max-width: 1200px;
 }
+@media (max-width: 932px) {
+    .resource-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Medium mobile devices (width ≤ 768px) */
+@media (max-width: 768px) {
+    .resource-grid {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 20px 10px;
+    }
+}
+
+/* Small mobile devices (width ≤ 480px) */
+@media (max-width: 480px) {
+    .resource-grid {
+        grid-template-columns: repeat(2, 1fr); 
+        padding: 16px 8px;
+    }
+}

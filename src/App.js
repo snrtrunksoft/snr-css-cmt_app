@@ -263,11 +263,13 @@ function App() {
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
           />
-        <div hidden={isLoading} style={{position:'absolute',left:'30px',top:'125px',display:'flex',flexDirection:'column'}}>
-          <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);setTodosPage(false);}}><h3>Members</h3></Button>
-          <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure',marginTop:'10px'}:{marginTop:'10px'}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false);setTodosPage(false);}}><h3>Resources</h3></Button>
-        </div>
-        <center hidden={!membersPage}><Input placeholder='Search Name or Ph no.' value={searchText} onChange={(e) => handleSearchText(e.target.value)}></Input></center>
+        <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%'}}>
+          <div hidden={isLoading}>
+            <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);setTodosPage(false);}}><h3>Members</h3></Button>
+            <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false);setTodosPage(false);}}><h3>Resources</h3></Button>
+          </div>
+          <div style={{paddingRight:'5px'}} hidden={!membersPage}><Input placeholder='Search Name or Ph no.' value={searchText} onChange={(e) => handleSearchText(e.target.value)}></Input></div>
+        </span>
       {isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
         (membersPage) ? (
           <div>
@@ -294,8 +296,8 @@ function App() {
               </div>) : (
               <div className='grid'>
                 {duplicateData.map((item) => (
-                    <NameCard key={item.customerId}
-                      customerId={item.customerId}
+                    <NameCard key={item.id}
+                      customerId={item.id}
                       customerName={item.customerName}
                       phoneNumber={item.phoneNumber}
                       address={item.address}
