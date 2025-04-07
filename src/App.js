@@ -263,7 +263,7 @@ function App() {
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
           />
-        <div hidden={isLoading} style={{position:'absolute',left:'30px',top:'125px',display:'flex',flexDirection:'column'}}>
+        {/* <div hidden={isLoading} style={{position:'absolute',left:'30px',top:'125px',display:'flex',flexDirection:'column'}}>
           <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);setTodosPage(false);}}><h3>Members</h3></Button>
           <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure',marginTop:'10px'}:{marginTop:'10px'}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false);setTodosPage(false);}}><h3>Resources</h3></Button>
         </div>
@@ -380,7 +380,7 @@ function App() {
           resourceData={resourceData} 
           /> : <TodosPage sampleData={sampleData}/>)}
         <Divider type='horizontal'/>
-        {<Footer/>}
+        {<Footer/>} */}
     </div>
   );
 }
