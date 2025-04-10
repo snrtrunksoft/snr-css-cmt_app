@@ -32,41 +32,400 @@ function App() {
   const [ todosPage, setTodosPage ] = useState(false);
   const [ isLoading, setIsLoading ] = useState(true);
   const [ searchText, setSearchText ] = useState("");
-  const [ resourceData, setResourceData ] = useState([]);
-  const [ data, setData]  = useState([]);
+  const [ resourceData, setResourceData ] = useState([
+    {
+        "resourceId": "8",
+        "resourceName": "SNR",
+        "phoneNumber": "8876543210",
+        "address": [
+            {
+                "street1": "test street5",
+                "street2": "test street6",
+                "city": "Test City",
+                "state": "TX",
+                "country": "USA"
+            }
+        ],
+        "comments": [
+            {
+                "commentId": "2034",
+                "message": "test Comment5",
+                "author": "SNR"
+            },
+            {
+                "commentId": "2346",
+                "message": "test comment 2",
+                "author": "SNR"
+            }
+        ],
+        "status": "Active"
+    },
+  ]);
+  const [ data, setData]  = useState([
+    {
+        "id": "8",
+        "customerName": "SNR",
+        "phoneNumber": "8876543210",
+        "address": [
+            {
+                "street1": "test street5",
+                "street2": "test street6",
+                "city": "Test City",
+                "state": "TX",
+                "country": "USA"
+            }
+        ],
+        "comments": [
+            {
+                "commentId": "2034",
+                "message": "test Comment5",
+                "author": "SNR"
+            },
+            {
+                "commentId": "2346",
+                "message": "test comment 2",
+                "author": "SNR"
+            }
+        ],
+        "status": "Active",
+        "subscriptions": [
+        {
+            "id": "001",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-02-2023",
+            "compltedData": "Feb-20-2024"
+        },
+        {
+            "id": "002",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-30-2024",
+            "compltedData": "Jan-20-2025"
+ 
+        },
+        {
+            "id": "003",
+            "status": "Complete",
+            "noOfServicesLeft": "9",
+            "noOfServicesCompleted": "1",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Jan-30-2025"
+        }
+    ],
+    },
+    {
+        "id": "8",
+        "customerName": "SNR",
+        "phoneNumber": "8876543210",
+        "address": [
+            {
+                "street1": "test street5",
+                "street2": "test street6",
+                "city": "Test City",
+                "state": "TX",
+                "country": "USA"
+            }
+        ],
+        "comments": [
+            {
+                "commentId": "2034",
+                "message": "test Comment5",
+                "author": "SNR"
+            },
+            {
+                "commentId": "2346",
+                "message": "test comment 2",
+                "author": "SNR"
+            }
+        ],
+        "status": "Active",
+        "subscriptions": [
+        {
+            "id": "001",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-02-2023",
+            "compltedData": "Feb-20-2024"
+        },
+        {
+            "id": "002",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-30-2024",
+            "compltedData": "Jan-20-2025"
+ 
+        },
+        {
+            "id": "003",
+            "status": "Complete",
+            "noOfServicesLeft": "9",
+            "noOfServicesCompleted": "1",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Jan-30-2025"
+        }
+    ],
+    },
+    {
+        "id": "8",
+        "customerName": "SNR",
+        "phoneNumber": "8876543210",
+        "address": [
+            {
+                "street1": "test street5",
+                "street2": "test street6",
+                "city": "Test City",
+                "state": "TX",
+                "country": "USA"
+            }
+        ],
+        "comments": [
+            {
+                "commentId": "2034",
+                "message": "test Comment5",
+                "author": "SNR"
+            },
+            {
+                "commentId": "2346",
+                "message": "test comment 2",
+                "author": "SNR"
+            }
+        ],
+        "status": "Active",
+        "subscriptions": [
+        {
+            "id": "001",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-02-2023",
+            "compltedData": "Feb-20-2024"
+        },
+        {
+            "id": "002",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-30-2024",
+            "compltedData": "Jan-20-2025"
+ 
+        },
+        {
+            "id": "003",
+            "status": "Complete",
+            "noOfServicesLeft": "9",
+            "noOfServicesCompleted": "1",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Jan-30-2025"
+        }
+    ],
+    },
+    {
+        "id": "8",
+        "customerName": "SNR",
+        "phoneNumber": "8876543210",
+        "address": [
+            {
+                "street1": "test street5",
+                "street2": "test street6",
+                "city": "Test City",
+                "state": "TX",
+                "country": "USA"
+            }
+        ],
+        "comments": [
+            {
+                "commentId": "2034",
+                "message": "test Comment5",
+                "author": "SNR"
+            },
+            {
+                "commentId": "2346",
+                "message": "test comment 2",
+                "author": "SNR"
+            }
+        ],
+        "status": "Active",
+        "subscriptions": [
+        {
+            "id": "001",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-02-2023",
+            "compltedData": "Feb-20-2024"
+        },
+        {
+            "id": "002",
+            "status": "Complete",
+            "noOfServicesLeft": "0",
+            "noOfServicesCompleted": "10",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Mar-30-2024",
+            "compltedData": "Jan-20-2025"
+ 
+        },
+        {
+            "id": "003",
+            "status": "Complete",
+            "noOfServicesLeft": "9",
+            "noOfServicesCompleted": "1",
+            "totalNumberOfServices": "10",
+            "purchasedDate": "Jan-30-2025"
+        }
+    ],
+    }
+  ]);
 
-  const [ sampleData, setSampleData ] = useState();
+  const [ sampleData, setSampleData ] = useState(
+    [
+          {
+              "month": "February",
+              "year": 2025,
+              "userId": "ABC123",
+              "1": {
+                events:[]
+              },
+              "2": {
+                events:[]
+              },
+              "3": {
+                events:[]
+              },
+              "4": {
+                events:[]
+              },
+              "5": {
+                events:[]
+              },
+              "19":{
+                events:[]
+              },
+              "25": {
+                  "isCalendarFull": false,
+                  "noOfEvents": 3,
+                  events: [
+                      {
+                          "title": "Appointment 1",
+                          "from": 0,
+                          "to": 1,
+                          "notes": "appointment for dentist",
+                      },
+                      {
+                          "title": "Appointment 2",
+                          "from": 13,
+                          "to": 18,
+                          "notes": "appointment for dentist",
+                      },
+                  ]
+              }
+          },
+          {
+              "month": "March",
+              "year": 2025,
+              "userId": "ABC123",
+              "1": {
+                events:[]
+              },
+              "2": {
+                events:[]
+              },
+              "3": {
+                events:[]
+              },
+              "4": {
+                events:[]
+              },
+              "9": {
+                events:[]
+              },
+              "19":{
+                events:[]
+              },
+              "5": {
+                  "isCalendarFull": false,
+                  "noOfEvents": 3,
+                  events: [
+                      {
+                          "title": "Appointment 1",
+                          "from": 0,
+                          "to": 1,
+                          "notes": "appointment for dentist",
+                      },
+                      {
+                          "title": "Appointment 2",
+                          "from": 13,
+                          "to": 18,
+                          "notes": "appointment for dentist",
+                      },
+                  ]
+              }
+          },
+          {
+            "month": "January",
+              "year": 2025,
+              "userId": "ABC133",
+              "1": {
+                events:[
+                    {
+                      "title": "Appointment 1",
+                      "from": 0,
+                      "to": 1,
+                      "notes": "appointment for dentist",
+                      },
+                      {
+                        "title": "Appointment 2",
+                        "from": 13,
+                        "to": 18,
+                        "notes": "appointment for dentist",
+                      },
+                ]
+              },
+          }
+          ]
+  );
 
   useEffect(() =>{
     console.log("initial loading, fetching data from the Database");
     // if(isInitialLoad.current){
       const fetchingData = async() => {
+        // try{
+        //   const Data = await fetch("https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users");
+        //   const fetchedData = await Data.json();
+        //   console.log("fetching Data from database is complete");
+        //   console.log("Fetched Data:",fetchedData);
+        //   setData(fetchedData);
+        // }catch(error){
+        //   console.log("fail in fetching Data");
+        //   console.error("Error while fetching Data",error);
+        // }
+        // try{
+        //   const calendarData = await fetch("https://nrv8108ak6.execute-api.us-east-2.amazonaws.com/Calendar/user/ABC123/month/March/year/2025/");
+        //   const fetchedCalendarData = await calendarData.json();
+        //   console.log("fetching Calendar Data from database is complete");
+        //   console.log("Fetched Calendar Data:",fetchedCalendarData);
+        //   setSampleData(fetchedCalendarData);
+        // }catch(error){
+        //   console.log("fail in fetching Calendar Data");
+        //   console.error("Error while fetching Calendar Data",error);
+        // }
         try{
-          const Data = await fetch("https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users");
-          const fetchedData = await Data.json();
-          console.log("fetching Data from database is complete");
-          console.log("Fetched Data:",fetchedData);
-          setData(fetchedData);
-        }catch(error){
-          console.log("fail in fetching Data");
-          console.error("Error while fetching Data",error);
-        }
-        try{
-          const calendarData = await fetch("https://nrv8108ak6.execute-api.us-east-2.amazonaws.com/Calendar/user/ABC123/month/March/year/2025/");
-          const fetchedCalendarData = await calendarData.json();
-          console.log("fetching Calendar Data from database is complete");
-          console.log("Fetched Calendar Data:",fetchedCalendarData);
-          setSampleData(fetchedCalendarData);
-        }catch(error){
-          console.log("fail in fetching Calendar Data");
-          console.error("Error while fetching Calendar Data",error);
-        }
-        try{
-          const Data = await fetch("https://yk216g0lxb.execute-api.us-east-2.amazonaws.com/resources");
-          const fetchedData = await Data.json();
-          console.log("fetching Resource Data from database is complete");
-          console.log("Fetched Resource Data:",fetchedData);
-          setResourceData(fetchedData);
+          // const Data = await fetch("https://yk216g0lxb.execute-api.us-east-2.amazonaws.com/resources");
+          // const fetchedData = await Data.json();
+          // console.log("fetching Resource Data from database is complete");
+          // console.log("Fetched Resource Data:",fetchedData);
+          // setResourceData(fetchedData);
         }catch(error){
           console.log("fail in fetching resource Data");
           console.error("Error while fetching resource Data",error);
@@ -246,7 +605,7 @@ function App() {
   );
 
   return (
-    <div className='app'>
+    <div className='home-app'>
         <Header 
           dropDownList={dropDownList} 
           dataView={dataView} 
@@ -263,11 +622,13 @@ function App() {
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
           />
-        {/* <div hidden={isLoading} style={{position:'absolute',left:'30px',top:'125px',display:'flex',flexDirection:'column'}}>
-          <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);setTodosPage(false);}}><h3>Members</h3></Button>
-          <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure',marginTop:'10px'}:{marginTop:'10px'}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false);setTodosPage(false);}}><h3>Resources</h3></Button>
-        </div>
-        <center hidden={!membersPage}><Input placeholder='Search Name or Ph no.' value={searchText} onChange={(e) => handleSearchText(e.target.value)}></Input></center>
+        <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%'}}>
+          <div hidden={isLoading}>
+            <Button style={membersPage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={() => {setResourcePage(false);setOpenCalendarPage(false);setMembersPage(true);setTodosPage(false);}}><h3>Members</h3></Button>
+            <Button style={resourcePage ? {backgroundColor:'#1677ff',color:'azure'}:{}} onClick={()=>{setResourcePage(true);setMembersPage(false);setOpenCalendarPage(false);setTodosPage(false);}}><h3>Resources</h3></Button>
+          </div>
+          <div style={{paddingRight:'5px'}} hidden={!membersPage}><Input placeholder='Search Name or Ph no.' value={searchText} onChange={(e) => handleSearchText(e.target.value)}></Input></div>
+        </span>
       {isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
         (membersPage) ? (
           <div>
@@ -292,10 +653,11 @@ function App() {
                   )}
                 ></Table>
               </div>) : (
-              <div className='grid'>
+              <Row gutter={[16, 16]} className="home-grid">
                 {duplicateData.map((item) => (
-                    <NameCard key={item.customerId}
-                      customerId={item.customerId}
+                  <Col key={item.id} xs={12} sm={12} md={8} lg={6} xl={6}>
+                    <NameCard key={item.id}
+                      customerId={item.id}
                       customerName={item.customerName}
                       phoneNumber={item.phoneNumber}
                       address={item.address}
@@ -303,21 +665,23 @@ function App() {
                       comments={item.comments}
                       subscriptions={item.subscriptions}
                       setDuplicateData={setDuplicateData}
-                      commentBox = {commentBox}
-                      setCommentBox = {setCommentBox}
-                      />
+                      commentBox={commentBox}
+                      setCommentBox={setCommentBox}
+                    />
+                  </Col>
                 ))}
-                  <div
+                  <Col xs={12} sm={12} md={8} lg={6} xl={6}
                     className={dataView === "grid" ? 'nameCard' : 'table'}
                     onClick={()=>setIsAddNewNameCardModalOpen(true)}
                     style= {{
                       display:'flex',
                       alignItems:'center',
                       justifyContent:'center',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                     }}>
                     <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
-                  </div>
-              </div>)}
+                  </Col>
+              </Row>)}
             <Divider type='horizontal'/>
             <div style={{width:"100%"}} hidden={hideDashboard}>
               <Row className='status-track-icons'>
@@ -340,11 +704,14 @@ function App() {
               </Row>
               <Col style={{paddingTop:'0px'}}>
                   <Divider type='horizontal' ></Divider>
-                </Col>
-              <Row className='graph'>
-                <Col>
-                  <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar> 
-                </Col>
+              </Col>
+              <Row className='graph' justify={'center'}>
+                {/* <Col xs={24} sm={24} md={16} lg={12} xl={10}>
+                <div className="chart-container">
+                  <Bar data={graphData} options={options} />
+                </div> */}
+                  {/* <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar>  */}
+                {/* </Col> */}
               </Row>
             </div>
             <Modal
@@ -380,7 +747,7 @@ function App() {
           resourceData={resourceData} 
           /> : <TodosPage sampleData={sampleData}/>)}
         <Divider type='horizontal'/>
-        {<Footer/>} */}
+        {<Footer/>}
     </div>
   );
 }
