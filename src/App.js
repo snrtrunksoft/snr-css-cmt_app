@@ -230,62 +230,7 @@ function App() {
         }
     ],
     },
-    {
-        "id": "8",
-        "customerName": "SNR",
-        "phoneNumber": "8876543210",
-        "address": [
-            {
-                "street1": "test street5",
-                "street2": "test street6",
-                "city": "Test City",
-                "state": "TX",
-                "country": "USA"
-            }
-        ],
-        "comments": [
-            {
-                "commentId": "2034",
-                "message": "test Comment5",
-                "author": "SNR"
-            },
-            {
-                "commentId": "2346",
-                "message": "test comment 2",
-                "author": "SNR"
-            }
-        ],
-        "status": "Active",
-        "subscriptions": [
-        {
-            "id": "001",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-02-2023",
-            "compltedData": "Feb-20-2024"
-        },
-        {
-            "id": "002",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-30-2024",
-            "compltedData": "Jan-20-2025"
- 
-        },
-        {
-            "id": "003",
-            "status": "Complete",
-            "noOfServicesLeft": "9",
-            "noOfServicesCompleted": "1",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Jan-30-2025"
-        }
-    ],
-    }
+    
   ]);
 
   const [ sampleData, setSampleData ] = useState(
@@ -655,7 +600,12 @@ function App() {
               </div>) : (
               <Row gutter={[16, 16]} className="home-grid">
                 {duplicateData.map((item) => (
-                  <Col key={item.id} xs={12} sm={12} md={8} lg={6} xl={6}>
+                  <Col key={item.id} 
+                    xs={duplicateData.length <= 1 ? 24 : 12} 
+                    sm={duplicateData.length <= 1 ? 24 : 12} 
+                    md={duplicateData.length <= 2 ? 20 : 8}  
+                    lg={duplicateData.length <= 2 ? 20 : 6} 
+                    xl={duplicateData.length <= 2 ? 20 : 6}>
                     <NameCard key={item.id}
                       customerId={item.id}
                       customerName={item.customerName}
@@ -670,7 +620,11 @@ function App() {
                     />
                   </Col>
                 ))}
-                  <Col xs={12} sm={12} md={8} lg={6} xl={6}
+                  <Col xs={duplicateData.length <= 1 ? 24 : 12} 
+                      sm={duplicateData.length <= 1 ? 24 : 12} 
+                      md={duplicateData.length <= 2 ? 20 : 8}  
+                      lg={duplicateData.length <= 2 ? 20 : 6} 
+                      xl={duplicateData.length <= 2 ? 20 : 6}
                     className={dataView === "grid" ? 'nameCard' : 'table'}
                     onClick={()=>setIsAddNewNameCardModalOpen(true)}
                     style= {{

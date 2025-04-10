@@ -15,7 +15,12 @@ const ResourcePage = ({ resourceData,setDuplicateData, commentBox, setCommentBox
         {isLoading ? (<h3><LoadingOutlined/> Loading....</h3>) : 
             <Row className="resource-grid" gutter={[12,16]}>
                 {resourceData.map((item)=>(
-                    <Col key={item.resourceId} xs={12} sm={12} md={8} lg={6} xl={6}>
+                    <Col key={item.resourceId}
+                        xs={resourceData.length <= 1 ? 24 : 12} 
+                        sm={resourceData.length <= 1 ? 24 : 12} 
+                        md={resourceData.length <= 2 ? 20 : 8}  
+                        lg={resourceData.length <= 2 ? 20 : 6}
+                        xl={resourceData.length <= 2 ? 20 : 6}>
                             <NameCard key={item.resourceId}
                                 customerId={item.resourceId}
                                 customerName={item.resourceName}
