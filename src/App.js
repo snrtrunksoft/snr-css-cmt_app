@@ -33,7 +33,7 @@ function App() {
   const [ isLoading, setIsLoading ] = useState(true);
   const [ searchText, setSearchText ] = useState("");
   const [ resourceData, setResourceData ] = useState([
-    {
+        {
         "resourceId": "8",
         "resourceName": "SNR",
         "phoneNumber": "8876543210",
@@ -118,123 +118,10 @@ function App() {
         }
     ],
     },
-    {
-        "id": "8",
-        "customerName": "SNR",
-        "phoneNumber": "8876543210",
-        "address": [
-            {
-                "street1": "test street5",
-                "street2": "test street6",
-                "city": "Test City",
-                "state": "TX",
-                "country": "USA"
-            }
-        ],
-        "comments": [
-            {
-                "commentId": "2034",
-                "message": "test Comment5",
-                "author": "SNR"
-            },
-            {
-                "commentId": "2346",
-                "message": "test comment 2",
-                "author": "SNR"
-            }
-        ],
-        "status": "Active",
-        "subscriptions": [
-        {
-            "id": "001",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-02-2023",
-            "compltedData": "Feb-20-2024"
-        },
-        {
-            "id": "002",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-30-2024",
-            "compltedData": "Jan-20-2025"
- 
-        },
-        {
-            "id": "003",
-            "status": "Complete",
-            "noOfServicesLeft": "9",
-            "noOfServicesCompleted": "1",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Jan-30-2025"
-        }
-    ],
-    },
-    {
-        "id": "8",
-        "customerName": "SNR",
-        "phoneNumber": "8876543210",
-        "address": [
-            {
-                "street1": "test street5",
-                "street2": "test street6",
-                "city": "Test City",
-                "state": "TX",
-                "country": "USA"
-            }
-        ],
-        "comments": [
-            {
-                "commentId": "2034",
-                "message": "test Comment5",
-                "author": "SNR"
-            },
-            {
-                "commentId": "2346",
-                "message": "test comment 2",
-                "author": "SNR"
-            }
-        ],
-        "status": "Active",
-        "subscriptions": [
-        {
-            "id": "001",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-02-2023",
-            "compltedData": "Feb-20-2024"
-        },
-        {
-            "id": "002",
-            "status": "Complete",
-            "noOfServicesLeft": "0",
-            "noOfServicesCompleted": "10",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Mar-30-2024",
-            "compltedData": "Jan-20-2025"
- 
-        },
-        {
-            "id": "003",
-            "status": "Complete",
-            "noOfServicesLeft": "9",
-            "noOfServicesCompleted": "1",
-            "totalNumberOfServices": "10",
-            "purchasedDate": "Jan-30-2025"
-        }
-    ],
-    },
-    
   ]);
 
   const [ sampleData, setSampleData ] = useState(
-    [
+        [
           {
               "month": "February",
               "year": 2025,
@@ -365,7 +252,32 @@ function App() {
         //   console.log("fail in fetching Calendar Data");
         //   console.error("Error while fetching Calendar Data",error);
         // }
+        // try{
+        //   const Data = await fetch("https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users");
+        //   const fetchedData = await Data.json();
+        //   console.log("fetching Data from database is complete");
+        //   console.log("Fetched Data:",fetchedData);
+        //   setData(fetchedData);
+        // }catch(error){
+        //   console.log("fail in fetching Data");
+        //   console.error("Error while fetching Data",error);
+        // }
+        // try{
+        //   const calendarData = await fetch("https://nrv8108ak6.execute-api.us-east-2.amazonaws.com/Calendar/user/ABC123/month/March/year/2025/");
+        //   const fetchedCalendarData = await calendarData.json();
+        //   console.log("fetching Calendar Data from database is complete");
+        //   console.log("Fetched Calendar Data:",fetchedCalendarData);
+        //   setSampleData(fetchedCalendarData);
+        // }catch(error){
+        //   console.log("fail in fetching Calendar Data");
+        //   console.error("Error while fetching Calendar Data",error);
+        // }
         try{
+          // const Data = await fetch("https://yk216g0lxb.execute-api.us-east-2.amazonaws.com/resources");
+          // const fetchedData = await Data.json();
+          // console.log("fetching Resource Data from database is complete");
+          // console.log("Fetched Resource Data:",fetchedData);
+          // setResourceData(fetchedData);
           // const Data = await fetch("https://yk216g0lxb.execute-api.us-east-2.amazonaws.com/resources");
           // const fetchedData = await Data.json();
           // console.log("fetching Resource Data from database is complete");
