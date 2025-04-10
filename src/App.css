@@ -1,4 +1,4 @@
-.app {
+.home-app {
   display: flex;
   padding-top: 100px;
   flex-direction: column;
@@ -8,14 +8,13 @@
   margin: 0;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+.home-grid {
+  padding: 0px 5px;
   padding-top: 30px;
   padding-bottom: 16px;
   width: 100%;
   max-width: 1200px;
+  margin: 0 auto;
 }
 
 .graph{
@@ -23,6 +22,16 @@
     align-items: center;
     justify-content: space-evenly;
 }
+/* .graph {
+  margin-top: 24px;
+  margin-bottom: 24px;
+  padding: 0 16px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 100%;
+} */
 
 .table{
   width: 100%;
