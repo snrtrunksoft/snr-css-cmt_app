@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Checkbox, Col, Drawer, Row, Space } from "antd";
+import { Badge, Button, Card, Checkbox, Col, Drawer,Grid, Row, Space } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
 import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
@@ -23,6 +23,16 @@ const NameCard = ({
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
     const [ punchCardsState, setPunchCardsState ] = useState("Complete");
     const [ flipped, setFlipped ] = useState(false);
+    const { useBreakpoint } = Grid;
+    const screens = useBreakpoint();
+
+    const getDrawerWidth = () => {
+        if (screens.xl) return 600;
+        if (screens.lg) return 550;
+        if (screens.md) return 500;
+        if (screens.sm) return 300;
+        return '100%';
+    };
 
     const toggleFlip = () => {
         setFlipped((prev) => !prev);
@@ -191,66 +201,101 @@ const NameCard = ({
                 style={{backgroundColor:'whitesmoke'}}
                 title={null}
                 // closable={false}
-                width="40%"
+                width= {getDrawerWidth()}
                 onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
                 >
                 <div className="nameDrawer">
-                    <div className="personalNameCard">
-                        <Row >
-                            <Col style={{width:'35%',padding:'10px'}}>
-                                <img src={maleAvatar} height={180} style={{borderRadius:"10px"}}/>
-                            </Col>
-                            <Col style={{width:'65%'}}>
-                                <h2> {customerName} </h2>
-                                <h3 style={{marginTop:'-10px'}}>{ phoneNumber }</h3>
-                                <h3 style={{marginRight:"10px",borderRadius:'5px',backgroundColor:'lightgrey',padding:'5px'}}> Address : { addressKeys.map((item,index) => 
-                                    <span key={index}>
-                                        {address[0][item]}{ item !== "country" ? ", " : "." }
-                                        {(item === "city") || (item === "state") ? "" : (<br/>) }
-                                    </span>)}
-                                </h3>
-                            </Col>
-                        </Row>
-                    </div>
+                    <Row className="personalNameCard">
+                        <Col style={{padding:'5px',width:'40%'}}>
+                            <img src={maleAvatar} style={{width:'100%',height:'95%'}}/>
+                        </Col>
+                        <Col style={{margin:'5px',width:'50%'}}>
+                            <h2> {customerName} </h2>
+                            <h3 style={{marginTop:'-10px'}}>{ phoneNumber }</h3>
+                            <h3 style={{
+                                    borderRadius:'5px',
+                                    backgroundColor:'lightgrey',
+                                    padding:'5px',width:'100%',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace:'nowrap'}}>
+                                    Address : { addressKeys.map((item,index) => 
+                                        <span key={index}>
+                                            {address[0][item]}{ item !== "country" ? ", " : "." }
+                                            {(item === "city") || (item === "state") ? "" : (<br/>) }
+                                        </span>)}
+                            </h3>
+                        </Col>
+                    </Row>
                     <h2>Punch cards:</h2>
                     {punchCards ? <div className="" >
-                        <Row style={{marginLeft:'10px'}}>
+                        <Row>
                             <Button onClick={() => {setFlipped(false);setPunchCardsState((prev) => prev === "Complete" ? "Active": "Complete")}}>View {punchCardsState}</Button> &nbsp;
                         </Row>
                         {punchCards.filter((card) => card.status !== punchCardsState)
                         .map((card) => (
                             <div>
-                                <div key={card.id} className="punch-card" style={{backgroundColor:`${color}`}}>
-                                    <Col className="punchCards">
-                                        {flipped ? <Row className={`${flipped ? "flipped" : ""}`}>
-                                                <span>name: {customerName}</span>
-                                                <span>purchased: {card.purchasedDate}</span>
-                                                <span>completed: {card.completedDate}</span>
-                                                <span>totalNumberOfService: {card.totalNumberOfServices}</span>
-                                                <span>noOfServicesLeft: {card.noOfServicesLeft}</span>
-                                                <span>noOfServicesCompleted: {card.noOfServicesCompleted}</span>
-                                                </Row>  : Array.from({ length: Number(card.noOfServicesCompleted) }, (_, index) => 
-                                            <div key={index} className="individualCards">
-                                                <Checkbox checked></Checkbox>
-                                            </div>
-                                        )}
-                                        {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
-                                        .reverse()
-                                        .map((index) => (
-                                            <div key={index} hidden={flipped} className={`${flipped ? "" : "individualCards"}`}>
-                                                <Checkbox onChange={(e)=>handleCheckboxChange(e,card)} width={50}></Checkbox>
-                                            </div>
-                                        ))}
-                                    </Col>
-                                    <Col style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
-                                        <Button onClick={() => toggleFlip()} icon={<SwapOutlined/>}>Flip</Button> &nbsp;
-                                    </Col>
-                            </div>
+                                <Row key={card.id} className="punch-card" style={{ backgroundColor: `${color}` }} gutter={[16, 16]}>
+                                <Col
+                                    className="punchCards"
+                                    xs={24}
+                                    sm={20}
+                                    md={24}
+                                    lg={20}
+                                    xl={20}
+                                >
+                                    {flipped ? (
+                                    <Row className="flipped">
+                                        <span>name: {customerName}</span>
+                                        <span>purchased: {card.purchasedDate}</span>
+                                        <span>completed: {card.completedDate}</span>
+                                        <span>totalNumberOfService: {card.totalNumberOfServices}</span>
+                                        <span>noOfServicesLeft: {card.noOfServicesLeft}</span>
+                                        <span>noOfServicesCompleted: {card.noOfServicesCompleted}</span>
+                                    </Row>
+                                    ) : (
+                                    Array.from({ length: Number(card.noOfServicesCompleted) }, (_, index) => (
+                                        <div key={index} className="individualCards">
+                                        <Checkbox checked />
+                                        </div>
+                                    ))
+                                    )}
+                                    {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
+                                    .reverse()
+                                    .map((index) => (
+                                        <div
+                                        key={index}
+                                        hidden={flipped}
+                                        className={!flipped ? "individualCards" : ""}
+                                        >
+                                        <Checkbox onChange={(e) => handleCheckboxChange(e, card)} />
+                                        </div>
+                                    ))}
+                                </Col>
+
+                                <Col
+                                    xs={24}
+                                    sm={4}
+                                    md={24}
+                                    lg={2}
+                                    xl={2}
+                                    style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    }}
+                                >
+                                    <Button onClick={() => toggleFlip()} icon={<SwapOutlined />}>
+                                    Flip
+                                    </Button>
+                                </Col>
+                                </Row>
+
                                 {checkedCount?<Row style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></Row>:""}
                             </div>
                             ))}
                             <span>{filterActiveSubscription.length === 0 ? 
-                            <center><Button onClick={() => addNewSubscription()}>Add Active Subscrition</Button></center> : ""}</span>
+                            <center><Button style={{margin:'5px'}} onClick={() => addNewSubscription()}>Add Active Subscription</Button></center> : ""}</span>
                     </div> : <center><h3 style={{color:'red'}}>No punch cards Available</h3></center>}
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
