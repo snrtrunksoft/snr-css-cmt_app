@@ -120,113 +120,26 @@ function App() {
     },
   ]);
 
-  const [ sampleData, setSampleData ] = useState(
-        [
-          {
-              "month": "February",
-              "year": 2025,
-              "userId": "ABC123",
-              "1": {
-                events:[]
-              },
-              "2": {
-                events:[]
-              },
-              "3": {
-                events:[]
-              },
-              "4": {
-                events:[]
-              },
-              "5": {
-                events:[]
-              },
-              "19":{
-                events:[]
-              },
-              "25": {
-                  "isCalendarFull": false,
-                  "noOfEvents": 3,
-                  events: [
-                      {
-                          "title": "Appointment 1",
-                          "from": 0,
-                          "to": 1,
-                          "notes": "appointment for dentist",
-                      },
-                      {
-                          "title": "Appointment 2",
-                          "from": 13,
-                          "to": 18,
-                          "notes": "appointment for dentist",
-                      },
-                  ]
-              }
-          },
-          {
-              "month": "March",
-              "year": 2025,
-              "userId": "ABC123",
-              "1": {
-                events:[]
-              },
-              "2": {
-                events:[]
-              },
-              "3": {
-                events:[]
-              },
-              "4": {
-                events:[]
-              },
-              "9": {
-                events:[]
-              },
-              "19":{
-                events:[]
-              },
-              "5": {
-                  "isCalendarFull": false,
-                  "noOfEvents": 3,
-                  events: [
-                      {
-                          "title": "Appointment 1",
-                          "from": 0,
-                          "to": 1,
-                          "notes": "appointment for dentist",
-                      },
-                      {
-                          "title": "Appointment 2",
-                          "from": 13,
-                          "to": 18,
-                          "notes": "appointment for dentist",
-                      },
-                  ]
-              }
-          },
-          {
-            "month": "January",
-              "year": 2025,
-              "userId": "ABC133",
-              "1": {
-                events:[
-                    {
-                      "title": "Appointment 1",
-                      "from": 0,
-                      "to": 1,
-                      "notes": "appointment for dentist",
-                      },
-                      {
-                        "title": "Appointment 2",
-                        "from": 13,
-                        "to": 18,
-                        "notes": "appointment for dentist",
-                      },
-                ]
-              },
-          }
-          ]
-  );
+
+  const [ sampleData, setSampleData ] = useState([
+    {
+      "month": "February",
+      "year": "2025",
+      "userId": "ABC123",
+      "date":"9",
+      "events":[{
+          "memberId": "ABC123",
+          "resourceId": "R_2",
+          "date": "24",
+          "year": "2025",
+          "month": "March",
+          "from": "02",
+          "to": "03",
+          "title": "Test title2",
+          "notes": "Appointment for dentist"
+        },]
+    },
+  ]);
 
   useEffect(() =>{
     console.log("initial loading, fetching data from the Database");
