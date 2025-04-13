@@ -485,12 +485,7 @@ function App() {
                   <Divider type='horizontal' ></Divider>
               </Col>
               <Row className='graph' justify={'center'}>
-                {/* <Col xs={24} sm={24} md={16} lg={12} xl={10}>
-                <div className="chart-container">
-                  <Bar data={graphData} options={options} />
-                </div> */}
-                  {/* <Bar data={graphData} options={options} height="300px" width="400px"  ></Bar>  */}
-                {/* </Col> */}
+                  <Bar data={graphData} options={options} width="100%" height={100}  ></Bar>
               </Row>
             </div>
             <Modal

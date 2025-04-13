@@ -63,7 +63,7 @@ const Header = ({
           <Drawer
             open={menuDrawerVisible}
             title="Menu"
-            width="70%"
+            width="60%"
             onClose={() => setMenuDrawerVisible(false)}
           >
             <Menu mode="vertical" theme="light">

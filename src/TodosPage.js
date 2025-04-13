@@ -8,7 +8,7 @@ const TodosPage = ({sampleData}) =>{
     
     return(
         <div className="list"> 
-            <h2>{currentDate.date()} {currentDate.format("MMMM")}, {currentDate.format("YYYY")}</h2>
+            <h2><center>{currentDate.date()} {currentDate.format("MMMM")}, {currentDate.format("YYYY")}</center></h2>
             {sampleData.map((prev,index) => prev.month === currentDate.format("MMMM") &&
             parseInt(prev.year) === parseInt(currentDate.format("YYYY")) &&
             parseInt(prev.date) === currentDate.date() ? 
