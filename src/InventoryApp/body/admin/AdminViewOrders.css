@@ -1,0 +1,86 @@
+/* .rowBox {
+    border: 1px solid black;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+} */
+
+/* Inner box */
+.rowBox {
+    flex: 1;
+    /* Allows boxes to expand equally */
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-left: 1px solid black;
+    /* Border only between items */
+    border-bottom: 1px solid black;
+}
+
+.rowBox-id-vo {
+    flex: 1;
+    /* Allows boxes to expand equally */
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-left: 1px solid black;
+    /* Border only between items */
+    border-bottom: 1px solid black;
+}
+
+.rowBox-top-vo {
+    flex: 1;
+    /* Allows boxes to expand equally */
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-top: 1px solid black;
+    border-radius: 3px;
+}
+
+.rowBox select {
+    width: 100%;
+}
+.rowBox-id-vo-end{
+    flex: 1;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid black;
+    border-top: 1px solid transparent;
+}
+.rowBox-end-col {
+    border: 1px solid black;
+    border-left: 1px solid transparent;
+    border-top: 1px solid transparent;
+}
+
+/* .no-border-select {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    Ensures the select still fills the div
+    height: 100%;
+    Matches the div's height if needed
+    font: inherit;
+    Ensures font consistency
+    padding: 0;
+    Optional, if you want to control padding
+    margin: 0;
+    Optional, if you want to control margin
+} */
+
+/* .no-border-select .ant-picker-input>input {
+    padding-left: 5px;
+    Adjust this value to move text to the right
+} */

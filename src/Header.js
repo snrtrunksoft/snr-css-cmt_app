@@ -2,6 +2,7 @@ import { Badge, Button, Menu, Card, Drawer, Space, Switch } from "antd";
 import { CalendarTwoTone,MenuOutlined, HomeOutlined, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
 import React, { useState, useEffect } from "react";
 import "./Header.css";
+import { ShoppingCart } from "lucide-react";
 
 const Header = ({
   dropDownList,
@@ -14,10 +15,12 @@ const Header = ({
   openCalendarPage,
   todosPage,
   resourcePage,
+  openShoppingApp,
   setOpenCalendarPage,
   setMembersPage,
   setResourcePage,
   setTodosPage,
+  setOpenShoppingApp,
 }) => {
   const [view, setView] = useState("Grid");
   const [handleInboxDrawer, setHandleInboxDrawer] = useState(false);
@@ -44,11 +47,12 @@ const Header = ({
     if (key === "members") setMembersPage(true);
     if (key === "calendar") setOpenCalendarPage(true);
     if (key === "todos") setTodosPage(true);
+    if (key === "shopping") setOpenShoppingApp(true);
   };
 
   return (
-    <header className="header">
-      <div className="header-left">
+    <header className="CMTheader">
+      <div className="CMTheader_left1">
         <h1 style={{ color: '#FF5F09' }}>SNR&nbsp;</h1>
         <h1>CMT APP</h1>
       </div>
@@ -79,6 +83,9 @@ const Header = ({
               <Menu.Item key="inbox" icon={<InboxOutlined />} onClick={() => { setHandleInboxDrawer(true); setMenuDrawerVisible(false); }}>
                 Inbox <Badge count={commentBox.length} offset={[10, -2]} />
               </Menu.Item>
+              <Menu.Item key="shopping" icon={<ShoppingCart/>} onClick={() => handleMenuClick("shopping")}>
+                Shopping
+              </Menu.Item>
               <Menu.SubMenu key="settings" title="Settings">
                 <Menu.Item key="view" onClick={() => {
                   setDataView(dataView === "grid" ? "table" : "grid");
@@ -99,9 +106,10 @@ const Header = ({
           </Drawer>
         </>
       ) : (
-        <div className="header-right">
-          <span className="header-icons">
+        <div className="CMTheader_right">
+          <span className="CMTheader_icons">
             <Button icon={<HomeOutlined />} style={{ backgroundColor: 'transparent', color: membersPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(true); setTodosPage(false); }} />
+            <Button icon={<ShoppingCart/>} style={{backgroundColor:'transparent',color:openShoppingApp ? "#1677ff" : ""}} onClick={() => setOpenShoppingApp(true)}></Button>
             <Button icon={<CalendarTwoTone twoToneColor={openCalendarPage ? "" : "azure"} />} style={{ backgroundColor: 'transparent' }} onClick={() => { setOpenCalendarPage(true); setResourcePage(false); setMembersPage(false); setTodosPage(false); }} />
             <Button style={{ fontSize: '20px', padding: '0px 0px', backgroundColor: 'transparent', color: todosPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(false); setTodosPage(true); }}>Todos</Button>
             <Badge count={commentBox.length} offset={[-10, 2]}>

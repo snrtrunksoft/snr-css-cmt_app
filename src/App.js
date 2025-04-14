@@ -11,6 +11,7 @@ import CalendarPage from "./CalendarPage";
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
+import InventoryApp from "./InventoryApp/InventoryApp";
 
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -31,6 +32,7 @@ function App() {
   const [ membersPage, setMembersPage ] = useState(true);
   const [ todosPage, setTodosPage ] = useState(false);
   const [ isLoading, setIsLoading ] = useState(true);
+  const [ openShoppingApp, setOpenShoppingApp ] = useState(false);
   const [ searchText, setSearchText ] = useState("");
   const [ resourceData, setResourceData ] = useState([
         {
@@ -375,7 +377,9 @@ function App() {
   );
 
   return (
-    <div className='home-app'>
+    <div>
+      {openShoppingApp ? <InventoryApp setOpenShoppingApp={setOpenShoppingApp}/>:
+      <div className='home_app'>
         <Header 
           dropDownList={dropDownList} 
           dataView={dataView} 
@@ -387,10 +391,12 @@ function App() {
           openCalendarPage={openCalendarPage}
           todosPage={todosPage}
           resourcePage={resourcePage}
+          openShoppingApp={openShoppingApp}
           setOpenCalendarPage={setOpenCalendarPage}
           setMembersPage={setMembersPage}
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
+          setOpenShoppingApp={setOpenShoppingApp}
           />
         <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%'}}>
           <div hidden={isLoading}>
@@ -403,7 +409,7 @@ function App() {
         (membersPage) ? (
           <div>
             {dataView === "table" ? (
-              <div className='table'>
+              <div className='members-table'>
                 <Table 
                   columns={columns}
                   dataSource={duplicateData} 
@@ -527,6 +533,7 @@ function App() {
           /> : <TodosPage sampleData={sampleData}/>)}
         <Divider type='horizontal'/>
         {<Footer/>}
+    </div>}
     </div>
   );
 }

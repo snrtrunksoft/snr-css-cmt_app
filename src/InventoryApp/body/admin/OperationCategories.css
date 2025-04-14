@@ -1,0 +1,15 @@
+.operation-type-row {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0px;
+  }
+
+  .inventory-image {
+    height: 150px;
+    width: 100%;
+    border: 1px solid #f2d203da; /* Specify color and style */
+    border-radius: 8px;
+    box-shadow: 0 5px 10px rgba(247, 67, 2, 0.229); /* Correct box-shadow */
+  }
+  

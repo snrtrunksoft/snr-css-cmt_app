@@ -1,4 +1,4 @@
-.home-app {
+.home_app {
   display: flex;
   padding-top: 100px;
   flex-direction: column;
@@ -22,18 +22,8 @@
     align-items: center;
     justify-content: space-evenly;
 }
-/* .graph {
-  margin-top: 24px;
-  margin-bottom: 24px;
-  padding: 0 16px;
-}
 
-.chart-container {
-  width: 100%;
-  height: 100%;
-} */
-
-.table{
+.members-table{
   width: 100%;
   padding-top: 30px;
 }

@@ -1,0 +1,29 @@
+.summary {
+    padding-top: 20px;
+    align-content: left;
+    text-align: left;
+  }
+
+  .total-summary-row {
+    padding: 02px 0;
+    border-bottom: 1px dotted #e9dddd;
+  }
+
+  .checkout-button-container {
+    display: flex;
+    justify-content: flex-end; /* Align button to the right */
+    padding-right: 50px;
+  }
+  
+  .complete-checkout-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 200px;
+    border-radius: 5px;
+  }
+  
+  .complete-checkout-button:hover {
+    background-color: #186b2a;
+  }

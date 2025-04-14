@@ -1,0 +1,27 @@
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: Black;
+    font-family: "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-weight: 700;
+    font-size: 2rem;
+    line-height: 1.5;
+}
+
+.p-info {
+    font-family: "Public Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #919EAB;
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+}
+
+.contact-image {
+    width: 450px;
+    height: 350px;
+}

@@ -1,5 +1,4 @@
-
-.header{
+.CMTheader{
     width: 100%;
     display: flex;
     background-color: #373d4b;
@@ -11,22 +10,22 @@
     justify-content: space-between;
 }
 
-.header-left{
+.CMTheader_left1{
     margin-left: 20px;
     display: flex;
     flex-direction: row;
     color: aliceblue;
 }
-.header-right{
+.CMTheader_right{
     display: flex;
     align-items: center;
     justify-content: center;
 }
-.header-icons{
+.CMTheader_icons{
     display: flex;
     flex-direction: row;
 }
-.header-icons Button{
+.CMTheader_icons Button{
     align-items: center;
     justify-content: center;
     font-size: 30px;

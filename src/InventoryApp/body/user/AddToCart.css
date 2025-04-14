@@ -1,0 +1,23 @@
+  .inventory-image-cart {
+    height: 500px;
+    border-radius: 8px;
+    object-fit:fill; /* Ensures the image maintains its aspect ratio */    
+    border-color: rgba(24, 24, 25, 0.2);
+    box-shadow: 0px 5px 10px rgba(1, 135, 213, 0.10); /* Add a slight shadow effect */
+    transition: box-shadow 0.3s ease;
+  }
+
+  .inventory-item-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* gap: 10px;  */
+  }
+
+  .item-cart-main-div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
