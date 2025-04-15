@@ -28,7 +28,7 @@ const Header = ({
   const [isMobile, setIsMobile] = useState(false);
 
   const handleResize = () => {
-    setIsMobile(window.innerWidth <= 920);
+    setIsMobile(window.innerWidth <= 1030);
   };
 
   useEffect(() => {

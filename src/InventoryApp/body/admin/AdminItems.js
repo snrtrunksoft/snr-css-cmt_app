@@ -6,7 +6,15 @@ import "./AdminItems.css";
 import AWS from 'aws-sdk';
 
 const AdminItems = () => {
-    const [rowData, setRowData] = useState([]);
+    const [rowData, setRowData] = useState([{
+        id: "1000000",
+        name: { value: "Toys", color: "transparent" },
+        image: { value: "Chair", color: 'transparent' },
+        price: { value: "500", color: 'transparent' },
+        description: "toy chair",
+        quantityAvailable: "30",
+        category: "Toys",
+    }]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newItemCategory, setNewItemCategory] = useState([]);
     const [name, setName] = useState(null);
@@ -21,23 +29,23 @@ const AdminItems = () => {
     useEffect(() => {
         const fetchStoreItems = async () => {
             try {
-                const response = await fetch("https://ze6vrasiw6.execute-api.us-east-2.amazonaws.com/items");
-                if (!response.ok) {
-                    throw new Error(`Error fetching store Items: ${response.statusText}`);
-                }
-                const storeItems = await response.json();
-                const formattedStoreItems = storeItems.map((item) => ({
-                    id: item.itemId,
-                    name: { value: item.itemName, color: "transparent" },
-                    image: { value: item.image, color: 'transparent' },
-                    price: { value: item.price, color: 'transparent' },
-                    description: item.description,
-                    quantityAvailable: item.quantityAvailable,
-                    category: item.category,
-                    isUpdated: false,
-                }));
-                setRowData(formattedStoreItems);
-                setError(null);
+                // const response = await fetch("https://ze6vrasiw6.execute-api.us-east-2.amazonaws.com/items");
+                // if (!response.ok) {
+                //     throw new Error(`Error fetching store Items: ${response.statusText}`);
+                // }
+                // const storeItems = await response.json();
+                // const formattedStoreItems = storeItems.map((item) => ({
+                //     id: item.itemId,
+                //     name: { value: item.itemName, color: "transparent" },
+                //     image: { value: item.image, color: 'transparent' },
+                //     price: { value: item.price, color: 'transparent' },
+                //     description: item.description,
+                //     quantityAvailable: item.quantityAvailable,
+                //     category: item.category,
+                //     isUpdated: false,
+                // }));
+                // setRowData(formattedStoreItems);
+                // setError(null);
             } catch (error) {
                 console.log("Error fetching store items", error);
                 setError("Failed to fetch data.");
@@ -286,22 +294,22 @@ const AdminItems = () => {
     return (
         <>
             <Row gutter={0} justify="start" className="rowBox-top-item">
-                <Col key="Item-id-header" flex="1 1 100px">
+                <Col span={2} key="Item-id-header" flex="1 1 100px">
                     <div className="rowBox-id-item">ID</div>
                 </Col>
-                <Col key="Item-name-header" flex="1 1 100px">
+                <Col xl={10} key="Item-name-header" flex="1 1 100px">
                     <div className="rowBox-id-item">Name</div>
                 </Col>
-                <Col key="Item-image-header" flex="1 1 100px">
+                <Col span={10} key="Item-image-header" flex="1 1 100px">
                     <div className="rowBox-id-item">Image</div>
                 </Col>
-                <Col key="Item-price-header" flex="1 1 100px">
+                <Col span={3} key="Item-price-header" flex="1 1 100px">
                     <div className="rowBox-id-item">Price</div>
                 </Col>
-                <Col key="Item-remove-header" className="rowBox-remove-end">
+                <Col span={2} key="Item-remove-header" className="rowBox-remove-end">
                     <Button icon={<DeleteTwoTone twoToneColor={"red"}/>} style={{border:'2px solid transparent'}} disabled></Button>
                 </Col>
-                <Col key="Item-remove-header" className="rowBox-save-end">
+                <Col span={2} key="Item-remove-header" className="rowBox-save-end">
                     <Button icon={<SaveTwoTone twoToneColor={"#36ed11"}/>} style={{border:'2px solid transparent'}} disabled></Button>
                 </Col>
             </Row>
@@ -313,11 +321,11 @@ const AdminItems = () => {
             <div>
             {availableItems.map((row) => (
                 <Row key={row.id} gutter={0} justify="start">
-                    <Col key="category-id" flex="1 1 100px">
+                    <Col span={2} style={{textOverflow:'ellipsis',whiteSpace:'nowrap',overflow:'hidden',textAlign:'left'}} key="category-id" flex="1 1 100px">
                         <div className="rowBox-id-item">{row.id}</div>
                     </Col>
-                    <Col key="category-name" flex="1 1 100px">
-                        <div className="rowBox-id-item">
+                    <Col span={10} key="category-name" flex="1 1 100px">
+                        <span className="rowBox-id-item" style={{width:'100%',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}>
                             <Input
                                 value={row.name.value}
                                 placeholder="Enter name"
@@ -325,10 +333,10 @@ const AdminItems = () => {
                                 style={{ border: `2px solid ${row.name.color || 'transparent'}` }}
                                 bordered={false}
                             />
-                        </div>
+                        </span>
                     </Col>
-                    <Col key="category-image" flex="1 1 100px">
-                        <div className="rowBox-id-item">
+                    <Col span={10} key="category-image" flex="1 1 100px">
+                        <div className="rowBox-id-item" style={{width:'100%',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}>
                             <Input
                                 value={row.image.value}
                                 placeholder="Enter Image url"
@@ -349,14 +357,14 @@ const AdminItems = () => {
                                 showUploadList={false}
                                 accept="image/*"
                             >
-                                <Button icon={<UploadOutlined />} loading={loading}>
-                                Upload Image
+                                <Button icon={<UploadOutlined />} loading={loading} style={{width:'70px'}}>
+                                    <span style={{width:'100%',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}>Upload Image</span>
                                 </Button>
                             </Upload>
                         </div>
                     </Col>
-                    <Col key="category-price" flex="1 1 100px" style={{position:'relative'}}>
-                        <div className="rowBox-id-item">
+                    <Col span={3} key="category-price" flex="1 1 100px" style={{position:'relative'}}>
+                        <div className="rowBox-id-item" style={{width:'100%',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}>
                             <Input
                                 value={row.price.value}
                                 placeholder="Enter Price"
@@ -371,14 +379,14 @@ const AdminItems = () => {
                         
                         </div>
                     </Col>
-                    <Col className="rowBox-remove-end">
+                    <Col span={2} className="rowBox-remove-end">
                         <Button
                         icon={<DeleteTwoTone twoToneColor={"red"}/>} 
                         onClick={()=>handleDelete(row.id)} 
                         style={{border:"2px solid transparent"}}
                         ></Button>
                     </Col>
-                    <Col className="rowBox-save-end">
+                    <Col span={2} className="rowBox-save-end">
                         <Button
                         icon={<SaveTwoTone twoToneColor={"#36ed11"}/>} 
                         onClick={()=>handleSave(row.id)} 

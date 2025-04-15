@@ -161,14 +161,14 @@ function App({setOpenShoppingApp}) {
     <Authenticator>
       {({ signOut, user }) => (
         <div className="App">
-          <InventoryHeader
+          {/* <InventoryHeader
             setOpenShoppingApp={setOpenShoppingApp}
             resetCart={resetCart}
             cartCount={cartCount}
             isAdmin={isAdmin}
             signOut={signOut}
             switchView={switchView} // Pass function to change views
-          />
+          /> */}
           {currentView === "home" && (
             <Body
               filteredItems={filteredItems}

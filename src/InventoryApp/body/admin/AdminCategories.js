@@ -5,7 +5,28 @@ import { DeleteTwoTone,SaveTwoTone,LoadingOutlined } from '@ant-design/icons';
 import './AdminCategories.css';
 
 const AdminCategories = () => {
-  const [rowData, setRowData] = useState([]);
+  const [rowData, setRowData] = useState([
+    {
+      id: {
+          value: "10032",
+          color: "transparent",
+        },
+        name: {
+          value: "Toys",
+          color: "transparent",
+        },
+    },
+    {
+      id: {
+          value: "10034",
+          color: "transparent",
+        },
+        name: {
+          value: "Sports",
+          color: "transparent",
+        },
+    }
+  ]);
   const [isAddNewCategoryModelOpen, setIsAddNewCategoryModelOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState(null);
   const [isStatusModalOpen,setIsStatusModalOpen] = useState(false);
@@ -38,28 +59,28 @@ const AdminCategories = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("https://l2wifnx033.execute-api.us-east-2.amazonaws.com/categories");
-        if (!response.ok) {
-          throw new Error(`Error fetching categories: ${response.statusText}`);
-        }
+        // const response = await fetch("https://l2wifnx033.execute-api.us-east-2.amazonaws.com/categories");
+        // if (!response.ok) {
+        //   throw new Error(`Error fetching categories: ${response.statusText}`);
+        // }
 
-        const categories = await response.json();
+        // const categories = await response.json();
 
-        // Transform API response to match rowData structure
-        const formattedCategories = categories.map((category) => ({
-          id: {
-            value: category.id,
-            color: "transparent",
-          },
-          name: {
-            value: category.name,
-            color: "transparent",
-          },
-          isUpdated: false,
-        }));
+        // // Transform API response to match rowData structure
+        // const formattedCategories = categories.map((category) => ({
+        //   id: {
+        //     value: category.id,
+        //     color: "transparent",
+        //   },
+        //   name: {
+        //     value: category.name,
+        //     color: "transparent",
+        //   },
+        //   isUpdated: false,
+        // }));
 
-        setRowData(formattedCategories);
-        setError(null);
+        // setRowData(formattedCategories);
+        // setError(null);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
         setError("Failed to fetch data.");

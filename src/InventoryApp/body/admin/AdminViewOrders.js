@@ -6,7 +6,18 @@ import { GetInvoice } from "./GetInvoice";
 import { Row, Col, Input, Checkbox, Divider, DatePicker, Pagination, Button, Modal } from "antd";
 
 export const AdminViewOrders = () => {
-  const [rowData, setRowData] = useState([]);
+  const [rowData, setRowData] = useState([
+    {
+      id: "10032", //for all we're using id but rest of the checkboxes we're using orderId instead of id
+          status: "available",
+          phone: "Not Available",
+          createdTime: "30/6/2025",
+          updatedTime: "25/8/2025",
+          placedBy: "sandy@2323",
+          totalAmount: "23000",
+          // items: order.items.length > 0 ? order.items.join(", ") : "None",
+    }
+  ]);
   const [filterCriteria, setFilterCriteria] = useState('all');
   const [filterValue, setFilterValue] = useState();
   const [text, setText] = useState("Please select Day");
@@ -34,41 +45,41 @@ export const AdminViewOrders = () => {
     const fetchOrders = async () => {
       try {
         // Construct the API URL based on filterCriteria and filterValue
-        let apiUrl = "https://ft9zc297k7.execute-api.us-east-2.amazonaws.com/orders/";
+        // let apiUrl = "https://ft9zc297k7.execute-api.us-east-2.amazonaws.com/orders/";
 
-        if (filterCriteria === 'day' && filterValue) {
-          apiUrl = `https://ft9zc297k7.execute-api.us-east-2.amazonaws.com/orders/daily/${filterValue}`;
-        } else if (filterCriteria === 'month' && filterValue) {
-          apiUrl = `https://ft9zc297k7.execute-api.us-east-2.amazonaws.com/orders/monthly/${filterValue}`;
-        } else if (filterCriteria === 'year' && filterValue) {
-          apiUrl = `https://ft9zc297k7.execute-api.us-east-2.amazonaws.com/orders/yearly/${filterValue}`;
-        }
+        // if (filterCriteria === 'day' && filterValue) {
+        //   apiUrl = `https://ft9zc297k7.execute-api.us-east-2.amazonaws.com/orders/daily/${filterValue}`;
+        // } else if (filterCriteria === 'month' && filterValue) {
+        //   apiUrl = `https://ft9zc297k7.execute-api.us-east-2.amazonaws.com/orders/monthly/${filterValue}`;
+        // } else if (filterCriteria === 'year' && filterValue) {
+        //   apiUrl = `https://ft9zc297k7.execute-api.us-east-2.amazonaws.com/orders/yearly/${filterValue}`;
+        // }
         
-        // Fetch the orders data
-        console.log('fetching orders, apiURL:', apiUrl);
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error(`Error fetching orders: ${response.statusText}`);
-        }
+        // // Fetch the orders data
+        // console.log('fetching orders, apiURL:', apiUrl);
+        // const response = await fetch(apiUrl);
+        // if (!response.ok) {
+        //   throw new Error(`Error fetching orders: ${response.statusText}`);
+        // }
 
-        const data = await response.json();
-        console.log('fetched orders:', data);
+        // const data = await response.json();
+        // console.log('fetched orders:', data);
 
-        // Format the fetched data
-        const formattedData = data.map(order => ({
-          id: order.id || order.orderId, //for all we're using id but rest of the checkboxes we're using orderId instead of id
-          status: order.status,
-          phone: order.phone || "Not Available",
-          createdTime: order.createdTime,
-          updatedTime: order.updatedTime,
-          placedBy: order.placedBy,
-          totalAmount: order.totalAmount,
-          items: order.items.length > 0 ? order.items.join(", ") : "None",
-        }));
+        // // Format the fetched data
+        // const formattedData = data.map(order => ({
+        //   id: order.id || order.orderId, //for all we're using id but rest of the checkboxes we're using orderId instead of id
+        //   status: order.status,
+        //   phone: order.phone || "Not Available",
+        //   createdTime: order.createdTime,
+        //   updatedTime: order.updatedTime,
+        //   placedBy: order.placedBy,
+        //   totalAmount: order.totalAmount,
+        //   items: order.items.length > 0 ? order.items.join(", ") : "None",
+        // }));
 
-        // Update rowData with the formatted data
-        setRowData(formattedData);
-        setError(null);
+        // // Update rowData with the formatted data
+        // setRowData(formattedData);
+        // setError(null);
       } catch (error) {
         console.error("Failed to fetch orders:", error);
         setError("Failed to fetch data.");
@@ -294,7 +305,7 @@ export const AdminViewOrders = () => {
                 showSizeChanger={false}
                 style={{ marginTop: '20px', textAlign: 'center' }}
             />
-            </Row>
+           </Row>
         </div>
       )}
     </>
