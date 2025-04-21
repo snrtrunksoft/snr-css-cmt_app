@@ -251,7 +251,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
     const updateEventSlot = async () =>{
       try{
-        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${filteredEvents[currentPage - 1].id}`,{
+        await fetch(`https://3jb2f8gsn0.execute-api.us-east-1.amazonaws.com/dev/event/${filteredEvents[currentPage - 1].id}`,{
           method: "PUT",
           headers: {
             "Content-Type" : "application/json"
@@ -275,18 +275,18 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
     const addEventSlot = async () =>{
         try{
-          // const response = await fetch("https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/",{
-          //   method:"POST",
-          //   headers:{
-          //     'Content-Type' : "application/json"
-          //   },
-          //   body:JSON.stringify(eventDetails)
-          // })
-          // const postData = await response.json();
-          // console.log("postData:",postData);
+          const response = await fetch("https://3jb2f8gsn0.execute-api.us-east-1.amazonaws.com/dev/event",{
+            method:"POST",
+            headers:{
+              'Content-Type' : "application/json"
+            },
+            body:JSON.stringify(eventDetails)
+          })
+          const postData = await response.json();
+          console.log("postData:",postData);
           const updatedRecord = {
             ...eventDetails,
-            // id:postData.eventId
+            id:postData.eventId
           }
           console.log("new event record:",updatedRecord);
           decrement();
@@ -334,7 +334,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const deleteEvent = () =>{
     const deleteExistingEvent = async() => {
       try{
-        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${filteredEvents[currentPage - 1].id}`,{
+        await fetch(`https://3jb2f8gsn0.execute-api.us-east-1.amazonaws.com/dev/event/${filteredEvents[currentPage - 1].id}`,{
           method: "DELETE",
           headers: {
             "Content-Type" : "application/json"

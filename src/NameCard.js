@@ -78,7 +78,7 @@ const NameCard = ({
         
         const updateSubscriptionData = async() =>{
             try{
-                const response = await fetch(`https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users/${customerId}`);
+                const response = await fetch(`https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev/users/${customerId}`);
                 const customerData = await response.json();
                 const newSub = {
                     id: "TBD",
@@ -94,7 +94,7 @@ const NameCard = ({
                     ...customerData,
                     subscriptions: [...customerData.subscriptions, newSub], // appending new subscription
                 };
-                await fetch(`https://7mw76m35e8.execute-api.us-east-2.amazonaws.com/users/${customerId}`,{
+                await fetch(`https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev/users/${customerId}`,{
                     method:'PUT',
                     headers: {
                         "Content-Type" : "application/json",
@@ -117,7 +117,7 @@ const NameCard = ({
         if(newComment){
             setDuplicateData(prevData =>
                 prevData.map(prev =>
-                    prev.customerId === customerId ? {
+                    prev.id === customerId ? {
                         ...prev,
                         comments: [...prev.comments, {
                             commentID : parseInt(comments[comments.length - 1]["commentId"]) + 1,
@@ -189,11 +189,16 @@ const NameCard = ({
                     textOverflow: 'ellipsis',
                     whiteSpace:'nowrap'
                     }}>Phone : { phoneNumber }</p>
-                 <p style={{
-                    width:'100%',overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace:'nowrap'
-                    }}>Address : { address.map(prev => prev.city) }, { address.map(prev => prev.state) }, { address.map(prev => prev.country) }.</p>
+                {address.length > 0 && (
+                    <p style={{
+                        width: '100%',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                    }}>
+                        Address: {address.map(prev => prev.city).join(', ')}, {address.map(prev => prev.state).join(', ')}, {address.map(prev => prev.country).join(', ')}.
+                    </p>
+                )}
                 <p>Status : { status }</p>
             </div>
             <Drawer
