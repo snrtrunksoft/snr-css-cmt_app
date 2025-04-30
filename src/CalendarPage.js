@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Checkbox, Col, Divider, Dropdown, Menu, Modal, Pagination, Row, TimePicker } from "antd";
+import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid } from "antd";
 import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const { useBreakpoint } = Grid;
 
 const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData}) => {
   const [ currentDate, setCurrentDate] = useState(new Date());
@@ -28,6 +29,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ resourceCalendar, setResourceCalendar ] = useState("");
   const [ newErrors, setNewErrors ] = useState({});
   const [ memberDropDown, setMemberDropDown ] = useState(true);
+  const [ frequencyOfEvent, setFrequencyOfEvent ] = useState("noRecurring");
+  const [ weeklyDayRecurring, setWeeklyDayRecurring ] = useState(weekdays[dayjs().weekday()]);
+  const [ monthlyRecurring, setMonthlyRecurring ] = useState(currentDate.getDate().toString());
+  const screens = useBreakpoint();
 
   const validateFields = () => {
     let fieldError = {};
@@ -234,6 +239,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const itemsForPage = 1;
   const startIndex = (currentPage - 1) * itemsForPage;
   const paginateEvents = filteredEvents.slice(startIndex,startIndex + itemsForPage);
+  const { Option } = Select;
 
   const handleCalendarEvent = () => {
 
@@ -247,6 +253,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
       from: fromTimeSlot,
       to: toTimeSlot,
       notes: eventNotes,
+      recurring: frequencyOfEvent,
+      day: weeklyDayRecurring
     };
 
     const updateEventSlot = async () =>{
@@ -480,8 +488,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             <Col>
                 <Button onClick={()=>{setOpenDailyCalendar(true);setOpenWeekCalendar(false);setOpenMonthCalendar(false)}}
                 style={{backgroundColor: openDailyCalendar ? "lightBlue" :"" }}><h3>Daily</h3></Button> &nbsp;
-                <Button onClick={()=>{setOpenWeekCalendar(true);setOpenDailyCalendar(false);setOpenMonthCalendar(false);}}
-                style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}><h3>Week</h3></Button> &nbsp;
+                {screens.lg &&
+                <span>
+                  <Button onClick={()=>{setOpenWeekCalendar(true);setOpenDailyCalendar(false);setOpenMonthCalendar(false);}}
+                  style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}><h3>Week</h3></Button> &nbsp;
+                </span>}
                 <Button onClick={()=>{setOpenMonthCalendar(true);setOpenWeekCalendar(false);setOpenDailyCalendar(false);}}
                 style={{backgroundColor: openMonthCalendar ? "lightBlue" :"" }}><h3>Month</h3></Button>
             </Col>
@@ -535,12 +546,25 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             </div>
             <div className="event-column" style={{ position: "relative" }}>
               {Array.from({ length: 24 }, (_, i) =>{
-                const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData).filter(prev =>
-                  prev.month === monthName &&
-                  parseInt(prev.year) === currentDate.getFullYear() &&
-                  parseInt(prev.date) === currentDate.getDate()
-                )
-                .flatMap(prev => prev.events.filter(item => item.from <= i && i < item.to));
+                const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData)
+                .flatMap(prev => 
+                  // Check if event is daily and skip the month/year/date validation for recurring events
+                  prev.events.filter(item => {
+                    if (item.recurring === "daily") {
+                      return item.from <= i && i < item.to; // Don't need to check for month, year, date for daily events
+                    }else if (item.recurring === "weekly"){
+                      return item.day === weekdays[currentDate.getDay()] && // Just checking the week day for weekly recurring
+                      item.from <= i && i < item.to;
+                    } else if (item.recurring === "monthly"){
+                      return item.date === currentDate.getDate().toString() && // Just checking date of the month for monthly recurring
+                      item.from <= i && item.to;
+                    }
+                    // For non-daily recurring events, check the month/year/date too
+                    return prev.month === monthName &&
+                      parseInt(prev.year) === currentDate.getFullYear() &&
+                      parseInt(prev.date) === currentDate.getDate() &&
+                      item.from <= i && i < item.to;
+                  }));
                 let backgroundColor = "";
                 if (eventsAtTimeSlot.length === 1) backgroundColor = "green";
                 else if(eventsAtTimeSlot.length === 2) backgroundColor = "orange";
@@ -549,11 +573,23 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                 return (
                   <div key={i} 
                     className="event-slot"
-                    style={(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev => 
-                    prev.month === monthName && 
-                    parseInt(prev.year) === currentDate.getFullYear() && 
-                    parseInt(prev.date) === currentDate.getDate() &&
-                    prev.events.some(item => (item.from <= i && i < item.to))
+                    style={(calendarUserId !== "All" ? resourceCalendar : sampleData)
+                      .some(prev => 
+                        prev.events.some(item => {
+                          if (item.recurring === "daily") {
+                            return item.from <= i && i < item.to; // Skip month, year, date validation for daily events
+                          } else if (item.recurring === "weekly"){
+                            return item.day === weekdays[currentDate.getDay()] &&
+                            item.from <= i && i < item.to;
+                          } else if (item.recurring === "monthly"){
+                            return item.date === currentDate.getDate().toString() &&
+                            item.from <= i && i < item.to;
+                          }
+                          return prev.month === monthName && 
+                                 parseInt(prev.year) === currentDate.getFullYear() && 
+                                 parseInt(prev.date) === currentDate.getDate() &&
+                                 item.from <= i && i < item.to;
+                        })
                     ) ? {backgroundColor,borderRight:'2px solid gray',borderLeft:"2px solid gray",
                     borderBottom:(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev => 
                     prev.month === monthName && 
@@ -629,13 +665,24 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                       >
                       <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
                         {hours.map((hour, index) => { 
-                          const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData).filter(prev =>
-                            prev.month === monthName &&
-                            parseInt(prev.year) === currentDate.getFullYear() &&
-                            parseInt(prev.date) === day.getDate()
-                          )
-                          .flatMap(prev => prev.events.filter(item => item.from <= dayjs(hour,"h A").format("HH")
-                           && dayjs(hour,"h A").format("HH") < item.to));
+                          const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData)
+                          .flatMap(prev => prev.events.filter(item => {
+                            if (item.recurring === "daily"){
+                              return item.from <= dayjs(hour,"h A").format("HH")
+                              && dayjs(hour,"h A").format("HH") < item.to
+                            } else if (item.recurring === "weekly"){
+                              return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour,"h A").format("HH")
+                              && dayjs(hour,"h A").format("HH") < item.to
+                            } else if (item.recurring === "monthly"){
+                              return item.date === day.getDate().toString() && item.from <= dayjs(hour,"h A").format("HH")
+                              && dayjs(hour,"h A").format("HH") < item.to
+                            }
+                             return prev.month === monthName &&
+                              parseInt(prev.year) === currentDate.getFullYear() &&
+                              parseInt(prev.date) === day.getDate() &&
+                              item.from <= dayjs(hour,"h A").format("HH")
+                              && dayjs(hour,"h A").format("HH") < item.to
+                          }));
                           let backgroundColor = "";
                           if (eventsAtTimeSlot.length === 1) backgroundColor = "green";
                           else if(eventsAtTimeSlot.length === 2) backgroundColor = "orange";
@@ -643,18 +690,44 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                           return (
                           <div key={index} className="time-section"
                             style={(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev =>
-                              prev.month === monthName &&
-                              parseInt(prev.year) === currentDate.getFullYear() &&
-                              parseInt(prev.date) === day.getDate() &&
-                              prev.events.some(item =>
-                              (item.from <= dayjs(hour,"h A").format("HH")
-                              && dayjs(hour,"h A").format("HH") < item.to)))
+                              prev.events.some(item => {
+                                if (item.recurring === "daily"){
+                                  return item.from <= dayjs(hour,"h A").format("HH")
+                                  && dayjs(hour,"h A").format("HH") < item.to
+                                } else if (item.recurring === "weekly"){
+                                  return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour,"h A").format("HH")
+                                  && dayjs(hour,"h A").format("HH") < item.to
+                                } else if (item.recurring === "monthly"){
+                                  return item.date === day.getDate().toString() && item.from <= dayjs(hour,"h A").format("HH")
+                                  && dayjs(hour,"h A").format("HH") < item.to
+                                }
+                                 return prev.month === monthName &&
+                                  parseInt(prev.year) === currentDate.getFullYear() &&
+                                  parseInt(prev.date) === day.getDate() &&
+                                  item.from <= dayjs(hour,"h A").format("HH")
+                                  && dayjs(hour,"h A").format("HH") < item.to
+                              }
+                              ))
                               ? {backgroundColor,
                               borderBottom:(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev =>
-                              prev.month === monthName &&
-                              parseInt(prev.year) === currentDate.getFullYear() &&
-                              parseInt(prev.date) === day.getDate() &&
-                              prev.events.some(item => dayjs(hour,"h A").format("HH") == item.to - 1)) ? "1px solid gray" : "1px solid transparent"
+                                prev.events.some(item => {
+                                  if (item.recurring === "daily"){
+                                    return item.from <= dayjs(hour,"h A").format("HH")
+                                    && dayjs(hour,"h A").format("HH") < item.to
+                                  } else if (item.recurring === "weekly"){
+                                    return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour,"h A").format("HH")
+                                    && dayjs(hour,"h A").format("HH") < item.to
+                                  } else if (item.recurring === "monthly"){
+                                    return item.date === day.getDate().toString() && item.from <= dayjs(hour,"h A").format("HH")
+                                    && dayjs(hour,"h A").format("HH") < item.to
+                                  }
+                                   return prev.month === monthName &&
+                                    parseInt(prev.year) === currentDate.getFullYear() &&
+                                    parseInt(prev.date) === day.getDate() &&
+                                    item.from <= dayjs(hour,"h A").format("HH")
+                                    && dayjs(hour,"h A").format("HH") < item.to
+                                }
+                                )) ? "1px solid gray" : "1px solid transparent"
                               } : {}}
                             onClick={() => {handleWeeklyCalendarEvent(hour,day.getDate())}}
                           >
@@ -741,6 +814,30 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                   onChange={(e)=>setEventNotes(e.target.value)}
                   value={eventNotes}
                   /></h2>
+                  <Row style={{display:'flex',alignItems:'center',flexDirection:'row'}}>
+                    <h2>Recurring : {" "}
+                        <Select 
+                          value={frequencyOfEvent}
+                          onChange={(value) => setFrequencyOfEvent(value)}
+                          style={{borderRadius:'5px',padding:'5px',fontSize:'15px',outline:'none'}}>
+                          <Option value="noRecurring">No Recurring</Option>
+                          <Option value="daily">Daily</Option>
+                          <Option value="weekly">Weekly</Option>
+                          <Option value="monthly">Monthly</Option>
+                      </Select></h2> &nbsp;&nbsp;
+                    <h2>Day : {" "}
+                        <select 
+                            value={frequencyOfEvent === "weekly" ? weeklyDayRecurring : monthlyRecurring}
+                            onChange={(e) => setWeeklyDayRecurring(e.target.value)}
+                            disabled={frequencyOfEvent === "noRecurring" || frequencyOfEvent === "daily"}
+                            style={{borderRadius:'5px',padding:'5px',fontSize:'15px',outline:'none'}}>
+                            {frequencyOfEvent === "weekly" ? weekdays.map((day, index) => (
+                              <option value={day}>{day}</option>
+                            )): days.map((day,index) => 
+                            <option value={day.day}>{" "+ day.day}</option>)}
+                        </select>
+                    </h2>
+                  </Row>
                   <h3>From :<TimePicker 
                                 format="h A"
                                 style={{width:'100px'}}
