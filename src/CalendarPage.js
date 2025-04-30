@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker } from "antd";
+
+import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid } from "antd";
+
 import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const { useBreakpoint } = Grid;
 
 const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData}) => {
   const [ currentDate, setCurrentDate] = useState(new Date());
@@ -31,6 +34,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ frequencyOfEvent, setFrequencyOfEvent ] = useState("noRecurring");
   const [ weeklyDayRecurring, setWeeklyDayRecurring ] = useState(weekdays[dayjs().weekday()]);
   const [ monthlyRecurring, setMonthlyRecurring ] = useState(currentDate.getDate().toString());
+
+  const screens = useBreakpoint();
 
   const validateFields = () => {
     let fieldError = {};
@@ -252,12 +257,14 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
       to: toTimeSlot.toString(),
       notes: eventNotes,
       recurring: frequencyOfEvent,
+
       day: frequencyOfEvent === "weekly" ? weeklyDayRecurring : ""
+
     };
 
     const updateEventSlot = async () =>{
       try{
-        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${filteredEvents[currentPage - 1].id}`,{
+        await fetch(`https://3jb2f8gsn0.execute-api.us-east-1.amazonaws.com/dev/event/${filteredEvents[currentPage - 1].id}`,{
           method: "PUT",
           headers: {
             "Content-Type" : "application/json"
@@ -281,18 +288,18 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
     const addEventSlot = async () =>{
         try{
-          // const response = await fetch("https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/",{
-          //   method:"POST",
-          //   headers:{
-          //     'Content-Type' : "application/json"
-          //   },
-          //   body:JSON.stringify(eventDetails)
-          // })
-          // const postData = await response.json();
-          // console.log("postData:",postData);
+          const response = await fetch("https://3jb2f8gsn0.execute-api.us-east-1.amazonaws.com/dev/event",{
+            method:"POST",
+            headers:{
+              'Content-Type' : "application/json"
+            },
+            body:JSON.stringify(eventDetails)
+          })
+          const postData = await response.json();
+          console.log("postData:",postData);
           const updatedRecord = {
             ...eventDetails,
-            // id:postData.eventId
+            id:postData.eventId
           }
           console.log("new event record:",updatedRecord);
           decrement();
@@ -340,7 +347,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const deleteEvent = () =>{
     const deleteExistingEvent = async() => {
       try{
-        await fetch(`https://ipl9c1zvee.execute-api.us-east-2.amazonaws.com/event/${filteredEvents[currentPage - 1].id}`,{
+        await fetch(`https://3jb2f8gsn0.execute-api.us-east-1.amazonaws.com/dev/event/${filteredEvents[currentPage - 1].id}`,{
           method: "DELETE",
           headers: {
             "Content-Type" : "application/json"
@@ -492,8 +499,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             <Col>
                 <Button onClick={()=>{setOpenDailyCalendar(true);setOpenWeekCalendar(false);setOpenMonthCalendar(false)}}
                 style={{backgroundColor: openDailyCalendar ? "lightBlue" :"" }}><h3>Daily</h3></Button> &nbsp;
-                <Button onClick={()=>{setOpenWeekCalendar(true);setOpenDailyCalendar(false);setOpenMonthCalendar(false);}}
-                style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}><h3>Week</h3></Button> &nbsp;
+                {screens.lg &&
+                <span>
+                  <Button onClick={()=>{setOpenWeekCalendar(true);setOpenDailyCalendar(false);setOpenMonthCalendar(false);}}
+                  style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}><h3>Week</h3></Button> &nbsp;
+                </span>}
                 <Button onClick={()=>{setOpenMonthCalendar(true);setOpenWeekCalendar(false);setOpenDailyCalendar(false);}}
                 style={{backgroundColor: openMonthCalendar ? "lightBlue" :"" }}><h3>Month</h3></Button>
             </Col>
@@ -676,13 +686,24 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                       >
                       <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
                         {hours.map((hour, index) => { 
-                          const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData).filter(prev =>
-                            prev.month === monthName &&
-                            parseInt(prev.year) === currentDate.getFullYear() &&
-                            parseInt(prev.date) === day.getDate()
-                          )
-                          .flatMap(prev => prev.events.filter(item => item.from <= dayjs(hour,"h A").format("HH")
-                           && dayjs(hour,"h A").format("HH") < item.to));
+                          const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData)
+                          .flatMap(prev => prev.events.filter(item => {
+                            if (item.recurring === "daily"){
+                              return item.from <= dayjs(hour,"h A").format("HH")
+                              && dayjs(hour,"h A").format("HH") < item.to
+                            } else if (item.recurring === "weekly"){
+                              return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour,"h A").format("HH")
+                              && dayjs(hour,"h A").format("HH") < item.to
+                            } else if (item.recurring === "monthly"){
+                              return item.date === day.getDate().toString() && item.from <= dayjs(hour,"h A").format("HH")
+                              && dayjs(hour,"h A").format("HH") < item.to
+                            }
+                             return prev.month === monthName &&
+                              parseInt(prev.year) === currentDate.getFullYear() &&
+                              parseInt(prev.date) === day.getDate() &&
+                              item.from <= dayjs(hour,"h A").format("HH")
+                              && dayjs(hour,"h A").format("HH") < item.to
+                          }));
                           let backgroundColor = "";
                           if (eventsAtTimeSlot.length === 1) backgroundColor = "green";
                           else if(eventsAtTimeSlot.length === 2) backgroundColor = "orange";
@@ -690,18 +711,44 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                           return (
                           <div key={index} className="time-section"
                             style={(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev =>
-                              prev.month === monthName &&
-                              parseInt(prev.year) === currentDate.getFullYear() &&
-                              parseInt(prev.date) === day.getDate() &&
-                              prev.events.some(item =>
-                              (item.from <= dayjs(hour,"h A").format("HH")
-                              && dayjs(hour,"h A").format("HH") < item.to)))
+                              prev.events.some(item => {
+                                if (item.recurring === "daily"){
+                                  return item.from <= dayjs(hour,"h A").format("HH")
+                                  && dayjs(hour,"h A").format("HH") < item.to
+                                } else if (item.recurring === "weekly"){
+                                  return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour,"h A").format("HH")
+                                  && dayjs(hour,"h A").format("HH") < item.to
+                                } else if (item.recurring === "monthly"){
+                                  return item.date === day.getDate().toString() && item.from <= dayjs(hour,"h A").format("HH")
+                                  && dayjs(hour,"h A").format("HH") < item.to
+                                }
+                                 return prev.month === monthName &&
+                                  parseInt(prev.year) === currentDate.getFullYear() &&
+                                  parseInt(prev.date) === day.getDate() &&
+                                  item.from <= dayjs(hour,"h A").format("HH")
+                                  && dayjs(hour,"h A").format("HH") < item.to
+                              }
+                              ))
                               ? {backgroundColor,
                               borderBottom:(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev =>
-                              prev.month === monthName &&
-                              parseInt(prev.year) === currentDate.getFullYear() &&
-                              parseInt(prev.date) === day.getDate() &&
-                              prev.events.some(item => dayjs(hour,"h A").format("HH") == item.to - 1)) ? "1px solid gray" : "1px solid transparent"
+                                prev.events.some(item => {
+                                  if (item.recurring === "daily"){
+                                    return item.from <= dayjs(hour,"h A").format("HH")
+                                    && dayjs(hour,"h A").format("HH") < item.to
+                                  } else if (item.recurring === "weekly"){
+                                    return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour,"h A").format("HH")
+                                    && dayjs(hour,"h A").format("HH") < item.to
+                                  } else if (item.recurring === "monthly"){
+                                    return item.date === day.getDate().toString() && item.from <= dayjs(hour,"h A").format("HH")
+                                    && dayjs(hour,"h A").format("HH") < item.to
+                                  }
+                                   return prev.month === monthName &&
+                                    parseInt(prev.year) === currentDate.getFullYear() &&
+                                    parseInt(prev.date) === day.getDate() &&
+                                    item.from <= dayjs(hour,"h A").format("HH")
+                                    && dayjs(hour,"h A").format("HH") < item.to
+                                }
+                                )) ? "1px solid gray" : "1px solid transparent"
                               } : {}}
                             onClick={() => {handleWeeklyCalendarEvent(hour,day.getDate())}}
                           >
@@ -803,6 +850,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                         <select 
                             value={frequencyOfEvent === "weekly" ? weeklyDayRecurring : monthlyRecurring}
                             onChange={(e) => {frequencyOfEvent === "weekly" ? setWeeklyDayRecurring(e.target.value): setMonthlyRecurring(e.target.value)}}
+
                             disabled={frequencyOfEvent === "noRecurring" || frequencyOfEvent === "daily"}
                             style={{borderRadius:'5px',padding:'5px',fontSize:'15px',outline:'none'}}>
                             {frequencyOfEvent === "weekly" ? weekdays.map((day, index) => (
