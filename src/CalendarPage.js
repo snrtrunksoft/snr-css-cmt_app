@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid } from "antd";
+
 import dayjs from "dayjs";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -32,6 +34,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   const [ frequencyOfEvent, setFrequencyOfEvent ] = useState("noRecurring");
   const [ weeklyDayRecurring, setWeeklyDayRecurring ] = useState(weekdays[dayjs().weekday()]);
   const [ monthlyRecurring, setMonthlyRecurring ] = useState(currentDate.getDate().toString());
+
   const screens = useBreakpoint();
 
   const validateFields = () => {
@@ -246,15 +249,17 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     const eventDetails = {
       memberId:selectedMemberId,
       resourceId:selectedResourceId,
-      date:currentDate.getDate().toString(),
+      date:frequencyOfEvent === "monthly" ? monthlyRecurring.toString() : currentDate.getDate().toString(),
       month:monthName,
       year:currentDate.getFullYear().toString(),
       title: eventTitle,
-      from: fromTimeSlot,
-      to: toTimeSlot,
+      from: fromTimeSlot.toString(),
+      to: toTimeSlot.toString(),
       notes: eventNotes,
       recurring: frequencyOfEvent,
-      day: weeklyDayRecurring
+
+      day: frequencyOfEvent === "weekly" ? weeklyDayRecurring : ""
+
     };
 
     const updateEventSlot = async () =>{
@@ -371,6 +376,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     setEventTitle("");
     setEventNotes("");
     setTimeSlot("");
+    setFrequencyOfEvent("");
+    setWeeklyDayRecurring("");
+    setMonthlyRecurring("");
     setNewErrors({});
   };
 
@@ -426,6 +434,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     setEventTitle(event.title);
     setEventNotes(event.notes);
     setFromTimeSlot(fromTimeSlot);
+    setFrequencyOfEvent(event.frequencyOfEvent);
+    setWeeklyDayRecurring(event.weeklyDayRecurring);
+    setMonthlyRecurring(event.monthlyRecurring);
     setToTimeSlot(toTimeSlot);
   };
 
@@ -591,11 +602,21 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                                  item.from <= i && i < item.to;
                         })
                     ) ? {backgroundColor,borderRight:'2px solid gray',borderLeft:"2px solid gray",
-                    borderBottom:(calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev => 
-                    prev.month === monthName && 
-                    parseInt(prev.year) === currentDate.getFullYear() && 
-                    parseInt(prev.date) === currentDate.getDate() &&
-                    prev.events.some(item => i === item.to - 1)) ? "1px solid gray" :"1px solid transparent",
+                      borderBottom: (calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev =>
+                        prev.events.some(item => {
+                          if (item.recurring === "daily") {
+                            return i === item.to - 1;
+                          } else if (item.recurring === "weekly") {
+                            return item.day === weekdays[currentDate.getDay()] && i === item.to - 1;
+                          } else if (item.recurring === "monthly") {
+                            return item.date === currentDate.getDate().toString() && i === item.to - 1;
+                          }
+                          return prev.month === monthName &&
+                                 parseInt(prev.year) === currentDate.getFullYear() &&
+                                 parseInt(prev.date) === currentDate.getDate() &&
+                                 i === item.to - 1;
+                        })
+                      ) ? "1px solid gray" : "1px solid transparent",                      
                     } :{}}
                     onClick={() => handleDailyCalendarEvent(i)}
                     >
@@ -828,7 +849,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                     <h2>Day : {" "}
                         <select 
                             value={frequencyOfEvent === "weekly" ? weeklyDayRecurring : monthlyRecurring}
-                            onChange={(e) => setWeeklyDayRecurring(e.target.value)}
+                            onChange={(e) => {frequencyOfEvent === "weekly" ? setWeeklyDayRecurring(e.target.value): setMonthlyRecurring(e.target.value)}}
+
                             disabled={frequencyOfEvent === "noRecurring" || frequencyOfEvent === "daily"}
                             style={{borderRadius:'5px',padding:'5px',fontSize:'15px',outline:'none'}}>
                             {frequencyOfEvent === "weekly" ? weekdays.map((day, index) => (
