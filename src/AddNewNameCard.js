@@ -41,9 +41,9 @@ const AddNewNameCard = ({
     return(
         <div>
             <form>
-                <Row>
+                {/* <Row>
                     <h2>Id : {parseInt(data[data.length - 1]['id']) + 1}</h2>
-                </Row>
+                </Row> */}
                 <Row>
                     <Col>
                         <h2>Name : </h2>
