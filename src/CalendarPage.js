@@ -37,6 +37,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
   const screens = useBreakpoint();
 
+
   const validateFields = () => {
     let fieldError = {};
     if (!selectedMemberId) fieldError.selectedMemberId = "please enter member Id";

@@ -122,23 +122,26 @@ function App() {
 
 
   const [ sampleData, setSampleData ] = useState([
-    // {
-    //   "month": "February",
-    //   "year": "2025",
-    //   "userId": "ABC123",
-    //   "date":"9",
-    //   "events":[{
-    //       "memberId": "ABC123",
-    //       "resourceId": "R_2",
-    //       "date": "24",
-    //       "year": "2025",
-    //       "month": "March",
-    //       "from": "02",
-    //       "to": "03",
-    //       "title": "Test title2",
-    //       "notes": "Appointment for dentist"
-    //     },]
-    // },
+
+    {
+      "month": "April",
+      "year": "2025",
+      "userId": "ABC123",
+      "date":"25",
+      "events":[{
+          "memberId": "ABC123",
+          "resourceId": "R_2",
+          "date": "25",
+          "year": "2025",
+          "month": "March",
+          "from": "02",
+          "to": "03",
+          "recurring":"weekly",
+          "day":"Fri",
+          "title": "Test title2",
+          "notes": "Appointment for dentist"
+        },]
+    },
   ]);
 
   useEffect(() =>{
