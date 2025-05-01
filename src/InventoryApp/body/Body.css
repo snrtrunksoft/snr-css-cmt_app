@@ -1,0 +1,17 @@
+  .cart-page {
+    padding: 20px;
+  }
+  
+  /* This CSS will specifically target the Ant Design card when hovered */
+  /* This CSS will specifically target the Ant Design card when hovered */
+  .ant-card:hover {
+    border-color: rgba(151, 152, 153, 0.5); /* Change border color on hover */
+    box-shadow: 0 4px 8px rgba(2, 114, 242, 0.2); /* Add shadow on hover */
+    transform: scale(1.02); /* Slightly enlarge the card on hover */
+  }
+
+  /* This CSS will specifically target the Ant Design card and only change the background color on hover */
+.ant-card {
+    transition: background-color 0.3s ease;
+  }
+  

@@ -1,4 +1,4 @@
-.home-app {
+.home_app {
   display: flex;
   padding-top: 100px;
   flex-direction: column;
@@ -24,7 +24,7 @@
   padding: 10px;
 }
 
-.table{
+.members-table{
   width: 100%;
   padding-top: 30px;
 }

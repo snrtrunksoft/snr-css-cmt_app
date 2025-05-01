@@ -6,6 +6,7 @@ import Footer from './Footer';
 import ResourcePage from './ResourcePage';
 import TodosPage from "./TodosPage";
 import AddNewNameCard from './AddNewNameCard';
+import InventoryApp from "./InventoryApp/InventoryApp";
 import { Button, Col, Divider, Input, Modal, Row, Table, } from "antd";
 import CalendarPage from "./CalendarPage";
 import { Bar, Pie } from 'react-chartjs-2';
@@ -32,6 +33,7 @@ function App() {
   const [ todosPage, setTodosPage ] = useState(false);
   const [ isLoading, setIsLoading ] = useState(true);
   const [ searchText, setSearchText ] = useState("");
+  const [ openShoppingApp, setOpenShoppingApp ] = useState(false);
   const [ resourceData, setResourceData ] = useState([
     //     {
     //     "resourceId": "8",
@@ -377,7 +379,9 @@ function App() {
   );
 
   return (
-    <div className='home-app'>
+    <div>
+      {openShoppingApp ? <InventoryApp setOpenShoppingApp={setOpenShoppingApp}/>:
+      <div className='home_app'>
         <Header 
           dropDownList={dropDownList} 
           dataView={dataView} 
@@ -389,10 +393,12 @@ function App() {
           openCalendarPage={openCalendarPage}
           todosPage={todosPage}
           resourcePage={resourcePage}
+          openShoppingApp={openShoppingApp}
           setOpenCalendarPage={setOpenCalendarPage}
           setMembersPage={setMembersPage}
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
+          setOpenShoppingApp={setOpenShoppingApp}
           />
         <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%'}}>
           <div hidden={isLoading}>
@@ -405,7 +411,7 @@ function App() {
         (membersPage) ? (
           <div>
             {dataView === "table" ? (
-              <div className='table'>
+              <div className='members-table'>
                 <Table 
                   columns={columns}
                   dataSource={duplicateData} 
@@ -526,6 +532,7 @@ function App() {
           /> : <TodosPage sampleData={sampleData}/>)}
         <Divider type='horizontal'/>
         {<Footer/>}
+      </div>}
     </div>
   );
 }
