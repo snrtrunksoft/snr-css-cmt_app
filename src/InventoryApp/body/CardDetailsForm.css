@@ -1,0 +1,28 @@
+.custom-card-form {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #f7fafc;
+  }
+  
+  .custom-card-form .ant-form-item {
+    margin-bottom: 16px;
+  }
+  
+  .ant-form-item-label > label {
+    color: #4a5568;
+    font-weight: 500;
+  }
+  
+  .stripe-input {
+    padding: 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+  }
+  
+  .stripe-input:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.6);
+  }

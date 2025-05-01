@@ -1,0 +1,51 @@
+.calendar-grid {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+}
+
+.header {
+  text-align: center;
+  font-weight: bold;
+  padding: 10px;
+  background-color: #f4f4f4;
+}
+
+.sidebar {
+  background-color: #f4f4f4;
+  padding: 10px;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  width: 14.28%; /* 7 columns */
+  height: 20px;
+  text-align: center;
+}
+
+th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+.time-cell {
+  font-weight: bold;
+  padding-left: 5px;
+  vertical-align: top;
+}
+
+.calendar-cell {
+  background-color: white;
+}

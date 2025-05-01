@@ -1,0 +1,66 @@
+.checkout-page {
+  padding: 20px;
+  border: 2px solid #e0e0e0; /* Adding the border */
+  border-radius: 10px; /* Optional: Rounded corners */
+  background-color: #f9f9f9; /* Optional: Background color */
+  max-width: 1800px; /* Optional: Max width */
+  min-width: 1000px;
+  margin: 20px auto; /* Center the checkout page horizontally */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow */
+}
+
+.checkout-button-container {
+  display: flex;
+  justify-content: flex-end; /* Align button to the right */
+  margin-top: 20px;
+}
+
+.complete-checkout-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  width: 200px;
+}
+
+.complete-checkout-button:hover {
+  background-color: #218838;
+}
+
+.checkout-container {
+  display: flex;
+}
+
+.cart-column {
+  border-right: 2px solid #e0e0e0; /* Adds vertical line */
+  padding-right: 16px;
+}
+
+.card-details {
+  padding-left: 16px;
+}
+
+.checkout-page {
+  padding: 20px;
+}
+
+.complete-checkout-button {
+  margin-top: 20px;
+}
+
+.card-form {
+  margin-top: 20px;
+}
+
+.submit-payment-button {
+  margin-top: 16px;
+}
+.custom-card-form {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f7fafc;
+}
