@@ -486,8 +486,10 @@ function App() {
               <Col style={{paddingTop:'0px'}}>
                   <Divider type='horizontal' ></Divider>
               </Col>
-              <Row className='graph' justify={'center'}>
-                  <Bar data={graphData} options={options} width="100%" height={100}  ></Bar>
+              <Row className="graph" justify={'center'}>
+                <Col xs={24} sm={22} md={20} lg={16} xl={12}>
+                  <Bar data={graphData} options={options} />
+                </Col>
               </Row>
             </div>
             <Modal
