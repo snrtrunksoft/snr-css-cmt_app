@@ -1,48 +1,41 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _react = _interopRequireWildcard(require("react"));
-require("./App.css");
-var _NameCard = _interopRequireDefault(require("./NameCard"));
-var _Header = _interopRequireDefault(require("./Header"));
-var _Footer = _interopRequireDefault(require("./Footer"));
-var _ResourcePage = _interopRequireDefault(require("./ResourcePage"));
-var _TodosPage = _interopRequireDefault(require("./TodosPage"));
-var _AddNewNameCard = _interopRequireDefault(require("./AddNewNameCard"));
-var _antd = require("antd");
-var _CalendarPage = _interopRequireDefault(require("./CalendarPage"));
-var _reactChartjs = require("react-chartjs-2");
-var _chart = require("chart.js");
-var _icons = require("@ant-design/icons");
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+import React, { useEffect, useRef, useState } from 'react';
+import './App.css';
+import NameCard from './NameCard';
+import Header from './Header';
+import Footer from './Footer';
+import ResourcePage from './ResourcePage';
+import TodosPage from "./TodosPage";
+import AddNewNameCard from './AddNewNameCard';
+import { Button, Col, Divider, Input, Modal, Row, Table } from "antd";
+import CalendarPage from "./CalendarPage";
+import { Bar, Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { LoadingOutlined } from '@ant-design/icons';
+
 // Registering necessary Chart.js components
-_chart.Chart.register(_chart.CategoryScale, _chart.LinearScale, _chart.BarElement, _chart.Title, _chart.Tooltip, _chart.Legend, _chart.ArcElement);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 function App() {
-  const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = (0, _react.useState)(false);
-  const [dataView, setDataView] = (0, _react.useState)("grid");
+  const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = useState(false);
+  const [dataView, setDataView] = useState("grid");
   // const [ isInitialLoad, setIsInitialLoad ] = useRef(true);
-  const [newRecordName, setNewRecordName] = (0, _react.useState)('');
-  const [newRecordPhone, setNewRecordPhone] = (0, _react.useState)('');
-  const [newRecordAddress, setNewRecordAddress] = (0, _react.useState)('');
-  const [newRecordStatus, setNewRecordStatus] = (0, _react.useState)("New");
-  const [statusSelection, setStatusSelection] = (0, _react.useState)("All");
-  const [hideDashboard, setHideDashboard] = (0, _react.useState)(false);
-  const [openCalendarPage, setOpenCalendarPage] = (0, _react.useState)(false);
-  const [resourcePage, setResourcePage] = (0, _react.useState)(false);
-  const [membersPage, setMembersPage] = (0, _react.useState)(true);
-  const [todosPage, setTodosPage] = (0, _react.useState)(false);
-  const [isLoading, setIsLoading] = (0, _react.useState)(true);
-  const [searchText, setSearchText] = (0, _react.useState)("");
-  const [resourceData, setResourceData] = (0, _react.useState)([
+  const [newRecordName, setNewRecordName] = useState('');
+  const [newRecordPhone, setNewRecordPhone] = useState('');
+  const [newRecordAddress, setNewRecordAddress] = useState('');
+  const [newRecordStatus, setNewRecordStatus] = useState("New");
+  const [statusSelection, setStatusSelection] = useState("All");
+  const [hideDashboard, setHideDashboard] = useState(false);
+  const [openCalendarPage, setOpenCalendarPage] = useState(false);
+  const [resourcePage, setResourcePage] = useState(false);
+  const [membersPage, setMembersPage] = useState(true);
+  const [todosPage, setTodosPage] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [resourceData, setResourceData] = useState([
     //     {
     //     "resourceId": "8",
     //     "resourceName": "SNR",
@@ -71,7 +64,7 @@ function App() {
     //     "status": "Active"
     // },
   ]);
-  const [data, setData] = (0, _react.useState)([
+  const [data, setData] = useState([
     // {
     //     "id": "8",
     //     "customerName": "SNR",
@@ -129,7 +122,7 @@ function App() {
     // ],
     // },
   ]);
-  const [sampleData, setSampleData] = (0, _react.useState)([{
+  const [sampleData, setSampleData] = useState([{
     "month": "April",
     "year": "2025",
     "userId": "ABC123",
@@ -148,7 +141,7 @@ function App() {
       "notes": "Appointment for dentist"
     }]
   }]);
-  (0, _react.useEffect)(() => {
+  useEffect(() => {
     console.log("initial loading, fetching data from the Database");
     // if(isInitialLoad.current){
     const fetchingData = async () => {
@@ -189,11 +182,11 @@ function App() {
     // isInitialLoad.current = false;
     // }
   }, []);
-  const [duplicateData, setDuplicateData] = (0, _react.useState)(data);
-  const [commentBox, setCommentBox] = (0, _react.useState)([]);
+  const [duplicateData, setDuplicateData] = useState(data);
+  const [commentBox, setCommentBox] = useState([]);
   console.log("comment Box:", commentBox);
   console.log("data:", duplicateData);
-  (0, _react.useEffect)(() => {
+  useEffect(() => {
     setDuplicateData(data);
   }, [data]);
   const statusCount = data.reduce((acc, item) => {
@@ -260,7 +253,7 @@ function App() {
     title: 'Name',
     dataIndex: 'customerName',
     key: 'customerName',
-    render: text => /*#__PURE__*/_react.default.createElement("a", null, text)
+    render: text => /*#__PURE__*/React.createElement("a", null, text)
   }, {
     title: 'Phone',
     dataIndex: 'phoneNumber',
@@ -270,7 +263,7 @@ function App() {
     dataIndex: "address",
     key: 'address',
     render: address => {
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         style: {
           maxHeight: '60px',
           // Limit the height
@@ -282,7 +275,7 @@ function App() {
           // Ensure it behaves like a block element
           whiteSpace: 'nowrap'
         }
-      }, Object.keys(address[0]).map((key, index) => /*#__PURE__*/_react.default.createElement("div", {
+      }, Object.keys(address[0]).map((key, index) => /*#__PURE__*/React.createElement("div", {
         key: index
       }, address[0][key])));
     }
@@ -344,7 +337,7 @@ function App() {
     const filterData = data.filter(prev => prev.customerName.toLowerCase().includes(value.toLowerCase()) || prev.phoneNumber.includes(value));
     setDuplicateData(filterData);
   };
-  const dropDownList = /*#__PURE__*/_react.default.createElement("select", {
+  const dropDownList = /*#__PURE__*/React.createElement("select", {
     value: statusSelection,
     style: {
       borderRadius: '5px',
@@ -353,20 +346,20 @@ function App() {
       outline: 'none'
     },
     onChange: e => handleStatusSelection(e.target.value)
-  }, /*#__PURE__*/_react.default.createElement("option", {
+  }, /*#__PURE__*/React.createElement("option", {
     value: "All"
-  }, "All"), /*#__PURE__*/_react.default.createElement("option", {
+  }, "All"), /*#__PURE__*/React.createElement("option", {
     value: "New"
-  }, "New"), /*#__PURE__*/_react.default.createElement("option", {
+  }, "New"), /*#__PURE__*/React.createElement("option", {
     value: "In_Progress"
-  }, "In-progress"), /*#__PURE__*/_react.default.createElement("option", {
+  }, "In-progress"), /*#__PURE__*/React.createElement("option", {
     value: "Complete"
-  }, "Complete"), /*#__PURE__*/_react.default.createElement("option", {
+  }, "Complete"), /*#__PURE__*/React.createElement("option", {
     value: "Cancelled"
   }, "Cancelled"));
-  return /*#__PURE__*/_react.default.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "home-app"
-  }, /*#__PURE__*/_react.default.createElement(_Header.default, {
+  }, /*#__PURE__*/React.createElement(Header, {
     dropDownList: dropDownList,
     dataView: dataView,
     setDataView: setDataView,
@@ -381,16 +374,16 @@ function App() {
     setMembersPage: setMembersPage,
     setResourcePage: setResourcePage,
     setTodosPage: setTodosPage
-  }), /*#__PURE__*/_react.default.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       width: '100%'
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     hidden: isLoading
-  }, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, /*#__PURE__*/React.createElement(Button, {
     style: membersPage ? {
       backgroundColor: '#1677ff',
       color: 'azure'
@@ -401,7 +394,7 @@ function App() {
       setMembersPage(true);
       setTodosPage(false);
     }
-  }, /*#__PURE__*/_react.default.createElement("h3", null, "Members")), /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, /*#__PURE__*/React.createElement("h3", null, "Members")), /*#__PURE__*/React.createElement(Button, {
     style: resourcePage ? {
       backgroundColor: '#1677ff',
       color: 'azure'
@@ -412,34 +405,34 @@ function App() {
       setOpenCalendarPage(false);
       setTodosPage(false);
     }
-  }, /*#__PURE__*/_react.default.createElement("h3", null, "Resources"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h3", null, "Resources"))), /*#__PURE__*/React.createElement("div", {
     style: {
       paddingRight: '5px'
     },
     hidden: !membersPage
-  }, /*#__PURE__*/_react.default.createElement(_antd.Input, {
+  }, /*#__PURE__*/React.createElement(Input, {
     placeholder: "Search Name or Ph no.",
     value: searchText,
     onChange: e => handleSearchText(e.target.value)
-  }))), isLoading ? /*#__PURE__*/_react.default.createElement("h3", null, /*#__PURE__*/_react.default.createElement(_icons.LoadingOutlined, null), " Loading...") : membersPage ? /*#__PURE__*/_react.default.createElement("div", null, dataView === "table" ? /*#__PURE__*/_react.default.createElement("div", {
+  }))), isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : membersPage ? /*#__PURE__*/React.createElement("div", null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
     className: "table"
-  }, /*#__PURE__*/_react.default.createElement(_antd.Table, {
+  }, /*#__PURE__*/React.createElement(Table, {
     columns: columns,
     dataSource: duplicateData,
     pagination: {
       pageSize: 5,
       simple: true
     },
-    footer: () => /*#__PURE__*/_react.default.createElement("tr", {
+    footer: () => /*#__PURE__*/React.createElement("tr", {
       style: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         height: '10px'
       }
-    }, /*#__PURE__*/_react.default.createElement("td", {
+    }, /*#__PURE__*/React.createElement("td", {
       colSpan: columns.length
-    }, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+    }, /*#__PURE__*/React.createElement(Button, {
       onClick: () => setIsAddNewNameCardModalOpen(true),
       style: {
         border: 'transparent',
@@ -447,17 +440,17 @@ function App() {
         backgroundColor: 'transparent'
       }
     }, "+")))
-  })) : /*#__PURE__*/_react.default.createElement(_antd.Row, {
+  })) : /*#__PURE__*/React.createElement(Row, {
     gutter: [16, 16],
     className: "home-grid"
-  }, duplicateData.map(item => /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, duplicateData.map(item => /*#__PURE__*/React.createElement(Col, {
     key: item.id,
     xs: duplicateData.length <= 1 ? 24 : 12,
     sm: duplicateData.length <= 1 ? 24 : 12,
     md: duplicateData.length <= 2 ? 20 : 8,
     lg: duplicateData.length <= 2 ? 20 : 6,
     xl: duplicateData.length <= 2 ? 20 : 6
-  }, /*#__PURE__*/_react.default.createElement(_NameCard.default, {
+  }, /*#__PURE__*/React.createElement(NameCard, {
     key: item.id,
     customerId: item.id,
     customerName: item.customerName,
@@ -469,7 +462,7 @@ function App() {
     setDuplicateData: setDuplicateData,
     commentBox: commentBox,
     setCommentBox: setCommentBox
-  }))), /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }))), /*#__PURE__*/React.createElement(Col, {
     xs: duplicateData.length <= 1 ? 24 : 12,
     sm: duplicateData.length <= 1 ? 24 : 12,
     md: duplicateData.length <= 2 ? 20 : 8,
@@ -483,68 +476,68 @@ function App() {
       justifyContent: 'center',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
     }
-  }, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, /*#__PURE__*/React.createElement(Button, {
     style: {
       border: 'transparent',
       fontSize: '40px'
     }
-  }, "+"))), /*#__PURE__*/_react.default.createElement(_antd.Divider, {
+  }, "+"))), /*#__PURE__*/React.createElement(Divider, {
     type: "horizontal"
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       width: "100%"
     },
     hidden: hideDashboard
-  }, /*#__PURE__*/_react.default.createElement(_antd.Row, {
+  }, /*#__PURE__*/React.createElement(Row, {
     className: "status-track-icons"
-  }, /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, /*#__PURE__*/React.createElement(Col, {
     className: "status-icons"
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       backgroundColor: 'pink'
     }
-  }, " ", statusCount["New"], " "), /*#__PURE__*/_react.default.createElement("h3", null, "New")), /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, " ", statusCount["New"], " "), /*#__PURE__*/React.createElement("h3", null, "New")), /*#__PURE__*/React.createElement(Col, {
     className: "status-icons"
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       backgroundColor: 'lightBlue'
     }
-  }, " ", statusCount["In_Progress"], " "), /*#__PURE__*/_react.default.createElement("h3", null, "In_progress")), /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, " ", statusCount["In_Progress"], " "), /*#__PURE__*/React.createElement("h3", null, "In_progress")), /*#__PURE__*/React.createElement(Col, {
     className: "status-icons"
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       backgroundColor: 'lightgreen'
     }
-  }, " ", statusCount["Complete"], " "), /*#__PURE__*/_react.default.createElement("h3", null, "Completed")), /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, " ", statusCount["Complete"], " "), /*#__PURE__*/React.createElement("h3", null, "Completed")), /*#__PURE__*/React.createElement(Col, {
     className: "status-icons"
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       backgroundColor: 'rgba(256,0,0,0.7)'
     }
-  }, " ", statusCount["Cancelled"], " "), /*#__PURE__*/_react.default.createElement("h3", null, "Cancelled"))), /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, " ", statusCount["Cancelled"], " "), /*#__PURE__*/React.createElement("h3", null, "Cancelled"))), /*#__PURE__*/React.createElement(Col, {
     style: {
       paddingTop: '0px'
     }
-  }, /*#__PURE__*/_react.default.createElement(_antd.Divider, {
+  }, /*#__PURE__*/React.createElement(Divider, {
     type: "horizontal"
-  })), /*#__PURE__*/_react.default.createElement(_antd.Row, {
+  })), /*#__PURE__*/React.createElement(Row, {
     className: "graph",
     justify: 'center'
-  }, /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, /*#__PURE__*/React.createElement(Col, {
     xs: 24,
     sm: 22,
     md: 20,
     lg: 16,
     xl: 12
-  }, /*#__PURE__*/_react.default.createElement(_reactChartjs.Bar, {
+  }, /*#__PURE__*/React.createElement(Bar, {
     data: graphData,
     options: options
-  })))), /*#__PURE__*/_react.default.createElement(_antd.Modal, {
+  })))), /*#__PURE__*/React.createElement(Modal, {
     title: "AddNewNameCard",
     open: isAddNewNameCardModalOpen,
     onCancel: () => setIsAddNewNameCardModalOpen(false),
     footer: null
-  }, /*#__PURE__*/_react.default.createElement(_AddNewNameCard.default, {
+  }, /*#__PURE__*/React.createElement(AddNewNameCard, {
     data: data,
     setNewRecordName: setNewRecordName,
     setNewRecordPhone: setNewRecordPhone
@@ -555,20 +548,20 @@ function App() {
     newRecordStatus: newRecordStatus,
     setIsAddNewNameCardModalOpen: setIsAddNewNameCardModalOpen,
     handleAddNewNameCard: handleAddNewNameCard
-  }))) : resourcePage ? /*#__PURE__*/_react.default.createElement(_ResourcePage.default, {
+  }))) : resourcePage ? /*#__PURE__*/React.createElement(ResourcePage, {
     resourceData: resourceData,
     setDuplicateData: setDuplicateData,
     commentBox: commentBox,
     setCommentBox: setCommentBox
-  }) : openCalendarPage ? /*#__PURE__*/_react.default.createElement(_CalendarPage.default, {
+  }) : openCalendarPage ? /*#__PURE__*/React.createElement(CalendarPage, {
     sampleData: sampleData,
     setSampleData: setSampleData,
     duplicateData: duplicateData,
     resourceData: resourceData
-  }) : /*#__PURE__*/_react.default.createElement(_TodosPage.default, {
+  }) : /*#__PURE__*/React.createElement(TodosPage, {
     sampleData: sampleData
-  }), /*#__PURE__*/_react.default.createElement(_antd.Divider, {
+  }), /*#__PURE__*/React.createElement(Divider, {
     type: "horizontal"
-  }), /*#__PURE__*/_react.default.createElement(_Footer.default, null));
+  }), /*#__PURE__*/React.createElement(Footer, null));
 }
-var _default = exports.default = App;
+export default App;

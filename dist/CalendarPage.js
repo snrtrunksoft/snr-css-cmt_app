@@ -1,25 +1,17 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _react = _interopRequireWildcard(require("react"));
-require("./CalendarPage.css");
-var _lucideReact = require("lucide-react");
-var _antd = require("antd");
-var _dayjs = _interopRequireDefault(require("dayjs"));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+import React, { useState, useEffect } from "react";
+import "./CalendarPage.css";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid } from "antd";
+import dayjs from "dayjs";
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const {
   useBreakpoint
-} = _antd.Grid;
+} = Grid;
 const CalendarPage = _ref => {
   let {
     sampleData,
@@ -27,30 +19,30 @@ const CalendarPage = _ref => {
     duplicateData,
     resourceData
   } = _ref;
-  const [currentDate, setCurrentDate] = (0, _react.useState)(new Date());
-  const [openWeekCalendar, setOpenWeekCalendar] = (0, _react.useState)(false);
-  const [openMonthCalendar, setOpenMonthCalendar] = (0, _react.useState)(true);
-  const [openDailyCalendar, setOpenDailyCalendar] = (0, _react.useState)(false);
-  const [days, setDays] = (0, _react.useState)([]);
-  const [openEventSlot, setOpenEventSlot] = (0, _react.useState)(false);
-  const [timeSlot, setTimeSlot] = (0, _react.useState)(null);
-  const [eventTitle, setEventTitle] = (0, _react.useState)('');
-  const [eventNotes, setEventNotes] = (0, _react.useState)('');
-  const [fromTimeSlot, setFromTimeSlot] = (0, _react.useState)(null);
-  const [toTimeSlot, setToTimeSlot] = (0, _react.useState)(null);
-  const [weekEventDate, setWeekEventDate] = (0, _react.useState)(null);
-  const [currentHour, setCurrentHour] = (0, _react.useState)((0, _dayjs.default)().hour());
-  const [calendarUserId, setCalendarUserId] = (0, _react.useState)("All");
-  const [selectedMemberId, setSelectedMemberId] = (0, _react.useState)("");
-  const [selectedResourceId, setSelectedResourceId] = (0, _react.useState)("");
-  const [openAppointment, setOpenAppoinment] = (0, _react.useState)(false);
-  const [bookSameSlot, setBookSameSlot] = (0, _react.useState)(false);
-  const [resourceCalendar, setResourceCalendar] = (0, _react.useState)("");
-  const [newErrors, setNewErrors] = (0, _react.useState)({});
-  const [memberDropDown, setMemberDropDown] = (0, _react.useState)(true);
-  const [frequencyOfEvent, setFrequencyOfEvent] = (0, _react.useState)("noRecurring");
-  const [weeklyDayRecurring, setWeeklyDayRecurring] = (0, _react.useState)(weekdays[(0, _dayjs.default)().weekday()]);
-  const [monthlyRecurring, setMonthlyRecurring] = (0, _react.useState)(currentDate.getDate().toString());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [openWeekCalendar, setOpenWeekCalendar] = useState(false);
+  const [openMonthCalendar, setOpenMonthCalendar] = useState(true);
+  const [openDailyCalendar, setOpenDailyCalendar] = useState(false);
+  const [days, setDays] = useState([]);
+  const [openEventSlot, setOpenEventSlot] = useState(false);
+  const [timeSlot, setTimeSlot] = useState(null);
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventNotes, setEventNotes] = useState('');
+  const [fromTimeSlot, setFromTimeSlot] = useState(null);
+  const [toTimeSlot, setToTimeSlot] = useState(null);
+  const [weekEventDate, setWeekEventDate] = useState(null);
+  const [currentHour, setCurrentHour] = useState(dayjs().hour());
+  const [calendarUserId, setCalendarUserId] = useState("All");
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [selectedResourceId, setSelectedResourceId] = useState("");
+  const [openAppointment, setOpenAppoinment] = useState(false);
+  const [bookSameSlot, setBookSameSlot] = useState(false);
+  const [resourceCalendar, setResourceCalendar] = useState("");
+  const [newErrors, setNewErrors] = useState({});
+  const [memberDropDown, setMemberDropDown] = useState(true);
+  const [frequencyOfEvent, setFrequencyOfEvent] = useState("noRecurring");
+  const [weeklyDayRecurring, setWeeklyDayRecurring] = useState(weekdays[dayjs().weekday()]);
+  const [monthlyRecurring, setMonthlyRecurring] = useState(currentDate.getDate().toString());
   const screens = useBreakpoint();
   const validateFields = () => {
     let fieldError = {};
@@ -60,7 +52,7 @@ const CalendarPage = _ref => {
     setNewErrors(fieldError);
     return Object.keys(fieldError).length === 0;
   };
-  const [allEventsOnDay, setAllEventsOnDay] = (0, _react.useState)(Object.fromEntries(Array.from({
+  const [allEventsOnDay, setAllEventsOnDay] = useState(Object.fromEntries(Array.from({
     length: 24
   }, (_, i) => [i === 0 ? "12 AM" : i < 12 ? "".concat(i, " AM") : i === 12 ? "12 PM" : "".concat(i - 12, " PM"), 3])));
   const decrement = () => {
@@ -68,9 +60,9 @@ const CalendarPage = _ref => {
       [timeSlot]: Math.max(0, (prev[timeSlot] || 0) - 1)
     }));
   };
-  (0, _react.useEffect)(() => {
+  useEffect(() => {
     const updateHour = () => {
-      setCurrentHour((0, _dayjs.default)().hour());
+      setCurrentHour(dayjs().hour());
     };
     updateHour();
     const interval = setInterval(updateHour, 3600000);
@@ -78,9 +70,9 @@ const CalendarPage = _ref => {
   }, []);
   console.log("allEventsOnDay:", allEventsOnDay);
   console.log("time Slot:", timeSlot);
-  (0, _react.useEffect)(() => {
+  useEffect(() => {
     if (calendarUserId !== "All") {
-      setOpenAppoinment(sampleData.some(prev => prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) && prev.events.some(item => item.from <= (0, _dayjs.default)(timeSlot, "h A").format("HH") && (0, _dayjs.default)(timeSlot, "h A").format("HH") < item.to ? true : false)));
+      setOpenAppoinment(sampleData.some(prev => prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) && prev.events.some(item => item.from <= dayjs(timeSlot, "h A").format("HH") && dayjs(timeSlot, "h A").format("HH") < item.to ? true : false)));
     }
   }, [currentDate, timeSlot]);
   console.log("openAppointment:", openAppointment);
@@ -102,10 +94,10 @@ const CalendarPage = _ref => {
     month: "long"
   });
   console.log("formatted Date:", formattedDate);
-  (0, _react.useEffect)(() => {
+  useEffect(() => {
     generateCalendar();
   }, [currentDate]);
-  (0, _react.useEffect)(() => {
+  useEffect(() => {
     if (calendarUserId !== "All" && !memberDropDown) {
       const filteredData = sampleData.filter(record => record.events.some(event => event.resourceId === calendarUserId)) // Keep records where at least one event has "SNR_2"
       .map(record => _objectSpread(_objectSpread({}, record), {}, {
@@ -162,8 +154,8 @@ const CalendarPage = _ref => {
     startDate.setDate(date.getDate() - date.getDay());
     return startDate;
   };
-  (0, _react.useEffect)(() => {
-    const format24Hour = (0, _dayjs.default)(timeSlot, "h A").hour();
+  useEffect(() => {
+    const format24Hour = dayjs(timeSlot, "h A").hour();
     setFromTimeSlot(format24Hour);
     setToTimeSlot(format24Hour + 1);
   }, [timeSlot]);
@@ -213,7 +205,7 @@ const CalendarPage = _ref => {
   };
   let valueToSet = "";
   const filteredEvents = (calendarUserId !== "All" ? resourceCalendar : sampleData).flatMap(prev => prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) ? prev.events.filter(item => {
-    if (item.from <= (0, _dayjs.default)(timeSlot, "h A").format("HH") && (0, _dayjs.default)(timeSlot, "h A").format("HH") < item.to) {
+    if (item.from <= dayjs(timeSlot, "h A").format("HH") && dayjs(timeSlot, "h A").format("HH") < item.to) {
       valueToSet = item;
       return true;
     }
@@ -221,13 +213,13 @@ const CalendarPage = _ref => {
   }) : []);
   console.log("filteredEvents:", filteredEvents);
   console.log("selected Event Item:", valueToSet);
-  const [currentPage, setCurrentPage] = (0, _react.useState)(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const itemsForPage = 1;
   const startIndex = (currentPage - 1) * itemsForPage;
   const paginateEvents = filteredEvents.slice(startIndex, startIndex + itemsForPage);
   const {
     Option
-  } = _antd.Select;
+  } = Select;
   const handleCalendarEvent = () => {
     const eventDetails = {
       memberId: selectedMemberId,
@@ -353,9 +345,9 @@ const CalendarPage = _ref => {
     setSelectedMemberId(e.domEvent.target.textContent);
   };
   const filterMembers = duplicateData.filter(prev => prev.customerName.toLowerCase().includes(selectedMemberId.toLowerCase()));
-  const membersMenu = /*#__PURE__*/_react.default.createElement(_antd.Menu, {
+  const membersMenu = /*#__PURE__*/React.createElement(Menu, {
     onClick: handleMembersMenu
-  }, filterMembers.map(prev => /*#__PURE__*/_react.default.createElement(_antd.Menu.Item, {
+  }, filterMembers.map(prev => /*#__PURE__*/React.createElement(Menu.Item, {
     key: prev.customerId
   }, prev.customerName)));
   const handleResourceMenu = e => {
@@ -363,12 +355,12 @@ const CalendarPage = _ref => {
   };
   const filterResources = resourceData.filter(prev => prev.resourceName.toLowerCase().includes(selectedResourceId.toLowerCase()));
   const filterOutAvailableResource = filterResources.flatMap(prev => prev.resourceName).filter(resourceName => {
-    return sampleData.filter(prev => prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === currentDate.getDate()).flatMap(prev => prev.events.filter(item => item.from <= (0, _dayjs.default)(timeSlot, "h A").format("HH") && (0, _dayjs.default)(timeSlot, "h A").format("HH") < item.to)).every(event => event.resourceId !== resourceName);
+    return sampleData.filter(prev => prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === currentDate.getDate()).flatMap(prev => prev.events.filter(item => item.from <= dayjs(timeSlot, "h A").format("HH") && dayjs(timeSlot, "h A").format("HH") < item.to)).every(event => event.resourceId !== resourceName);
   });
   console.log("filterOutAvailableResource:", filterOutAvailableResource);
-  const resourceMenu = /*#__PURE__*/_react.default.createElement(_antd.Menu, {
+  const resourceMenu = /*#__PURE__*/React.createElement(Menu, {
     onClick: handleResourceMenu
-  }, filterOutAvailableResource.map((prev, index) => /*#__PURE__*/_react.default.createElement(_antd.Menu.Item, {
+  }, filterOutAvailableResource.map((prev, index) => /*#__PURE__*/React.createElement(Menu.Item, {
     key: index
   }, prev)));
   const handleUpdateExistingEventDetails = event => {
@@ -383,7 +375,7 @@ const CalendarPage = _ref => {
     setMonthlyRecurring(event.monthlyRecurring);
     setToTimeSlot(toTimeSlot);
   };
-  const dropDownList = /*#__PURE__*/_react.default.createElement("select", {
+  const dropDownList = /*#__PURE__*/React.createElement("select", {
     value: calendarUserId,
     onChange: e => setCalendarUserId(e.target.value),
     style: {
@@ -392,9 +384,9 @@ const CalendarPage = _ref => {
       fontSize: '15px',
       outline: 'none'
     }
-  }, /*#__PURE__*/_react.default.createElement("option", {
+  }, /*#__PURE__*/React.createElement("option", {
     value: "All"
-  }, "All"), !memberDropDown ? resourceData.map(prevData => /*#__PURE__*/_react.default.createElement("option", null, prevData.resourceName)) : duplicateData.map(prevData => /*#__PURE__*/_react.default.createElement("option", null, prevData.customerName)));
+  }, "All"), !memberDropDown ? resourceData.map(prevData => /*#__PURE__*/React.createElement("option", null, prevData.resourceName)) : duplicateData.map(prevData => /*#__PURE__*/React.createElement("option", null, prevData.customerName)));
   const handleDailyCalendarEvent = time => {
     time = time === 0 ? "12 AM" : time < 12 ? "".concat(time, " AM") : time === 12 ? "12 PM" : "".concat(time - 12, " PM");
     if (allEventsOnDay[time] > 0) {
@@ -411,18 +403,18 @@ const CalendarPage = _ref => {
       setWeekEventDate(date);
     }
   };
-  return /*#__PURE__*/_react.default.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "calendar-container"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "calendar-header"
-  }, /*#__PURE__*/_react.default.createElement(_antd.Row, {
+  }, /*#__PURE__*/React.createElement(Row, {
     hidden: !CalendarPage,
     className: "filterCalendar",
     gutter: [8, 8],
     style: {
       marginBottom: '20px'
     }
-  }, /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, /*#__PURE__*/React.createElement(Col, {
     xs: 24,
     sm: 12,
     md: 8,
@@ -433,29 +425,29 @@ const CalendarPage = _ref => {
       flexWrap: 'wrap',
       gap: '10px'
     }
-  }, /*#__PURE__*/_react.default.createElement(_antd.Checkbox, {
+  }, /*#__PURE__*/React.createElement(Checkbox, {
     checked: memberDropDown,
     onClick: () => setMemberDropDown(true)
-  }, "Member"), /*#__PURE__*/_react.default.createElement(_antd.Checkbox, {
+  }, "Member"), /*#__PURE__*/React.createElement(Checkbox, {
     checked: !memberDropDown,
     onClick: () => setMemberDropDown(false)
-  }, "Resource")), /*#__PURE__*/_react.default.createElement(_antd.Col, {
+  }, "Resource")), /*#__PURE__*/React.createElement(Col, {
     xs: 24,
     sm: 12,
     md: 16,
     style: {
       padding: '10px 0'
     }
-  }, dropDownList)), /*#__PURE__*/_react.default.createElement(_antd.Row, {
+  }, dropDownList)), /*#__PURE__*/React.createElement(Row, {
     style: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       marginTop: '40px'
     }
-  }, /*#__PURE__*/_react.default.createElement(_antd.Col, null, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, /*#__PURE__*/React.createElement(Col, null, /*#__PURE__*/React.createElement(Button, {
     onClick: () => setCurrentDate(new Date())
-  }, /*#__PURE__*/_react.default.createElement("h3", null, "Today")), " \xA0"), /*#__PURE__*/_react.default.createElement(_antd.Col, null, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, /*#__PURE__*/React.createElement("h3", null, "Today")), " \xA0"), /*#__PURE__*/React.createElement(Col, null, /*#__PURE__*/React.createElement(Button, {
     onClick: () => {
       setOpenDailyCalendar(true);
       setOpenWeekCalendar(false);
@@ -464,7 +456,7 @@ const CalendarPage = _ref => {
     style: {
       backgroundColor: openDailyCalendar ? "lightBlue" : ""
     }
-  }, /*#__PURE__*/_react.default.createElement("h3", null, "Daily")), " \xA0", screens.lg && /*#__PURE__*/_react.default.createElement("span", null, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, /*#__PURE__*/React.createElement("h3", null, "Daily")), " \xA0", screens.lg && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(Button, {
     onClick: () => {
       setOpenWeekCalendar(true);
       setOpenDailyCalendar(false);
@@ -473,7 +465,7 @@ const CalendarPage = _ref => {
     style: {
       backgroundColor: openWeekCalendar ? "lightBlue" : ""
     }
-  }, /*#__PURE__*/_react.default.createElement("h3", null, "Week")), " \xA0"), /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, /*#__PURE__*/React.createElement("h3", null, "Week")), " \xA0"), /*#__PURE__*/React.createElement(Button, {
     onClick: () => {
       setOpenMonthCalendar(true);
       setOpenWeekCalendar(false);
@@ -482,9 +474,9 @@ const CalendarPage = _ref => {
     style: {
       backgroundColor: openMonthCalendar ? "lightBlue" : ""
     }
-  }, /*#__PURE__*/_react.default.createElement("h3", null, "Month")))), /*#__PURE__*/_react.default.createElement(_antd.Divider, {
+  }, /*#__PURE__*/React.createElement("h3", null, "Month")))), /*#__PURE__*/React.createElement(Divider, {
     type: "horizontal"
-  })), /*#__PURE__*/_react.default.createElement(_antd.Row, {
+  })), /*#__PURE__*/React.createElement(Row, {
     style: {
       width: '100%',
       display: 'flex',
@@ -492,20 +484,20 @@ const CalendarPage = _ref => {
       alignItems: 'center',
       marginTop: '-20px'
     }
-  }, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, /*#__PURE__*/React.createElement(Button, {
     onClick: handlePrev
-  }, /*#__PURE__*/_react.default.createElement(_lucideReact.ChevronLeft, null)), /*#__PURE__*/_react.default.createElement("h2", {
+  }, /*#__PURE__*/React.createElement(ChevronLeft, null)), /*#__PURE__*/React.createElement("h2", {
     hidden: !openDailyCalendar
-  }, formattedDate, ", ", currentDate.getFullYear()), /*#__PURE__*/_react.default.createElement("h2", {
+  }, formattedDate, ", ", currentDate.getFullYear()), /*#__PURE__*/React.createElement("h2", {
     hidden: openDailyCalendar
-  }, formattedDate, ", ", currentDate.getFullYear()), /*#__PURE__*/_react.default.createElement(_antd.Button, {
+  }, formattedDate, ", ", currentDate.getFullYear()), /*#__PURE__*/React.createElement(Button, {
     onClick: handleNext
-  }, /*#__PURE__*/_react.default.createElement(_lucideReact.ChevronRight, null))), openMonthCalendar ? /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement(ChevronRight, null))), openMonthCalendar ? /*#__PURE__*/React.createElement("div", {
     className: "calendar-grid"
-  }, weekdays.map((day, index) => /*#__PURE__*/_react.default.createElement("div", {
+  }, weekdays.map((day, index) => /*#__PURE__*/React.createElement("div", {
     key: index,
     className: "grid-header-item"
-  }, day)), days.map((item, index) => /*#__PURE__*/_react.default.createElement("div", {
+  }, day)), days.map((item, index) => /*#__PURE__*/React.createElement("div", {
     key: index,
     className: item.type === "current" ? "grid-item" : "disabled",
     onClick: () => {
@@ -516,16 +508,16 @@ const CalendarPage = _ref => {
     style: {
       backgroundColor: currentDate.getFullYear() === new Date().getFullYear() && currentDate.getMonth() === new Date().getMonth() && item.day === new Date().getDate() && item.type === "current" ? "lightblue" : ""
     }
-  }, item.day))) : openDailyCalendar ? /*#__PURE__*/_react.default.createElement("div", {
+  }, item.day))) : openDailyCalendar ? /*#__PURE__*/React.createElement("div", {
     className: "day-view"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "time-column"
   }, Array.from({
     length: 24
-  }, (_, i) => /*#__PURE__*/_react.default.createElement("div", {
+  }, (_, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "time-slot"
-  }, i === 0 ? "12 AM" : i < 12 ? "".concat(i, " AM") : i === 12 ? "12 PM" : "".concat(i - 12, " PM")))), /*#__PURE__*/_react.default.createElement("div", {
+  }, i === 0 ? "12 AM" : i < 12 ? "".concat(i, " AM") : i === 12 ? "12 PM" : "".concat(i - 12, " PM")))), /*#__PURE__*/React.createElement("div", {
     className: "event-column",
     style: {
       position: "relative"
@@ -552,7 +544,7 @@ const CalendarPage = _ref => {
     }));
     let backgroundColor = "";
     if (eventsAtTimeSlot.length === 1) backgroundColor = "green";else if (eventsAtTimeSlot.length === 2) backgroundColor = "orange";else if (eventsAtTimeSlot.length === 3) backgroundColor = "red";
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: i,
       className: "event-slot",
       style: (calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev => prev.events.some(item => {
@@ -588,7 +580,7 @@ const CalendarPage = _ref => {
         });
       }
       return "";
-    }) : "", currentHour === i && /*#__PURE__*/_react.default.createElement("div", {
+    }) : "", currentHour === i && /*#__PURE__*/React.createElement("div", {
       className: "current-time-line",
       style: {
         position: "absolute",
@@ -599,26 +591,26 @@ const CalendarPage = _ref => {
         top: 35
       }
     }));
-  }))) : /*#__PURE__*/_react.default.createElement("div", {
+  }))) : /*#__PURE__*/React.createElement("div", {
     className: "grid-container header1"
-  }, getWeekDays().map((day, index) => /*#__PURE__*/_react.default.createElement("div", {
+  }, getWeekDays().map((day, index) => /*#__PURE__*/React.createElement("div", {
     key: index
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid-header-item",
     style: {
       backgroundColor: currentDate.getFullYear() === new Date().getFullYear() && currentDate.getMonth() === new Date().getMonth() && day.getDate() === new Date().getDate() ? "lightblue" : "",
       opacity: day.getMonth() !== currentDate.getMonth() ? 0.5 : 1,
       pointerEvents: day.getMonth() !== currentDate.getMonth() ? "none" : "auto"
     }
-  }, /*#__PURE__*/_react.default.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "day-name"
-  }, weekdays[index]), " \xA0", /*#__PURE__*/_react.default.createElement("span", {
+  }, weekdays[index]), " \xA0", /*#__PURE__*/React.createElement("span", {
     className: "day-number"
-  }, day.getDate())), /*#__PURE__*/_react.default.createElement("div", {
+  }, day.getDate())), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative'
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     hidden: weekdays[index] !== "Sun",
     style: {
       position: "absolute",
@@ -626,25 +618,25 @@ const CalendarPage = _ref => {
       width: '80px'
     },
     className: "week-days"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "time-section",
     style: {
       borderBottom: '1px solid gray',
       backgroundColor: "#ececec"
     }
-  }, "all-day"), hours.map((hour, index) => /*#__PURE__*/_react.default.createElement("div", {
+  }, "all-day"), hours.map((hour, index) => /*#__PURE__*/React.createElement("div", {
     key: index,
     className: "time-section",
     style: {
       backgroundColor: "#ececec"
     }
-  }, hour))), /*#__PURE__*/_react.default.createElement("div", {
+  }, hour))), /*#__PURE__*/React.createElement("div", {
     className: "week-days",
     style: currentDate.getFullYear() === new Date().getFullYear() && currentDate.getMonth() === new Date().getMonth() && day.getDate() === new Date().getDate() ? {
       border: '2px solid gray',
       marginTop: '-1px'
     } : {}
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "time-section",
     style: {
       borderBottom: '1px solid gray'
@@ -652,39 +644,39 @@ const CalendarPage = _ref => {
   }), hours.map((hour, index) => {
     const eventsAtTimeSlot = (calendarUserId !== "All" ? resourceCalendar : sampleData).flatMap(prev => prev.events.filter(item => {
       if (item.recurring === "daily") {
-        return item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+        return item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
       } else if (item.recurring === "weekly") {
-        return item.day === weekdays[day.getDay()] && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+        return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
       } else if (item.recurring === "monthly") {
-        return item.date === day.getDate().toString() && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+        return item.date === day.getDate().toString() && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
       }
-      return prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate() && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+      return prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate() && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
     }));
     let backgroundColor = "";
     if (eventsAtTimeSlot.length === 1) backgroundColor = "green";else if (eventsAtTimeSlot.length === 2) backgroundColor = "orange";else if (eventsAtTimeSlot.length === 3) backgroundColor = "red";
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       key: index,
       className: "time-section",
       style: (calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev => prev.events.some(item => {
         if (item.recurring === "daily") {
-          return item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+          return item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
         } else if (item.recurring === "weekly") {
-          return item.day === weekdays[day.getDay()] && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+          return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
         } else if (item.recurring === "monthly") {
-          return item.date === day.getDate().toString() && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+          return item.date === day.getDate().toString() && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
         }
-        return prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate() && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+        return prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate() && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
       })) ? {
         backgroundColor,
         borderBottom: (calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev => prev.events.some(item => {
           if (item.recurring === "daily") {
-            return item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+            return item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
           } else if (item.recurring === "weekly") {
-            return item.day === weekdays[day.getDay()] && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+            return item.day === weekdays[day.getDay()] && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
           } else if (item.recurring === "monthly") {
-            return item.date === day.getDate().toString() && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+            return item.date === day.getDate().toString() && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
           }
-          return prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate() && item.from <= (0, _dayjs.default)(hour, "h A").format("HH") && (0, _dayjs.default)(hour, "h A").format("HH") < item.to;
+          return prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate() && item.from <= dayjs(hour, "h A").format("HH") && dayjs(hour, "h A").format("HH") < item.to;
         })) ? "1px solid gray" : "1px solid transparent"
       } : {},
       onClick: () => {
@@ -697,11 +689,11 @@ const CalendarPage = _ref => {
           const toTime = parseInt(item.to, 10);
           const midpoint = Math.floor((fromTime + toTime) / 2); // Midpoint calculation
 
-          return (0, _dayjs.default)(hour, "h A").format("HH") == midpoint ? item.title : ""; // Show only at midpoint
+          return dayjs(hour, "h A").format("HH") == midpoint ? item.title : ""; // Show only at midpoint
         });
       }
       return "";
-    }) : "", currentHour == (0, _dayjs.default)(hour, "h A").format("HH") && /*#__PURE__*/_react.default.createElement("div", {
+    }) : "", currentHour == dayjs(hour, "h A").format("HH") && /*#__PURE__*/React.createElement("div", {
       className: "current-time-line",
       style: {
         position: "absolute",
@@ -712,49 +704,49 @@ const CalendarPage = _ref => {
         top: 30
       }
     }));
-  })))))), /*#__PURE__*/_react.default.createElement(_antd.Modal, {
+  })))))), /*#__PURE__*/React.createElement(Modal, {
     open: openEventSlot,
     title: timeSlot + " Slot",
     onCancel: handleCloseEventSlot,
-    footer: openAppointment ? /*#__PURE__*/_react.default.createElement("div", {
+    footer: openAppointment ? /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
       }
-    }, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+    }, /*#__PURE__*/React.createElement(Button, {
       disabled: allEventsOnDay[timeSlot] === 0,
       onClick: () => {
         valueToSet = "";
         setBookSameSlot(false);
         setOpenAppoinment(false);
       }
-    }, "Book new Event"), /*#__PURE__*/_react.default.createElement(_antd.Button, {
+    }, "Book new Event"), /*#__PURE__*/React.createElement(Button, {
       onClick: () => {
         handleUpdateExistingEventDetails(filteredEvents[currentPage - 1]);
         setBookSameSlot(true);
       }
-    }, "update"), /*#__PURE__*/_react.default.createElement(_antd.Button, {
+    }, "update"), /*#__PURE__*/React.createElement(Button, {
       danger: true,
       onClick: () => deleteEvent()
-    }, "Delete")) : /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+    }, "Delete")) : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Button, {
       type: "primary",
       onClick: handleCalendarEvent
     }, "Ok"))
-  }, /*#__PURE__*/_react.default.createElement("div", null, !openAppointment ? /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, !openAppointment ? /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       textAlign: 'left',
       flexDirection: 'column'
     }
-  }, /*#__PURE__*/_react.default.createElement(_antd.Row, {
+  }, /*#__PURE__*/React.createElement(Row, {
     style: {
       position: 'relative'
     }
-  }, /*#__PURE__*/_react.default.createElement(_antd.Dropdown, {
+  }, /*#__PURE__*/React.createElement(Dropdown, {
     overlay: membersMenu,
     trigger: ["click"]
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     style: {
       border: !selectedMemberId ? "2px solid red" : ""
     },
@@ -762,12 +754,12 @@ const CalendarPage = _ref => {
     placeholder: "Search for members",
     value: selectedMemberId,
     onChange: e => handleMembersDropDown(e.target.value)
-  })), newErrors.selectedMemberId && /*#__PURE__*/_react.default.createElement("span", {
+  })), newErrors.selectedMemberId && /*#__PURE__*/React.createElement("span", {
     className: "inputError1"
-  }, newErrors.selectedMemberId), /*#__PURE__*/_react.default.createElement(_antd.Dropdown, {
+  }, newErrors.selectedMemberId), /*#__PURE__*/React.createElement(Dropdown, {
     overlay: resourceMenu,
     trigger: ["click"]
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     style: {
       border: !selectedResourceId ? '2px solid red' : ""
     },
@@ -775,9 +767,9 @@ const CalendarPage = _ref => {
     placeholder: "Search for resource",
     value: selectedResourceId,
     onChange: e => handleResourceDropDown(e.target.value)
-  })), newErrors.selectedResourceId && /*#__PURE__*/_react.default.createElement("span", {
+  })), newErrors.selectedResourceId && /*#__PURE__*/React.createElement("span", {
     className: "inputError2"
-  }, newErrors.selectedResourceId)), /*#__PURE__*/_react.default.createElement("h2", null, "Title :", /*#__PURE__*/_react.default.createElement("input", {
+  }, newErrors.selectedResourceId)), /*#__PURE__*/React.createElement("h2", null, "Title :", /*#__PURE__*/React.createElement("input", {
     style: {
       border: 'transparent',
       outline: 'none',
@@ -787,11 +779,11 @@ const CalendarPage = _ref => {
     },
     onChange: e => setEventTitle(e.target.value),
     value: eventTitle
-  }), newErrors.eventTitle && /*#__PURE__*/_react.default.createElement("span", {
+  }), newErrors.eventTitle && /*#__PURE__*/React.createElement("span", {
     style: {
       color: "red"
     }
-  }, "*")), /*#__PURE__*/_react.default.createElement("h2", null, "Notes :", /*#__PURE__*/_react.default.createElement("input", {
+  }, "*")), /*#__PURE__*/React.createElement("h2", null, "Notes :", /*#__PURE__*/React.createElement("input", {
     style: {
       border: 'transparent',
       outline: 'none',
@@ -801,13 +793,13 @@ const CalendarPage = _ref => {
     },
     onChange: e => setEventNotes(e.target.value),
     value: eventNotes
-  })), /*#__PURE__*/_react.default.createElement(_antd.Row, {
+  })), /*#__PURE__*/React.createElement(Row, {
     style: {
       display: 'flex',
       alignItems: 'center',
       flexDirection: 'row'
     }
-  }, /*#__PURE__*/_react.default.createElement("h2", null, "Recurring : ", " ", /*#__PURE__*/_react.default.createElement(_antd.Select, {
+  }, /*#__PURE__*/React.createElement("h2", null, "Recurring : ", " ", /*#__PURE__*/React.createElement(Select, {
     value: frequencyOfEvent,
     onChange: value => setFrequencyOfEvent(value),
     style: {
@@ -816,15 +808,15 @@ const CalendarPage = _ref => {
       fontSize: '15px',
       outline: 'none'
     }
-  }, /*#__PURE__*/_react.default.createElement(Option, {
+  }, /*#__PURE__*/React.createElement(Option, {
     value: "noRecurring"
-  }, "No Recurring"), /*#__PURE__*/_react.default.createElement(Option, {
+  }, "No Recurring"), /*#__PURE__*/React.createElement(Option, {
     value: "daily"
-  }, "Daily"), /*#__PURE__*/_react.default.createElement(Option, {
+  }, "Daily"), /*#__PURE__*/React.createElement(Option, {
     value: "weekly"
-  }, "Weekly"), /*#__PURE__*/_react.default.createElement(Option, {
+  }, "Weekly"), /*#__PURE__*/React.createElement(Option, {
     value: "monthly"
-  }, "Monthly"))), " \xA0\xA0", /*#__PURE__*/_react.default.createElement("h2", null, "Day : ", " ", /*#__PURE__*/_react.default.createElement("select", {
+  }, "Monthly"))), " \xA0\xA0", /*#__PURE__*/React.createElement("h2", null, "Day : ", " ", /*#__PURE__*/React.createElement("select", {
     value: frequencyOfEvent === "weekly" ? weeklyDayRecurring : monthlyRecurring,
     onChange: e => {
       frequencyOfEvent === "weekly" ? setWeeklyDayRecurring(e.target.value) : setMonthlyRecurring(e.target.value);
@@ -836,40 +828,40 @@ const CalendarPage = _ref => {
       fontSize: '15px',
       outline: 'none'
     }
-  }, frequencyOfEvent === "weekly" ? weekdays.map((day, index) => /*#__PURE__*/_react.default.createElement("option", {
+  }, frequencyOfEvent === "weekly" ? weekdays.map((day, index) => /*#__PURE__*/React.createElement("option", {
     value: day
-  }, day)) : days.map((day, index) => /*#__PURE__*/_react.default.createElement("option", {
+  }, day)) : days.map((day, index) => /*#__PURE__*/React.createElement("option", {
     value: day.day
-  }, " " + day.day))))), /*#__PURE__*/_react.default.createElement("h3", null, "From :", /*#__PURE__*/_react.default.createElement(_antd.TimePicker, {
+  }, " " + day.day))))), /*#__PURE__*/React.createElement("h3", null, "From :", /*#__PURE__*/React.createElement(TimePicker, {
     format: "h A",
     style: {
       width: '100px'
     },
-    value: Number.isInteger(fromTimeSlot) ? (0, _dayjs.default)().hour(fromTimeSlot) : fromTimeSlot,
+    value: Number.isInteger(fromTimeSlot) ? dayjs().hour(fromTimeSlot) : fromTimeSlot,
     onChange: e => setFromTimeSlot(e.hour()),
     needConfirm: false
-  }), " \xA0\xA0 To :", /*#__PURE__*/_react.default.createElement(_antd.TimePicker, {
+  }), " \xA0\xA0 To :", /*#__PURE__*/React.createElement(TimePicker, {
     format: "h A",
     style: {
       width: '100px'
     },
-    value: Number.isInteger(toTimeSlot) ? (0, _dayjs.default)().hour(toTimeSlot) : toTimeSlot,
+    value: Number.isInteger(toTimeSlot) ? dayjs().hour(toTimeSlot) : toTimeSlot,
     onChange: e => setToTimeSlot(e.hour()),
     needConfirm: false
-  }))) : /*#__PURE__*/_react.default.createElement("div", {
+  }))) : /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       textAlign: 'left',
       flexDirection: 'column'
     }
-  }, paginateEvents.map(item => /*#__PURE__*/_react.default.createElement("center", {
+  }, paginateEvents.map(item => /*#__PURE__*/React.createElement("center", {
     key: item.title
-  }, /*#__PURE__*/_react.default.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     onClick: () => {
       handleUpdateExistingEventDetails(filteredEvents[currentPage - 1]);
       setBookSameSlot(true);
     }
-  }, item.title))), /*#__PURE__*/_react.default.createElement(_antd.Pagination, {
+  }, item.title))), /*#__PURE__*/React.createElement(Pagination, {
     current: currentPage,
     pageSize: itemsForPage,
     onChange: page => setCurrentPage(page),
@@ -882,4 +874,4 @@ const CalendarPage = _ref => {
     }
   })))));
 };
-var _default = exports.default = CalendarPage;
+export default CalendarPage;
