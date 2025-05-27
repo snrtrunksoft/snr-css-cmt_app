@@ -1,0 +1,72 @@
+.nameCard {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    /* width: 100%; */
+}
+
+.nameCard h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.nameCard p {
+    font-size: 1rem;
+    color: #666;
+}
+
+.personalNameCard {
+    width: 100%;
+    background-color: white;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    box-shadow: 0px 8px 20px lightblue;
+}
+
+.punchCards {
+    border-radius: 10px;
+    display: grid;
+    gap: 10px;
+    padding: 20px;
+    width: 100%;
+    grid-template-columns: repeat(4, 1fr);
+}
+.individualCards {
+    background-color: #f4f4f4;
+    padding: 20px;
+    text-align: left;
+    max-width: fit-content;
+    max-height: fit-content;
+    border-radius: 10px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.5s;
+    margin: 0px 10px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.flipped {
+    background-color: #f4f4f4;
+    display: flex;
+    width: max-content;
+    max-width: 300px;
+    flex-direction: column;
+    padding: 10px;
+    padding-right: 100px;
+    border-radius: 5px;
+    transform: rotateY(360deg);
+}
+
+.punch-card {
+    margin: 10px 0px;
+    border-radius: 5px;
+    width: fit-content;
+    min-width: 95%;
+    min-height: 150px;
+    display: flex;
+    flex-direction: row;
+}

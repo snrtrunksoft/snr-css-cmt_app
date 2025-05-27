@@ -1,2 +1,2 @@
-import TestCMT from './TestCMT';
-export default TestCMT;
+import CmtApp from './CmtApp';
+export default CmtApp;

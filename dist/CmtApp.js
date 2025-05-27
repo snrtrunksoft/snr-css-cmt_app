@@ -1,0 +1,570 @@
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+import React, { useEffect, useRef, useState } from 'react';
+import './CmtApp.css';
+import NameCard from './NameCard';
+import Header from './Header';
+import Footer from './Footer';
+import ResourcePage from './ResourcePage';
+import TodosPage from "./TodosPage";
+import AddNewNameCard from './AddNewNameCard';
+import InventoryApp from "./InventoryApp/InventoryApp";
+import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "../properties/EndPointProperties";
+import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table } from "antd";
+import CalendarPage from "./CalendarPage";
+import { Bar, Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { LoadingOutlined } from '@ant-design/icons';
+const {
+  useBreakpoint
+} = Grid;
+
+// Registering necessary Chart.js components
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+function App(_ref) {
+  let {
+    cartItems,
+    setCartItems
+  } = _ref;
+  const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = useState(false);
+  const [dataView, setDataView] = useState("grid");
+  // const [ isInitialLoad, setIsInitialLoad ] = useRef(true);
+  const [newRecordName, setNewRecordName] = useState('');
+  const [newRecordPhone, setNewRecordPhone] = useState('');
+  const [newRecordAddress, setNewRecordAddress] = useState('');
+  const [newRecordLastName, setNewRecordLastName] = useState('');
+  const [newRecordStatus, setNewRecordStatus] = useState("Active");
+  const [newRecordCountry, setNewRecordCountry] = useState("");
+  const [newRecordState, setNewRecordState] = useState("");
+  const [newRecordCity, setNewRecordCity] = useState("");
+  const [statusSelection, setStatusSelection] = useState("All");
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [openCalendarPage, setOpenCalendarPage] = useState(false);
+  const [resourcePage, setResourcePage] = useState(false);
+  const [membersPage, setMembersPage] = useState(false);
+  const [todosPage, setTodosPage] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [openShoppingApp, setOpenShoppingApp] = useState(true);
+  const [view, setView] = useState("Grid");
+  const [resourceData, setResourceData] = useState([]);
+  const [resourceData1, setResourceData1] = useState([]);
+  const screens = useBreakpoint();
+  const [data, setData] = useState([]);
+  const [sampleData, setSampleData] = useState([]);
+  useEffect(() => {
+    console.log("initial loading, fetching user data from the Database");
+    // if(isInitialLoad.current){
+    const fetchingData = async () => {
+      try {
+        const Data = await fetch(MEMBERS_API);
+        const fetchedData = await Data.json();
+        console.log("fetching Data from database is complete");
+        console.log("Fetched Data:", fetchedData);
+        setData(fetchedData);
+      } catch (error) {
+        console.log("fail in fetching Data");
+        console.error("Error while fetching Data", error);
+      }
+      try {
+        const calendarData = await fetch(CALENDAR_API);
+        const fetchedCalendarData = await calendarData.json();
+        console.log("fetching Calendar Data from database is complete");
+        console.log("Fetched Calendar Data:", fetchedCalendarData);
+        setSampleData(fetchedCalendarData);
+      } catch (error) {
+        console.log("fail in fetching Calendar Data");
+        console.error("Error while fetching Calendar Data", error);
+      }
+      try {
+        const Data = await fetch(RESOURCES_API);
+        const fetchedData = await Data.json();
+        console.log("fetching Resource Data from database is complete");
+        console.log("Fetched Resource Data:", fetchedData);
+        setResourceData1(fetchedData);
+      } catch (error) {
+        console.log("fail in fetching resource Data");
+        console.error("Error while fetching resource Data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchingData();
+    // isInitialLoad.current = false;
+    // }
+  }, []);
+  useEffect(() => {
+    setResourceData(resourceData1);
+  }, [resourceData1]);
+  const [duplicateData, setDuplicateData] = useState(data);
+  const [commentBox, setCommentBox] = useState([]);
+  console.log("comment Box:", commentBox);
+  console.log("data:", duplicateData);
+  useEffect(() => {
+    setDuplicateData(data);
+  }, [data]);
+  const statusCount = data.reduce((acc, item) => {
+    acc[item.status] = (acc[item.status] || 0) + 1;
+    return acc;
+  }, {});
+  console.log(statusCount);
+  if (!("Active" in statusCount)) {
+    statusCount["Active"] = 0;
+  }
+  ;
+  if (!("In_Progress" in statusCount)) {
+    statusCount["In_Progress"] = 0;
+  }
+  ;
+  if (!("Complete" in statusCount)) {
+    statusCount["Complete"] = 0;
+  }
+  ;
+  if (!("Cancelled" in statusCount)) {
+    statusCount["Cancelled"] = 0;
+  }
+  ;
+  console.log("StatusCount:", statusCount);
+  const legendLabels = {
+    "Active": "Active Status",
+    "In_Progress": "In Progress Status",
+    "Complete": "Completed Status"
+  };
+  const graphData = {
+    labels: Object.keys(statusCount),
+    datasets: [{
+      label: 'Status Count',
+      data: Object.values(statusCount),
+      backgroundColor: ['brown', '#00B0FF', '#4CAF50', 'pink'],
+      borderColor: ['brown', '#00B0FF', '#4CAF50', 'pink']
+    }]
+  };
+  const options = {
+    responsive: true,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Status Distribution'
+      },
+      legend: {
+        position: 'top',
+        labels: {
+          generateLabels: chart => {
+            // Customizing the legend labels based on the chart's data
+            return chart.data.labels.map((label, index) => ({
+              text: legendLabels[label] || label,
+              fillStyle: chart.data.datasets[0].backgroundColor[index],
+              strokeStyle: chart.data.datasets[0].borderColor[index],
+              lineWidth: 1
+            }));
+          }
+        },
+        onClick: null
+      }
+    }
+  };
+  const columns = [{
+    title: 'Name',
+    dataIndex: 'customerName',
+    key: 'customerName',
+    render: text => /*#__PURE__*/React.createElement("a", null, text)
+  }, {
+    title: 'Phone',
+    dataIndex: 'phoneNumber',
+    key: 'phoneNumber'
+  }, {
+    title: 'Address',
+    dataIndex: "address",
+    key: 'address',
+    render: address => {
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          maxHeight: '60px',
+          // Limit the height
+          overflow: 'hidden',
+          // Hide overflow content
+          textOverflow: 'ellipsis',
+          // Optional: show ellipsis if text overflows
+          display: 'inline-block',
+          // Ensure it behaves like a block element
+          whiteSpace: 'nowrap'
+        }
+      }, Object.keys(address[0]).map((key, index) => /*#__PURE__*/React.createElement("div", {
+        key: index
+      }, address[0][key])));
+    }
+  }, {
+    title: 'Status',
+    dataIndex: 'status',
+    key: 'status',
+    sorter: (a, b) => a.status.localeCompare(b.status),
+    // Sorting by status alphabetically
+    sortDirections: ['ascend', 'descend']
+  }];
+  const handleAddNewNameCard = () => {
+    const newRecord = {
+      customerName: newRecordName + newRecordLastName,
+      phoneNumber: newRecordPhone,
+      address: [{
+        "country": newRecordCountry,
+        "city": newRecordCity,
+        "houseNo": "",
+        "street1": newRecordAddress,
+        "street2": "",
+        "state": newRecordState
+      }],
+      comments: [{
+        "author": newRecordName,
+        "commentId": "test id 101",
+        "message": "test comment 101"
+      }],
+      status: newRecordStatus,
+      subscriptions: [{}]
+    };
+    const addNewMember = async () => {
+      try {
+        const response = await fetch(MEMBERS_API, {
+          method: "POST",
+          headers: {
+            'Content-Type': "application/json"
+          },
+          body: JSON.stringify(newRecord)
+        });
+        const postData = await response.json();
+        console.log("postData:", postData);
+        const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
+          id: postData.userId
+        });
+        setDuplicateData(prevData => [...prevData, updatedRecord]);
+      } catch (error) {
+        console.log("unable to add new member", error);
+      }
+    };
+    addNewMember();
+    setIsAddNewNameCardModalOpen(false);
+  };
+  const handleStatusSelection = value => {
+    setStatusSelection(value);
+    setShowDashboard(true);
+    if (value === "All") {
+      setDuplicateData(data);
+      // setResourceData(resourceData1);
+      setShowDashboard(false);
+    } else {
+      const filteredRecords = data.filter(prev => prev.status === value);
+      // const filteredResourceData = resourceData1.filter((prev) => prev.status === value);
+      setDuplicateData(filteredRecords);
+      // setResourceData(filteredResourceData);
+    }
+    ;
+  };
+  const handleSearchText = value => {
+    setSearchText(value);
+    if (membersPage) {
+      const filterData = data.filter(prev => prev.customerName.toLowerCase().includes(value.toLowerCase()) || prev.phoneNumber.includes(value));
+      setDuplicateData(filterData);
+    } else {
+      const filteredResourceData = resourceData1.filter(prev => prev.resourceName.toLowerCase().includes(value.toLowerCase()) || prev.phoneNumber.includes(value));
+      setResourceData(filteredResourceData);
+    }
+  };
+  const dropDownList = /*#__PURE__*/React.createElement("select", {
+    value: statusSelection,
+    hidden: openCalendarPage || todosPage || resourcePage || isLoading,
+    style: {
+      borderRadius: '5px',
+      padding: '5px',
+      margin: '0px 10px',
+      outline: 'none',
+      fontSize: '15px'
+    },
+    onChange: e => handleStatusSelection(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "All"
+  }, "All"), /*#__PURE__*/React.createElement("option", {
+    value: "Active"
+  }, "Active"), /*#__PURE__*/React.createElement("option", {
+    value: "In_Progress"
+  }, "In_Progress"), /*#__PURE__*/React.createElement("option", {
+    value: "Complete"
+  }, "Complete"), /*#__PURE__*/React.createElement("option", {
+    value: "Cancelled"
+  }, "Cancelled"));
+  return /*#__PURE__*/React.createElement("div", null, openShoppingApp ? /*#__PURE__*/React.createElement(InventoryApp, {
+    setOpenShoppingApp: setOpenShoppingApp,
+    setMembersPage: setMembersPage,
+    cartItems: cartItems,
+    setCartItems: setCartItems
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "home_app"
+  }, /*#__PURE__*/React.createElement(Header, {
+    commentBox: commentBox,
+    membersPage: membersPage,
+    openCalendarPage: openCalendarPage,
+    todosPage: todosPage,
+    resourcePage: resourcePage,
+    openShoppingApp: openShoppingApp,
+    setOpenCalendarPage: setOpenCalendarPage,
+    setMembersPage: setMembersPage,
+    setResourcePage: setResourcePage,
+    setTodosPage: setTodosPage,
+    setOpenShoppingApp: setOpenShoppingApp
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    hidden: isLoading || openCalendarPage
+  }, /*#__PURE__*/React.createElement(Button, {
+    style: membersPage ? {
+      backgroundColor: '#1677ff',
+      color: 'azure'
+    } : {},
+    onClick: () => {
+      setResourcePage(false);
+      setOpenCalendarPage(false);
+      setMembersPage(true);
+      setTodosPage(false);
+    }
+  }, /*#__PURE__*/React.createElement("h3", null, "Members")), /*#__PURE__*/React.createElement(Button, {
+    style: resourcePage ? {
+      backgroundColor: '#1677ff',
+      color: 'azure'
+    } : {},
+    onClick: () => {
+      setResourcePage(true);
+      setMembersPage(false);
+      setOpenCalendarPage(false);
+      setTodosPage(false);
+    }
+  }, /*#__PURE__*/React.createElement("h3", null, "Resources"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      paddingRight: '5px'
+    },
+    hidden: !membersPage && !resourcePage
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Search Name or Ph no.",
+    value: searchText,
+    onChange: e => handleSearchText(e.target.value)
+  }))), /*#__PURE__*/React.createElement(Row, {
+    style: {
+      width: '100%',
+      backgroundColor: '',
+      gap: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '10px'
+    }
+  }, /*#__PURE__*/React.createElement(Col, {
+    hidden: openCalendarPage || todosPage || isLoading,
+    style: {
+      fontSize: '20px'
+    }
+  }, /*#__PURE__*/React.createElement("span", null, view + " View "), /*#__PURE__*/React.createElement(Switch
+  // style={{ margin: '0px 10px' }}
+  , {
+    onClick: () => {
+      setDataView(dataView === "grid" ? "table" : "grid");
+      setView(view === "Grid" ? "List" : "Grid");
+    }
+  })), /*#__PURE__*/React.createElement(Col, {
+    hidden: openCalendarPage || todosPage || isLoading,
+    style: {
+      fontSize: '20px'
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "Show Dashboard "), /*#__PURE__*/React.createElement(Switch, {
+    checked: showDashboard
+    // style={{ margin: '0px 10px' }}
+    ,
+    onClick: () => setShowDashboard(prev => !prev)
+  })), /*#__PURE__*/React.createElement(Col, {
+    style: {
+      fontSize: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'end'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    hidden: openCalendarPage || todosPage || resourcePage || isLoading
+  }, "Status:"), " ", dropDownList)), isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : membersPage ? /*#__PURE__*/React.createElement("div", null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
+    className: "table-wrapper"
+  }, /*#__PURE__*/React.createElement(Row, {
+    className: "table-row table-header",
+    style: {
+      width: screens.xl || screens.lg ? '60vw' : ""
+    }
+  }, /*#__PURE__*/React.createElement(Col, {
+    span: 3,
+    className: "table-cell"
+  }, "ID"), /*#__PURE__*/React.createElement(Col, {
+    span: 5,
+    className: "table-cell"
+  }, "Name"), /*#__PURE__*/React.createElement(Col, {
+    span: 10,
+    className: "table-cell"
+  }, "Address"), /*#__PURE__*/React.createElement(Col, {
+    span: 6,
+    className: "table-cell"
+  }, "Phone Number")), duplicateData.map((item, index) => /*#__PURE__*/React.createElement(Row, {
+    key: index,
+    className: "table-row",
+    style: {
+      width: screens.xl || screens.lg ? '60vw' : ""
+    }
+  }, /*#__PURE__*/React.createElement(Col, {
+    span: 3,
+    className: "table-cell"
+  }, item.id), /*#__PURE__*/React.createElement(Col, {
+    span: 5,
+    className: "table-cell"
+  }, item.customerName), /*#__PURE__*/React.createElement(Col, {
+    span: 10,
+    className: "table-cell"
+  }, "".concat(item.address[0].houseNo, ", ").concat(item.address[0].street1, ", ").concat(item.address[0].street2, ", ").concat(item.address[0].city, ", ").concat(item.address[0].state, ", ").concat(item.address[0].country)), /*#__PURE__*/React.createElement(Col, {
+    span: 6,
+    className: "table-cell"
+  }, item.phoneNumber))), /*#__PURE__*/React.createElement(Row, {
+    className: "table-row add-record-row"
+  }, /*#__PURE__*/React.createElement(Col, {
+    span: 24,
+    style: {
+      margin: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("center", null, /*#__PURE__*/React.createElement(Button, {
+    style: {
+      fontSize: '18px'
+    },
+    onClick: () => setIsAddNewNameCardModalOpen(true)
+  }, "+ Add New Record"))))) : /*#__PURE__*/React.createElement(Row, {
+    gutter: [16, 16],
+    className: "home-grid"
+  }, duplicateData.map(item => /*#__PURE__*/React.createElement(Col, {
+    key: item.id,
+    xs: duplicateData.length <= 1 ? 24 : 12,
+    sm: duplicateData.length <= 1 ? 24 : 12,
+    md: duplicateData.length <= 2 ? 20 : 8,
+    lg: duplicateData.length <= 2 ? 20 : 6,
+    xl: duplicateData.length <= 2 ? 20 : 6
+  }, /*#__PURE__*/React.createElement(NameCard, {
+    key: item.id,
+    customerId: item.id,
+    customerName: item.customerName,
+    phoneNumber: item.phoneNumber,
+    address: item.address,
+    status: item.status,
+    comments: item.comments,
+    subscriptions: item.subscriptions,
+    setDuplicateData: setDuplicateData,
+    commentBox: commentBox,
+    setCommentBox: setCommentBox
+  }))), /*#__PURE__*/React.createElement(Col, {
+    xs: duplicateData.length <= 1 ? 24 : 12,
+    sm: duplicateData.length <= 1 ? 24 : 12,
+    md: duplicateData.length <= 2 ? 20 : 8,
+    lg: duplicateData.length <= 2 ? 20 : 6,
+    xl: duplicateData.length <= 2 ? 20 : 6,
+    className: "nameCard",
+    onClick: () => setIsAddNewNameCardModalOpen(true),
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    style: {
+      border: 'transparent',
+      fontSize: '40px'
+    }
+  }, "+"))), /*#__PURE__*/React.createElement(Divider, {
+    type: "horizontal"
+  }), showDashboard && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%"
+    }
+  }, /*#__PURE__*/React.createElement(Row, {
+    className: "status-track-icons"
+  }, /*#__PURE__*/React.createElement(Col, {
+    className: "status-icons"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      backgroundColor: 'pink'
+    }
+  }, " ", statusCount["Active"], " "), /*#__PURE__*/React.createElement("h3", null, "Active")), /*#__PURE__*/React.createElement(Col, {
+    className: "status-icons"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      backgroundColor: 'lightBlue'
+    }
+  }, " ", statusCount["In_Progress"], " "), /*#__PURE__*/React.createElement("h3", null, "In_Progress")), /*#__PURE__*/React.createElement(Col, {
+    className: "status-icons"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      backgroundColor: 'lightgreen'
+    }
+  }, " ", statusCount["Complete"], " "), /*#__PURE__*/React.createElement("h3", null, "Complete")), /*#__PURE__*/React.createElement(Col, {
+    className: "status-icons"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      backgroundColor: 'rgba(256,0,0,0.7)'
+    }
+  }, " ", statusCount["Cancelled"], " "), /*#__PURE__*/React.createElement("h3", null, "Cancelled"))), /*#__PURE__*/React.createElement(Col, {
+    style: {
+      paddingTop: '0px'
+    }
+  }, /*#__PURE__*/React.createElement(Divider, {
+    type: "horizontal"
+  })), /*#__PURE__*/React.createElement(Row, {
+    className: "graph",
+    justify: 'center'
+  }, /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    sm: 22,
+    md: 20,
+    lg: 16,
+    xl: 12
+  }, /*#__PURE__*/React.createElement(Bar, {
+    data: graphData,
+    options: options
+  })))), /*#__PURE__*/React.createElement(Modal, {
+    open: isAddNewNameCardModalOpen,
+    onCancel: () => setIsAddNewNameCardModalOpen(false),
+    footer: null
+  }, /*#__PURE__*/React.createElement(AddNewNameCard, {
+    setNewRecordName: setNewRecordName,
+    setNewRecordLastName: setNewRecordLastName,
+    setNewRecordPhone: setNewRecordPhone,
+    setNewRecordAddress: setNewRecordAddress,
+    setNewRecordCity: setNewRecordCity,
+    setNewRecordState: setNewRecordState,
+    setNewRecordCountry: setNewRecordCountry,
+    setNewRecordStatus: setNewRecordStatus,
+    newRecordStatus: newRecordStatus,
+    handleAddNewNameCard: handleAddNewNameCard,
+    membersPage: true
+  }))) : resourcePage ? /*#__PURE__*/React.createElement(ResourcePage, {
+    resourceData: resourceData,
+    setResourceData: setResourceData,
+    dataView: dataView,
+    setDuplicateData: setDuplicateData,
+    commentBox: commentBox,
+    setCommentBox: setCommentBox
+  }) : openCalendarPage ? /*#__PURE__*/React.createElement(CalendarPage, {
+    sampleData: sampleData,
+    setSampleData: setSampleData,
+    duplicateData: duplicateData,
+    resourceData: resourceData
+  }) : /*#__PURE__*/React.createElement(TodosPage, {
+    sampleData: sampleData
+  }), /*#__PURE__*/React.createElement(Divider, {
+    type: "horizontal"
+  }), /*#__PURE__*/React.createElement(Footer, null)));
+}
+export default App;

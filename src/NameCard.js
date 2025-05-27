@@ -4,6 +4,8 @@ import { Badge, Button, Card, Checkbox, Col, Drawer,Grid, Row, Space } from "ant
 import maleAvatar from "./assets/male_avatar.jpg";
 import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
+import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
+import PunchCardsPage  from "./PunchCardsPage";
 import { SwapOutlined } from "@ant-design/icons";
 
 const NameCard = ({ 
@@ -21,8 +23,6 @@ const NameCard = ({
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
-    const [ punchCardsState, setPunchCardsState ] = useState("Complete");
-    const [ flipped, setFlipped ] = useState(false);
     const { useBreakpoint } = Grid;
     const screens = useBreakpoint();
 
@@ -33,96 +33,50 @@ const NameCard = ({
         if (screens.sm) return 300;
         return '100%';
     };
-
-    const toggleFlip = () => {
-        setFlipped((prev) => !prev);
-    };
-
-    const [ punchCards, setPunchCards ] = useState(subscriptions);
-    const [ checkedCount, setCheckedCount ] = useState(0);
-    const handleSave = (value) => {
-        setPunchCards((prevCards) =>
-        prevCards.map((prev) => {
-            if(prev.id === value.id) {
-                const servicesLeft = Math.max(0, prev.noOfServicesLeft - checkedCount);
-                if(servicesLeft === 0){
-                    return {
-                        ...prev,
-                        noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
-                        noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
-                        status:'Complete'
-                    }
-                }
-                return {
-                    ...prev,
-                    noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
-                    noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
-                }
-            } 
-            return prev;
-        }
-        ));
-        handleSend();
-        setCheckedCount(0);
-    };
-
-    const handleCheckboxChange = (e,value) => {
-        const count = e.target.checked ? checkedCount + 1 : checkedCount - 1;
-        setCheckedCount(count);
-        setNewComment(count > 0 ?"Subscription ID: "+value.id +", selected Cards: "+count:"");
-    };
-
-    const filterActiveSubscription = punchCards !== "" ? punchCards.filter((prev) => prev.status === "Active") : "";
-
-    const addNewSubscription = () => {
-        
-        const updateSubscriptionData = async() =>{
-            try{
-                const response = await fetch(`https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev/users/${customerId}`);
-                const customerData = await response.json();
-                const newSub = {
-                    id: "TBD",
-                    status: "Active",
-                    noOfServicesLeft: "10",
-                    noOfServicesCompleted: "0",
-                    totalNumberOfServices: "10",
-                    purchasedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-                    completedDate: "",
-                    };
-                console.log(customerData.subscriptions.length);
-                const updatedCustomer = {
-                    ...customerData,
-                    subscriptions: [...customerData.subscriptions, newSub], // appending new subscription
-                };
-                await fetch(`https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev/users/${customerId}`,{
-                    method:'PUT',
-                    headers: {
-                        "Content-Type" : "application/json",
-                    },
-                    body:JSON.stringify(updatedCustomer)
-                })
-                .then(response => response.json())
-                .then(data => console.log("updated Data:",data))
-                setPunchCards((prev) => [...prev, newSub]);
-            }catch(error){
-                console.error("unable to update the record",error);
-            }
-        }
-        updateSubscriptionData();
-    };
-
+    
     const addressKeys = Object.keys(address[0]);
     // console.log(addressKeys);
     const handleSend = () => {
         if(newComment){
+            const commentBody = [...comments, {
+                "commentId" : parseInt(comments[comments.length - 1].commentId) + 1 || 1,
+                "author" : customerName,
+                "message" : newComment
+            }]
+            const updatedRecord = {
+                "customerName" : customerName,
+                "status" : status,
+                "address" : address,
+                "subscriptions" : subscriptions,
+                "phoneNumber" : phoneNumber,
+                "comments" : commentBody
+            }
+            console.log("updatedRecord:",updatedRecord);
+            const uploadComment = async () => {
+                try {
+                    const response = await fetch(MEMBERS_API + customerId, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(updatedRecord)
+                    });
+                    const data = await response.json();
+                    console.log("successfully added the comment:", data);
+                } catch(error) {
+                    console.log("unbale to add Comment:",error);
+                }
+            }
+            uploadComment();
+
             setDuplicateData(prevData =>
                 prevData.map(prev =>
                     prev.id === customerId ? {
                         ...prev,
                         comments: [...prev.comments, {
-                            commentID : parseInt(comments[comments.length - 1]["commentId"]) + 1,
-                            message:newComment,
-                            author:"TBD",
+                            commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                            message: newComment,
+                            author: customerName,
                         }]
                     } : prev)
             );
@@ -133,9 +87,9 @@ const NameCard = ({
                     prevComments.map((prev, index) =>
                         index === existingData
                             ? { ...prev, comment: [...prev.comment, {
-                                commentId:prev.comment.length + 1,
-                                message:newComment,
-                                author:'TBD',
+                                commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                                message: newComment,
+                                author: customerName,
                             }] }
                             : prev
                     )
@@ -143,7 +97,11 @@ const NameCard = ({
             } else {
                 setCommentBox(prevComments => [
                     ...prevComments,
-                    { customerName,color, comment: [{commentId:'1',message:newComment,author:'TBD'}] }
+                    { customerName,color, comment: [{
+                        commentId:parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                        message:newComment,
+                        author:customerName
+                    }] }
                 ]);
             }
         }
@@ -169,25 +127,25 @@ const NameCard = ({
         <div>
             <div 
                 onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)} 
+                onMouseLeave={() => setIsHovered(false)}
                 className="nameCard"
-                onClick={()=>setNameCardDrawer(true)} 
+                onClick={()=>setNameCardDrawer(true)}
                 style={{
                     boxShadow: isHovered ? `0px 8px 20px ${color}` : `0px 0px 6px ${color}`,
                     transition:'box-shadow 0.3s ease'
                     }}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                     <h3 style={{
-                    width:'100%',overflow: 'hidden',
+                    width: '100%',overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace:'nowrap'
                     }}>Name : { customerName }</h3>
                     <div style={{width:'30px',height:'15px',backgroundColor:`${color}`,}}></div>
                 </div>
                 <p style={{
-                    width:'100%',overflow: 'hidden',
+                    width: '100%',overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace:'nowrap'
+                    whiteSpace: 'nowrap'
                     }}>Phone : { phoneNumber }</p>
                 {address.length > 0 && (
                     <p style={{
@@ -199,7 +157,12 @@ const NameCard = ({
                         Address: {address.map(prev => prev.city).join(', ')}, {address.map(prev => prev.state).join(', ')}, {address.map(prev => prev.country).join(', ')}.
                     </p>
                 )}
-                <p>Status : { status }</p>
+                <p style={{
+                        width: '100%',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                    }}>Status : { status }</p>
             </div>
             <Drawer
                 open={nameCardDrawer}
@@ -232,76 +195,13 @@ const NameCard = ({
                             </h3>
                         </Col>
                     </Row>
-                    <h2>Punch cards:</h2>
-                    {punchCards ? <div className="" >
-                        <Row>
-                            <Button onClick={() => {setFlipped(false);setPunchCardsState((prev) => prev === "Complete" ? "Active": "Complete")}}>View {punchCardsState}</Button> &nbsp;
-                        </Row>
-                        {punchCards.filter((card) => card.status !== punchCardsState)
-                        .map((card) => (
-                            <div>
-                                <Row key={card.id} className="punch-card" style={{ backgroundColor: `${color}` }} gutter={[16, 16]}>
-                                <Col
-                                    className="punchCards"
-                                    xs={24}
-                                    sm={20}
-                                    md={24}
-                                    lg={20}
-                                    xl={20}
-                                >
-                                    {flipped ? (
-                                    <Row className="flipped">
-                                        <span>name: {customerName}</span>
-                                        <span>purchased: {card.purchasedDate}</span>
-                                        <span>completed: {card.completedDate}</span>
-                                        <span>totalNumberOfService: {card.totalNumberOfServices}</span>
-                                        <span>noOfServicesLeft: {card.noOfServicesLeft}</span>
-                                        <span>noOfServicesCompleted: {card.noOfServicesCompleted}</span>
-                                    </Row>
-                                    ) : (
-                                    Array.from({ length: Number(card.noOfServicesCompleted) }, (_, index) => (
-                                        <div key={index} className="individualCards">
-                                        <Checkbox checked />
-                                        </div>
-                                    ))
-                                    )}
-                                    {Array.from({ length: Number(card.noOfServicesLeft) }, (_, index) => index)
-                                    .reverse()
-                                    .map((index) => (
-                                        <div
-                                        key={index}
-                                        hidden={flipped}
-                                        className={!flipped ? "individualCards" : ""}
-                                        >
-                                        <Checkbox onChange={(e) => handleCheckboxChange(e, card)} />
-                                        </div>
-                                    ))}
-                                </Col>
-
-                                <Col
-                                    xs={24}
-                                    sm={4}
-                                    md={24}
-                                    lg={2}
-                                    xl={2}
-                                    style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    }}
-                                >
-                                    <Button onClick={() => toggleFlip()} icon={<SwapOutlined />}>
-                                    Flip
-                                    </Button>
-                                </Col>
-                                </Row>
-
-                                {checkedCount?<Row style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Button type="primary" onClick={()=>handleSave(card)}>Save</Button></Row>:""}
-                            </div>
-                            ))}
-                            <span>{filterActiveSubscription.length === 0 ? 
-                            <center><Button style={{margin:'5px'}} onClick={() => addNewSubscription()}>Add Active Subscription</Button></center> : ""}</span>
-                    </div> : <center><h3 style={{color:'red'}}>No punch cards Available</h3></center>}
+                        <PunchCardsPage
+                            customerId={customerId}
+                            customerName={customerName}
+                            setNewComment={setNewComment}
+                            handleSend={handleSend}
+                            subscriptions={subscriptions}
+                            color={color} />
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
                         {comments.map((comment,index) =>(

@@ -9,6 +9,8 @@ import { Badge, Button, Card, Checkbox, Col, Drawer, Grid, Row, Space } from "an
 import maleAvatar from "./assets/male_avatar.jpg";
 import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
+import { MEMBERS_API, RESOURCES_API } from "../properties/EndPointProperties";
+import PunchCardsPage from "./PunchCardsPage";
 import { SwapOutlined } from "@ant-design/icons";
 const NameCard = _ref => {
   let {
@@ -26,8 +28,6 @@ const NameCard = _ref => {
   const [isHovered, setIsHovered] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [nameCardDrawer, setNameCardDrawer] = useState(false);
-  const [punchCardsState, setPunchCardsState] = useState("Complete");
-  const [flipped, setFlipped] = useState(false);
   const {
     useBreakpoint
   } = Grid;
@@ -39,92 +39,54 @@ const NameCard = _ref => {
     if (screens.sm) return 300;
     return '100%';
   };
-  const toggleFlip = () => {
-    setFlipped(prev => !prev);
-  };
-  const [punchCards, setPunchCards] = useState(subscriptions);
-  const [checkedCount, setCheckedCount] = useState(0);
-  const handleSave = value => {
-    setPunchCards(prevCards => prevCards.map(prev => {
-      if (prev.id === value.id) {
-        const servicesLeft = Math.max(0, prev.noOfServicesLeft - checkedCount);
-        if (servicesLeft === 0) {
-          return _objectSpread(_objectSpread({}, prev), {}, {
-            noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
-            noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
-            status: 'Complete'
-          });
-        }
-        return _objectSpread(_objectSpread({}, prev), {}, {
-          noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
-          noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount)
-        });
-      }
-      return prev;
-    }));
-    handleSend();
-    setCheckedCount(0);
-  };
-  const handleCheckboxChange = (e, value) => {
-    const count = e.target.checked ? checkedCount + 1 : checkedCount - 1;
-    setCheckedCount(count);
-    setNewComment(count > 0 ? "Subscription ID: " + value.id + ", selected Cards: " + count : "");
-  };
-  const filterActiveSubscription = punchCards !== "" ? punchCards.filter(prev => prev.status === "Active") : "";
-  const addNewSubscription = () => {
-    const updateSubscriptionData = async () => {
-      try {
-        const response = await fetch("https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev/users/".concat(customerId));
-        const customerData = await response.json();
-        const newSub = {
-          id: "TBD",
-          status: "Active",
-          noOfServicesLeft: "10",
-          noOfServicesCompleted: "0",
-          totalNumberOfServices: "10",
-          purchasedDate: new Date().toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric'
-          }),
-          completedDate: ""
-        };
-        console.log(customerData.subscriptions.length);
-        const updatedCustomer = _objectSpread(_objectSpread({}, customerData), {}, {
-          subscriptions: [...customerData.subscriptions, newSub] // appending new subscription
-        });
-        await fetch("https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev/users/".concat(customerId), {
-          method: 'PUT',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(updatedCustomer)
-        }).then(response => response.json()).then(data => console.log("updated Data:", data));
-        setPunchCards(prev => [...prev, newSub]);
-      } catch (error) {
-        console.error("unable to update the record", error);
-      }
-    };
-    updateSubscriptionData();
-  };
   const addressKeys = Object.keys(address[0]);
   // console.log(addressKeys);
   const handleSend = () => {
     if (newComment) {
+      const commentBody = [...comments, {
+        "commentId": parseInt(comments[comments.length - 1].commentId) + 1 || 1,
+        "author": customerName,
+        "message": newComment
+      }];
+      const updatedRecord = {
+        "customerName": customerName,
+        "status": status,
+        "address": address,
+        "subscriptions": subscriptions,
+        "phoneNumber": phoneNumber,
+        "comments": commentBody
+      };
+      console.log("updatedRecord:", updatedRecord);
+      const uploadComment = async () => {
+        try {
+          const response = await fetch(MEMBERS_API + customerId, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updatedRecord)
+          });
+          const data = await response.json();
+          console.log("successfully added the comment:", data);
+        } catch (error) {
+          console.log("unbale to add Comment:", error);
+        }
+      };
+      uploadComment();
       setDuplicateData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
         comments: [...prev.comments, {
-          commentID: parseInt(comments[comments.length - 1]["commentId"]) + 1,
+          commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
           message: newComment,
-          author: "TBD"
+          author: customerName
         }]
       }) : prev));
       const existingData = commentBox.findIndex(person => person.customerName === customerName);
       if (existingData !== -1) {
         setCommentBox(prevComments => prevComments.map((prev, index) => index === existingData ? _objectSpread(_objectSpread({}, prev), {}, {
           comment: [...prev.comment, {
-            commentId: prev.comment.length + 1,
+            commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
             message: newComment,
-            author: 'TBD'
+            author: customerName
           }]
         }) : prev));
       } else {
@@ -132,9 +94,9 @@ const NameCard = _ref => {
           customerName,
           color,
           comment: [{
-            commentId: '1',
+            commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
             message: newComment,
-            author: 'TBD'
+            author: customerName
           }]
         }]);
       }
@@ -199,7 +161,14 @@ const NameCard = _ref => {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     }
-  }, "Address: ", address.map(prev => prev.city).join(', '), ", ", address.map(prev => prev.state).join(', '), ", ", address.map(prev => prev.country).join(', '), "."), /*#__PURE__*/React.createElement("p", null, "Status : ", status)), /*#__PURE__*/React.createElement(Drawer, {
+  }, "Address: ", address.map(prev => prev.city).join(', '), ", ", address.map(prev => prev.state).join(', '), ", ", address.map(prev => prev.country).join(', '), "."), /*#__PURE__*/React.createElement("p", {
+    style: {
+      width: '100%',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  }, "Status : ", status)), /*#__PURE__*/React.createElement(Drawer, {
     open: nameCardDrawer,
     style: {
       backgroundColor: 'whitesmoke'
@@ -248,77 +217,14 @@ const NameCard = _ref => {
     }
   }, "Address : ", addressKeys.map((item, index) => /*#__PURE__*/React.createElement("span", {
     key: index
-  }, address[0][item], item !== "country" ? ", " : ".", item === "city" || item === "state" ? "" : /*#__PURE__*/React.createElement("br", null)))))), /*#__PURE__*/React.createElement("h2", null, "Punch cards:"), punchCards ? /*#__PURE__*/React.createElement("div", {
-    className: ""
-  }, /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(Button, {
-    onClick: () => {
-      setFlipped(false);
-      setPunchCardsState(prev => prev === "Complete" ? "Active" : "Complete");
-    }
-  }, "View ", punchCardsState), " \xA0"), punchCards.filter(card => card.status !== punchCardsState).map(card => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Row, {
-    key: card.id,
-    className: "punch-card",
-    style: {
-      backgroundColor: "".concat(color)
-    },
-    gutter: [16, 16]
-  }, /*#__PURE__*/React.createElement(Col, {
-    className: "punchCards",
-    xs: 24,
-    sm: 20,
-    md: 24,
-    lg: 20,
-    xl: 20
-  }, flipped ? /*#__PURE__*/React.createElement(Row, {
-    className: "flipped"
-  }, /*#__PURE__*/React.createElement("span", null, "name: ", customerName), /*#__PURE__*/React.createElement("span", null, "purchased: ", card.purchasedDate), /*#__PURE__*/React.createElement("span", null, "completed: ", card.completedDate), /*#__PURE__*/React.createElement("span", null, "totalNumberOfService: ", card.totalNumberOfServices), /*#__PURE__*/React.createElement("span", null, "noOfServicesLeft: ", card.noOfServicesLeft), /*#__PURE__*/React.createElement("span", null, "noOfServicesCompleted: ", card.noOfServicesCompleted)) : Array.from({
-    length: Number(card.noOfServicesCompleted)
-  }, (_, index) => /*#__PURE__*/React.createElement("div", {
-    key: index,
-    className: "individualCards"
-  }, /*#__PURE__*/React.createElement(Checkbox, {
-    checked: true
-  }))), Array.from({
-    length: Number(card.noOfServicesLeft)
-  }, (_, index) => index).reverse().map(index => /*#__PURE__*/React.createElement("div", {
-    key: index,
-    hidden: flipped,
-    className: !flipped ? "individualCards" : ""
-  }, /*#__PURE__*/React.createElement(Checkbox, {
-    onChange: e => handleCheckboxChange(e, card)
-  })))), /*#__PURE__*/React.createElement(Col, {
-    xs: 24,
-    sm: 4,
-    md: 24,
-    lg: 2,
-    xl: 2,
-    style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }
-  }, /*#__PURE__*/React.createElement(Button, {
-    onClick: () => toggleFlip(),
-    icon: /*#__PURE__*/React.createElement(SwapOutlined, null)
-  }, "Flip"))), checkedCount ? /*#__PURE__*/React.createElement(Row, {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, /*#__PURE__*/React.createElement(Button, {
-    type: "primary",
-    onClick: () => handleSave(card)
-  }, "Save")) : "")), /*#__PURE__*/React.createElement("span", null, filterActiveSubscription.length === 0 ? /*#__PURE__*/React.createElement("center", null, /*#__PURE__*/React.createElement(Button, {
-    style: {
-      margin: '5px'
-    },
-    onClick: () => addNewSubscription()
-  }, "Add Active Subscription")) : "")) : /*#__PURE__*/React.createElement("center", null, /*#__PURE__*/React.createElement("h3", {
-    style: {
-      color: 'red'
-    }
-  }, "No punch cards Available")), /*#__PURE__*/React.createElement("h3", null, "Comments :"), /*#__PURE__*/React.createElement(Row, {
+  }, address[0][item], item !== "country" ? ", " : ".", item === "city" || item === "state" ? "" : /*#__PURE__*/React.createElement("br", null)))))), /*#__PURE__*/React.createElement(PunchCardsPage, {
+    customerId: customerId,
+    customerName: customerName,
+    setNewComment: setNewComment,
+    handleSend: handleSend,
+    subscriptions: subscriptions,
+    color: color
+  }), /*#__PURE__*/React.createElement("h3", null, "Comments :"), /*#__PURE__*/React.createElement(Row, {
     style: {
       display: 'flex',
       flexDirection: 'column',

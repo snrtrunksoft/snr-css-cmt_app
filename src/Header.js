@@ -1,34 +1,54 @@
-import { Badge, Button, Menu, Card, Drawer, Space, Switch } from "antd";
-import { CalendarTwoTone,MenuOutlined, HomeOutlined, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
+import { Badge, Button, Menu, Card, Drawer, Space, Switch, Modal, Row, Col } from "antd";
+import { MenuOutlined, InboxOutlined, LogoutOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import React, { useState, useEffect } from "react";
 import "./Header.css";
+import { getCurrentUser, signOut } from 'aws-amplify/auth'; // ✅ Auth import
+import { useNavigate } from 'react-router-dom';
+import { FaUser } from "react-icons/fa";
+import { IoIosGlobe } from "react-icons/io";
+import { LuCalendar, LuListTodo  } from "react-icons/lu";
 
 const Header = ({
-  dropDownList,
-  dataView,
-  setDataView,
-  setHideDashboard,
-  hideDashboard,
   commentBox,
   membersPage,
   openCalendarPage,
   todosPage,
   resourcePage,
+  openShoppingApp,
   setOpenCalendarPage,
   setMembersPage,
   setResourcePage,
   setTodosPage,
+  setOpenShoppingApp,
 }) => {
-  const [view, setView] = useState("Grid");
+  
   const [handleInboxDrawer, setHandleInboxDrawer] = useState(false);
   const [menuDrawerVisible, setMenuDrawerVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [openConfirmationModal, setOpenConfirmationModal] = useState(false);
+  const navigate = useNavigate();
 
   const handleResize = () => {
-    setIsMobile(window.innerWidth <= 920);
+    setIsMobile(window.innerWidth <= 1030);
   };
 
+  const handleLogout = async () => {
+      await signOut();
+      console.log("logout");
+      // setIsLoggedIn(false);
+      navigate('/');
+    };
+
   useEffect(() => {
+    const checkLogin = async () => {
+          try {
+            await getCurrentUser();
+            // setIsLoggedIn(true);
+          } catch {
+            // setIsLoggedIn(false);
+          }
+        };
+        checkLogin();
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -44,11 +64,12 @@ const Header = ({
     if (key === "members") setMembersPage(true);
     if (key === "calendar") setOpenCalendarPage(true);
     if (key === "todos") setTodosPage(true);
+    if (key === "shopping") setOpenShoppingApp(true);
   };
 
   return (
-    <header className="header">
-      <div className="header-left">
+    <header className="CMTheader">
+      <div className="CMTheader-left">
         <h1 style={{ color: '#FF5F09' }}>SNR&nbsp;</h1>
         <h1>CMT APP</h1>
       </div>
@@ -67,19 +88,25 @@ const Header = ({
             onClose={() => setMenuDrawerVisible(false)}
           >
             <Menu mode="vertical" theme="light">
-              <Menu.Item key="members" icon={<HomeOutlined />} onClick={() => handleMenuClick("members")}>
+              <Menu.Item key="Website" icon={<IoIosGlobe />} onClick={() => navigate('/')}>
+                WebSite
+              </Menu.Item>
+              <Menu.Item key="members" icon={<FaUser />} onClick={() => handleMenuClick("members")}>
                 Home
               </Menu.Item>
-              <Menu.Item key="calendar" icon={<CalendarTwoTone />} onClick={() => handleMenuClick("calendar")}>
+              <Menu.Item key="calendar" icon={<LuCalendar />} onClick={() => handleMenuClick("calendar")}>
                 Calendar
               </Menu.Item>
-              <Menu.Item key="todos" onClick={() => handleMenuClick("todos")}>
+              <Menu.Item key="todos" icon={<LuListTodo />} onClick={() => handleMenuClick("todos")}>
                 Todos
               </Menu.Item>
               <Menu.Item key="inbox" icon={<InboxOutlined />} onClick={() => { setHandleInboxDrawer(true); setMenuDrawerVisible(false); }}>
                 Inbox <Badge count={commentBox.length} offset={[10, -2]} />
               </Menu.Item>
-              <Menu.SubMenu key="settings" title="Settings">
+              <Menu.Item key="shopping" icon={<ShoppingCartOutlined />} onClick={() => handleMenuClick("shopping")}>
+                Shopping
+              </Menu.Item>
+              {/* <Menu.SubMenu key="settings" title="Settings">
                 <Menu.Item key="view" onClick={() => {
                   setDataView(dataView === "grid" ? "table" : "grid");
                   setView(view === "Grid" ? "List" : "Grid");
@@ -91,24 +118,52 @@ const Header = ({
                   Dashboard Off{" "}
                   <Switch checked={hideDashboard} onClick={() => { setHideDashboard((prev) => !prev); setMenuDrawerVisible(false); }} />
                 </Menu.Item>
-              </Menu.SubMenu>
-              <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={() => setMenuDrawerVisible(false)}>
+              </Menu.SubMenu> */}
+              <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={() => {setMenuDrawerVisible(false);setOpenConfirmationModal(true);}}>
                 Logout
               </Menu.Item>
             </Menu>
           </Drawer>
         </>
       ) : (
-        <div className="header-right">
-          <span className="header-icons">
-            <Button icon={<HomeOutlined />} style={{ backgroundColor: 'transparent', color: membersPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(true); setTodosPage(false); }} />
-            <Button icon={<CalendarTwoTone twoToneColor={openCalendarPage ? "" : "azure"} />} style={{ backgroundColor: 'transparent' }} onClick={() => { setOpenCalendarPage(true); setResourcePage(false); setMembersPage(false); setTodosPage(false); }} />
-            <Button style={{ fontSize: '20px', padding: '0px 0px', backgroundColor: 'transparent', color: todosPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(false); setTodosPage(true); }}>Todos</Button>
-            <Badge count={commentBox.length} offset={[-10, 2]}>
-              <Button icon={<InboxOutlined />} style={{ backgroundColor: 'transparent' }} onClick={() => setHandleInboxDrawer(true)} />
-            </Badge>
+        <div className="CMTheader-right" >
+          <span className="CMTheader-icons">
+            <span className="icon-with-label">
+              <Button icon={<IoIosGlobe />} onClick={() => navigate("/")} style={{backgroundColor: 'transparent'}}></Button>
+              <span className="icon-label">WebSite</span>
+            </span>
+            <span className="icon-with-label">
+              <Button icon={<FaUser />} style={{ backgroundColor: 'transparent', color: membersPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(true); setTodosPage(false); }} />
+              <span className="icon-label">Members</span>
+            </span>
+
+            <span className="icon-with-label">
+              <Button icon={<LuCalendar />} style={{ backgroundColor: 'transparent', color: openCalendarPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(true); setResourcePage(false); setMembersPage(false); setTodosPage(false); }} />
+              <span className="icon-label">Calendar</span>
+            </span>
+
+            <div className="icon-with-label">
+              <Button icon={<ShoppingCartOutlined />} style={{ backgroundColor: 'transparent', color: openShoppingApp ? "#1677ff" : "" }} onClick={() => setOpenShoppingApp(true)} />
+              <span className="icon-label">Shop</span>
+            </div>
+
+            <div className="icon-with-label">
+              <Button icon={<LuListTodo />} style={{ fontSize: '20px', padding: '0px', backgroundColor: 'transparent', color: todosPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(false); setTodosPage(true); }}></Button>
+              <span className="icon-label">Todos</span>
+            </div>
+
+            <div className="icon-with-label">
+              <Badge count={commentBox.length} offset={[-10, 2]}>
+                <Button icon={<InboxOutlined />} style={{ backgroundColor: 'transparent' }} onClick={() => setHandleInboxDrawer(true)} />
+              </Badge>
+              <span className="icon-label">Inbox</span>
+            </div>
+            <div className="icon-with-label">
+              <Button icon={<LogoutOutlined />} onClick={() => setOpenConfirmationModal(true)} style={{ backgroundColor: 'inherit', color: 'white' }} />
+              <span className="icon-label">Logout</span>
+            </div>
           </span>
-          <span hidden={openCalendarPage || todosPage || resourcePage}>
+          {/* <span hidden={openCalendarPage || todosPage || resourcePage}>
             Status: {dropDownList} {view + " View"}
             <Switch
               style={{ margin: '0px 10px' }}
@@ -123,8 +178,8 @@ const Header = ({
               style={{ margin: '0px 10px' }}
               onClick={() => setHideDashboard(prev => !prev)}
             />
-          </span>
-          <Button icon={<LogoutOutlined />} style={{ margin: "15px", backgroundColor: 'inherit', color: 'white' }} />
+          </span> */}
+          
         </div>
       )}
 
@@ -153,6 +208,18 @@ const Header = ({
           ))
         )}
       </Drawer>
+      <Modal
+        open={openConfirmationModal}
+        footer={null}
+        onCancel={() => setOpenConfirmationModal(false)}>
+        <Row style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column'}}>
+          <Col><h3>Are you sure you want to logout..!</h3></Col>
+          <Col>
+          <Button type="primary" onClick={() => handleLogout()}>Confirm</Button> &nbsp;&nbsp;
+          <Button onClick={() => setOpenConfirmationModal(false)}>Cancel</Button>
+          </Col>
+        </Row>
+      </Modal>
     </header>
   );
 };
