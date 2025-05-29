@@ -9,7 +9,7 @@ import { Badge, Button, Card, Checkbox, Col, Drawer, Grid, Row, Space } from "an
 import maleAvatar from "./assets/male_avatar.jpg";
 import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
-import { MEMBERS_API, RESOURCES_API } from "../properties/EndPointProperties";
+import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage from "./PunchCardsPage";
 import { SwapOutlined } from "@ant-design/icons";
 const NameCard = _ref => {

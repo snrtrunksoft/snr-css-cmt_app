@@ -53,8 +53,86 @@ function App(_ref) {
   const [resourceData, setResourceData] = useState([]);
   const [resourceData1, setResourceData1] = useState([]);
   const screens = useBreakpoint();
-  const [data, setData] = useState([]);
-  const [sampleData, setSampleData] = useState([]);
+  const [data, setData] = useState([
+    // {
+    //     "id": "8",
+    //     "customerName": "SNR",
+    //     "phoneNumber": "8876543210",
+    //     "address": [
+    //         {
+    //             "street1": "test street5",
+    //             "street2": "test street6",
+    //             "city": "Test City",
+    //             "state": "TX",
+    //             "country": "USA"
+    //         }
+    //     ],
+    //     "comments": [
+    //         {
+    //             "commentId": "2034",
+    //             "message": "test Comment5",
+    //             "author": "SNR"
+    //         },
+    //         {
+    //             "commentId": "2346",
+    //             "message": "test comment 2",
+    //             "author": "SNR"
+    //         }
+    //     ],
+    //     "status": "Active",
+    //     "subscriptions": [
+    //     {
+    //         "id": "001",
+    //         "status": "Complete",
+    //         "noOfServicesLeft": "0",
+    //         "noOfServicesCompleted": "10",
+    //         "totalNumberOfServices": "10",
+    //         "purchasedDate": "Mar-02-2023",
+    //         "compltedData": "Feb-20-2024"
+    //     },
+    //     {
+    //         "id": "002",
+    //         "status": "Complete",
+    //         "noOfServicesLeft": "0",
+    //         "noOfServicesCompleted": "10",
+    //         "totalNumberOfServices": "10",
+    //         "purchasedDate": "Mar-30-2024",
+    //         "compltedData": "Jan-20-2025"
+
+    //     },
+    //     {
+    //         "id": "003",
+    //         "status": "Complete",
+    //         "noOfServicesLeft": "9",
+    //         "noOfServicesCompleted": "1",
+    //         "totalNumberOfServices": "10",
+    //         "purchasedDate": "Jan-30-2025"
+    //     }
+    // ],
+    // },
+  ]);
+  const [sampleData, setSampleData] = useState([
+
+    // {
+    //   "month": "April",
+    //   "year": "2025",
+    //   "userId": "ABC123",
+    //   "date":"25",
+    //   "events":[{
+    //       "memberId": "ABC123",
+    //       "resourceId": "R_2",
+    //       "date": "25",
+    //       "year": "2025",
+    //       "month": "March",
+    //       "from": "02",
+    //       "to": "03",
+    //       "recurring":"weekly",
+    //       "day":"Fri",
+    //       "title": "Test title2",
+    //       "notes": "Appointment for dentist"
+    //     },]
+    // },
+  ]);
   useEffect(() => {
     console.log("initial loading, fetching user data from the Database");
     // if(isInitialLoad.current){

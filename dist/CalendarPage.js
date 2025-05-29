@@ -6,7 +6,7 @@ function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = 
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { EVENTS_API } from "../properties/EndPointProperties";
+import { EVENTS_API } from "./properties/EndPointProperties";
 import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid } from "antd";
 import dayjs from "dayjs";
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

@@ -5,7 +5,7 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useState } from "react";
 import { Button, Checkbox, Col, Row } from "antd";
-import { MEMBERS_API, SUBSCRIPTIONS_API } from "../properties/EndPointProperties";
+import { MEMBERS_API, SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
 import { LoadingOutlined, SwapOutlined } from "@ant-design/icons";
 const PunchCardsPage = _ref => {
   let {
