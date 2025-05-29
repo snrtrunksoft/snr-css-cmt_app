@@ -6,7 +6,7 @@ import Footer from './Footer';
 import ResourcePage from './ResourcePage';
 import TodosPage from "./TodosPage";
 import AddNewNameCard from './AddNewNameCard';
-import InventoryApp from "./InventoryApp/InventoryApp";
+// import InventoryApp from "./InventoryApp/InventoryApp";
 import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "../properties/EndPointProperties";
 import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, } from "antd";
 import CalendarPage from "./CalendarPage";
@@ -385,11 +385,7 @@ function App({cartItems, setCartItems}) {
   return (
     <div>
       {openShoppingApp ? 
-        <InventoryApp 
-          setOpenShoppingApp={setOpenShoppingApp} 
-          setMembersPage={setMembersPage} 
-          cartItems={cartItems} 
-          setCartItems={setCartItems} /> :
+        <>InventoryApp ToDo</> :
       <div className='home_app'>
         <Header 
           commentBox={commentBox}
