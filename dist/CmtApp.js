@@ -11,8 +11,8 @@ import Footer from './Footer';
 import ResourcePage from './ResourcePage';
 import TodosPage from "./TodosPage";
 import AddNewNameCard from './AddNewNameCard';
-import InventoryApp from "./InventoryApp/InventoryApp";
-import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "../properties/EndPointProperties";
+// import InventoryApp from "./InventoryApp/InventoryApp";
+import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "./properties/EndPointProperties";
 import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table } from "antd";
 import CalendarPage from "./CalendarPage";
 import { Bar, Pie } from 'react-chartjs-2';
@@ -371,12 +371,7 @@ function App(_ref) {
   }, "Complete"), /*#__PURE__*/React.createElement("option", {
     value: "Cancelled"
   }, "Cancelled"));
-  return /*#__PURE__*/React.createElement("div", null, openShoppingApp ? /*#__PURE__*/React.createElement(InventoryApp, {
-    setOpenShoppingApp: setOpenShoppingApp,
-    setMembersPage: setMembersPage,
-    cartItems: cartItems,
-    setCartItems: setCartItems
-  }) : /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", null, openShoppingApp ? /*#__PURE__*/React.createElement(React.Fragment, null, "InventoryApp ToDo") : /*#__PURE__*/React.createElement("div", {
     className: "home_app"
   }, /*#__PURE__*/React.createElement(Header, {
     commentBox: commentBox,

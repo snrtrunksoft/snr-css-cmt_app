@@ -7,7 +7,7 @@ import ResourcePage from './ResourcePage';
 import TodosPage from "./TodosPage";
 import AddNewNameCard from './AddNewNameCard';
 // import InventoryApp from "./InventoryApp/InventoryApp";
-import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "../properties/EndPointProperties";
+import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "./properties/EndPointProperties";
 import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, } from "antd";
 import CalendarPage from "./CalendarPage";
 import { Bar, Pie } from 'react-chartjs-2';
