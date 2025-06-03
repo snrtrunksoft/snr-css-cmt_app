@@ -7,7 +7,7 @@
     "start": "react-scripts start",
     "build": "babel src --out-dir dist --extensions \".js,.jsx\" && npm run copy-css && npm run copy-assets",
     "copy-css": "copyfiles -u 1 \"src/**/*.css\" dist/",
-    "copy-assets": "copyfiles -u 1 \"src/assets/**/*\" dist/assets"
+    "copy-assets": "copyfiles -u 1 \"src/assets/**/*\" dist"
   },
   "peerDependencies": {
     "react": "^19.0.0",
