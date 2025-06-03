@@ -4,7 +4,7 @@ import { Badge, Button, Card, Checkbox, Col, Drawer,Grid, Row, Space } from "ant
 import maleAvatar from "./assets/male_avatar.jpg";
 import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
-import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
+import { MEMBERS_API, RESOURCES_API } from "../properties/EndPointProperties";
 import PunchCardsPage  from "./PunchCardsPage";
 import { SwapOutlined } from "@ant-design/icons";
 
@@ -37,11 +37,14 @@ const NameCard = ({
     const addressKeys = Object.keys(address[0]);
     // console.log(addressKeys);
     const handleSend = () => {
+        const addTimeForComment = new Date().toLocaleString();
+        console.log(addTimeForComment);
         if(newComment){
             const commentBody = [...comments, {
                 "commentId" : parseInt(comments[comments.length - 1].commentId) + 1 || 1,
                 "author" : customerName,
-                "message" : newComment
+                "message" : newComment,
+                "time" : addTimeForComment
             }]
             const updatedRecord = {
                 "customerName" : customerName,
@@ -64,7 +67,7 @@ const NameCard = ({
                     const data = await response.json();
                     console.log("successfully added the comment:", data);
                 } catch(error) {
-                    console.log("unbale to add Comment:",error);
+                    console.log("unable to add Comment:",error);
                 }
             }
             uploadComment();
@@ -77,6 +80,7 @@ const NameCard = ({
                             commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
                             message: newComment,
                             author: customerName,
+                            time: addTimeForComment
                         }]
                     } : prev)
             );
@@ -90,6 +94,7 @@ const NameCard = ({
                                 commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
                                 message: newComment,
                                 author: customerName,
+                                time: addTimeForComment
                             }] }
                             : prev
                     )
@@ -100,7 +105,8 @@ const NameCard = ({
                     { customerName,color, comment: [{
                         commentId:parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
                         message:newComment,
-                        author:customerName
+                        author:customerName,
+                        time: addTimeForComment
                     }] }
                 ]);
             }
@@ -212,7 +218,19 @@ const NameCard = ({
                                 style={{
                                     width: '100%'}}>
                                     <Badge.Ribbon text={comment["author"]} color={color}>
-                                        <Card size="small">{comment["message"]}</Card>
+                                        {/* <Card size="small">{comment["message"]}</Card> */}
+                                        <Card size="small" style={{ position: 'relative', paddingBottom: '24px' }}>
+                                            {comment["message"]}
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: '4px',
+                                                right: '8px',
+                                                fontSize: '11px',
+                                                color: '#888'
+                                            }}>
+                                                {comment['time']}
+                                            </div>
+                                            </Card>
                                     </Badge.Ribbon>
                             </Space>
                         ))}

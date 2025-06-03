@@ -5,7 +5,7 @@ import "./NameCard.css";
 import { LoadingOutlined } from "@ant-design/icons";
 import { Button, Col, Grid, Modal, Row } from "antd";
 import AddNewNameCard from "./AddNewNameCard";
-import { RESOURCES_API } from "./properties/EndPointProperties";
+import { RESOURCES_API } from "../properties/EndPointProperties";
 
 const { useBreakpoint } = Grid;
 

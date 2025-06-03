@@ -202,6 +202,15 @@ const Header = ({
               <Badge.Ribbon text={item.comment[item.comment.length - 1].author} color={item.color}>
                 <Card title={item.customerName} size="small">
                   {item.comment[item.comment.length - 1].message}
+                  <div style={{
+                        position: 'absolute',
+                        bottom: '4px',
+                        right: '8px',
+                        fontSize: '11px',
+                        color: '#888'
+                    }}>
+                        {item.comment[item.comment.length - 1].time}
+                    </div>
                 </Card>
               </Badge.Ribbon>
             </Space>
