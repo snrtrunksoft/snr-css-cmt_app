@@ -7,7 +7,7 @@
     "start": "react-scripts start",
     "build": "babel src --out-dir dist --extensions \".js,.jsx\" && npm run copy-css && npm run copy-assets",
     "copy-css": "copyfiles -u 1 \"src/**/*.css\" dist/",
-    "copy-assets": "copyfiles -u 1 \"src/assets/**/*\" dist"
+    "copy-assets": "copyfiles -u 2 \"src/assets/**/*\" dist/"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -19,16 +19,21 @@
     "antd": "^5.23.3",
     "aws-amplify": "^6.15.0",
     "chart.js": "^4.4.7",
-    "cra-template": "1.2.0",
     "lucide-react": "^0.475.0",
-    "react": "^19.0.0",
     "react-chartjs-2": "^5.3.0",
-    "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^7.6.0",
-    "react-scripts": "latest",
     "web-vitals": "^4.2.4"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.27.2",
+    "@babel/core": "^7.27.1",
+    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-react": "^7.27.1",
+    "copyfiles": "^2.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.6.0"
   },
   "eslintConfig": {
     "extends": [
@@ -47,12 +52,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@babel/cli": "^7.27.2",
-    "@babel/core": "^7.27.1",
-    "@babel/preset-env": "^7.27.2",
-    "@babel/preset-react": "^7.27.1",
-    "copyfiles": "^2.4.1"
   }
 }
