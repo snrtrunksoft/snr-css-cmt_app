@@ -6,7 +6,6 @@ import Footer from './Footer';
 import ResourcePage from './ResourcePage';
 import TodosPage from "./TodosPage";
 import AddNewNameCard from './AddNewNameCard';
-// import InventoryApp from "./InventoryApp/InventoryApp";
 import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "./properties/EndPointProperties";
 import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, } from "antd";
 import CalendarPage from "./CalendarPage";
@@ -384,8 +383,6 @@ function App({cartItems, setCartItems}) {
 
   return (
     <div>
-      {openShoppingApp ? 
-        <>InventoryApp ToDo</> :
       <div className='home_app'>
         <Header 
           commentBox={commentBox}
@@ -407,185 +404,185 @@ function App({cartItems, setCartItems}) {
           </div>
           <div style={{paddingRight:'5px'}} hidden={!membersPage && !resourcePage}><Input placeholder='Search Name or Ph no.' value={searchText} onChange={(e) => handleSearchText(e.target.value)}></Input></div>
         </span>
-      <Row  style={{width:'100%',backgroundColor:'',gap:'16px',display:'flex',alignItems:'center',justifyContent:'center',margin:'10px'}}>
-        <Col hidden={openCalendarPage || todosPage || isLoading} style={{fontSize:'20px'}}>
-           <span>{view + " View "}</span>
-            <Switch
-              // style={{ margin: '0px 10px' }}
-              onClick={() => {
-                setDataView(dataView === "grid" ? "table" : "grid");
-                setView(view === "Grid" ? "List" : "Grid");
-              }}
-            />
-        </Col>
-        <Col hidden={openCalendarPage || todosPage || isLoading} style={{fontSize:'20px'}}>
-            <span>Show Dashboard </span>
-            <Switch
-              checked={showDashboard}
-              // style={{ margin: '0px 10px' }}
-              onClick={() => setShowDashboard(prev => !prev)}
-            />
-        </Col>
-        <Col style={{fontSize:'20px',display:'flex',alignItems:'center',justifyContent:'end'}}>
-            <span hidden={openCalendarPage || todosPage || resourcePage || isLoading}>Status:</span> {dropDownList}
-        </Col>
-      </Row>
-      {isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
-        (membersPage) ? (
-          <div>
-            {dataView === "table" ? 
-              <div className='table-wrapper'>
-                <Row className="table-row table-header" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
-                  <Col span={3} className="table-cell">ID</Col>
-                  <Col span={5} className="table-cell">Name</Col>
-                  <Col span={10} className="table-cell">Address</Col>
-                  <Col span={6} className="table-cell">Phone Number</Col>
-                </Row>
-                {/* Data Rows */}
-                {duplicateData.map((item, index) => (
-                  <Row key={index} className="table-row" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
-                    <Col span={3} className="table-cell">{item.id}</Col>
-                    <Col span={5} className="table-cell">{item.customerName}</Col>
-                    <Col span={10} className="table-cell">
-                      {`${item.address[0].houseNo}, ${item.address[0].street1}, ${item.address[0].street2}, ${item.address[0].city}, ${item.address[0].state}, ${item.address[0].country}`}
-                    </Col>
-                    <Col span={6} className="table-cell">{item.phoneNumber}</Col>
+        <Row  style={{width:'100%',backgroundColor:'',gap:'16px',display:'flex',alignItems:'center',justifyContent:'center',margin:'10px'}}>
+          <Col hidden={openCalendarPage || todosPage || isLoading} style={{fontSize:'20px'}}>
+            <span>{view + " View "}</span>
+              <Switch
+                // style={{ margin: '0px 10px' }}
+                onClick={() => {
+                  setDataView(dataView === "grid" ? "table" : "grid");
+                  setView(view === "Grid" ? "List" : "Grid");
+                }}
+              />
+          </Col>
+          <Col hidden={openCalendarPage || todosPage || isLoading} style={{fontSize:'20px'}}>
+              <span>Show Dashboard </span>
+              <Switch
+                checked={showDashboard}
+                // style={{ margin: '0px 10px' }}
+                onClick={() => setShowDashboard(prev => !prev)}
+              />
+          </Col>
+          <Col style={{fontSize:'20px',display:'flex',alignItems:'center',justifyContent:'end'}}>
+              <span hidden={openCalendarPage || todosPage || resourcePage || isLoading}>Status:</span> {dropDownList}
+          </Col>
+        </Row>
+        {isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
+          (membersPage) ? (
+            <div>
+              {dataView === "table" ? 
+                <div className='table-wrapper'>
+                  <Row className="table-row table-header" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
+                    <Col span={3} className="table-cell">ID</Col>
+                    <Col span={5} className="table-cell">Name</Col>
+                    <Col span={10} className="table-cell">Address</Col>
+                    <Col span={6} className="table-cell">Phone Number</Col>
                   </Row>
-                ))}
-                {/* Add New Record */}
-                <Row className="table-row add-record-row">
-                  <Col span={24} style={{margin:'10px'}}>
-                    <center>
-                        <Button style={{fontSize:'18px'}} onClick={() => setIsAddNewNameCardModalOpen(true)}>+ Add New Record</Button>
-                    </center>
-                    </Col>
-                </Row>
-              {/* <div className='members-table'>
-                <Table 
-                  columns={columns}
-                  dataSource={duplicateData} 
-                  pagination={{pageSize:5,simple:true}}
-                  footer={()=>(
-                    <tr style={{display:'flex',alignItems:'center',justifyContent:'center',height:'10px'}}>
-                      <td colSpan={columns.length}>
-                        <Button 
-                          onClick={()=>setIsAddNewNameCardModalOpen(true)}
-                          style={{
-                            border:'transparent',
-                            fontSize:'40px',
-                            backgroundColor:'transparent'
-                            }}>+</Button>
-                      </td>
-                    </tr>
-                  )}
-                ></Table> </div> */}
-              </div>
-               : (
-              <Row gutter={[16, 16]} className="home-grid">
-                {duplicateData.map((item) => (
-                  <Col key={item.id} 
-                    xs={duplicateData.length <= 1 ? 24 : 12} 
-                    sm={duplicateData.length <= 1 ? 24 : 12} 
-                    md={duplicateData.length <= 2 ? 20 : 8}  
-                    lg={duplicateData.length <= 2 ? 20 : 6} 
-                    xl={duplicateData.length <= 2 ? 20 : 6}>
-                    <NameCard key={item.id}
-                      customerId={item.id}
-                      customerName={item.customerName}
-                      phoneNumber={item.phoneNumber}
-                      address={item.address}
-                      status={item.status}
-                      comments={item.comments}
-                      subscriptions={item.subscriptions}
-                      setDuplicateData={setDuplicateData}
-                      commentBox={commentBox}
-                      setCommentBox={setCommentBox}
-                    />
-                  </Col>
-                ))}
-                  <Col xs={duplicateData.length <= 1 ? 24 : 12} 
+                  {/* Data Rows */}
+                  {duplicateData.map((item, index) => (
+                    <Row key={index} className="table-row" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
+                      <Col span={3} className="table-cell">{item.id}</Col>
+                      <Col span={5} className="table-cell">{item.customerName}</Col>
+                      <Col span={10} className="table-cell">
+                        {`${item.address[0].houseNo}, ${item.address[0].street1}, ${item.address[0].street2}, ${item.address[0].city}, ${item.address[0].state}, ${item.address[0].country}`}
+                      </Col>
+                      <Col span={6} className="table-cell">{item.phoneNumber}</Col>
+                    </Row>
+                  ))}
+                  {/* Add New Record */}
+                  <Row className="table-row add-record-row">
+                    <Col span={24} style={{margin:'10px'}}>
+                      <center>
+                          <Button style={{fontSize:'18px'}} onClick={() => setIsAddNewNameCardModalOpen(true)}>+ Add New Record</Button>
+                      </center>
+                      </Col>
+                  </Row>
+                {/* <div className='members-table'>
+                  <Table 
+                    columns={columns}
+                    dataSource={duplicateData} 
+                    pagination={{pageSize:5,simple:true}}
+                    footer={()=>(
+                      <tr style={{display:'flex',alignItems:'center',justifyContent:'center',height:'10px'}}>
+                        <td colSpan={columns.length}>
+                          <Button 
+                            onClick={()=>setIsAddNewNameCardModalOpen(true)}
+                            style={{
+                              border:'transparent',
+                              fontSize:'40px',
+                              backgroundColor:'transparent'
+                              }}>+</Button>
+                        </td>
+                      </tr>
+                    )}
+                  ></Table> </div> */}
+                </div>
+                : (
+                <Row gutter={[16, 16]} className="home-grid">
+                  {duplicateData.map((item) => (
+                    <Col key={item.id} 
+                      xs={duplicateData.length <= 1 ? 24 : 12} 
                       sm={duplicateData.length <= 1 ? 24 : 12} 
                       md={duplicateData.length <= 2 ? 20 : 8}  
                       lg={duplicateData.length <= 2 ? 20 : 6} 
-                      xl={duplicateData.length <= 2 ? 20 : 6}
-                    className='nameCard'
-                    onClick={()=>setIsAddNewNameCardModalOpen(true)}
-                    style= {{
-                      display:'flex',
-                      alignItems:'center',
-                      justifyContent:'center',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                    }}>
-                    <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
-                  </Col>
-              </Row>)}
-            <Divider type='horizontal'/>
-            {showDashboard && <div style={{width:"100%"}}>
-              <Row className='status-track-icons'>
-                  <Col className='status-icons'>
-                    <span style={{backgroundColor:'pink'}}> {statusCount["Active"]} </span>
-                    <h3>Active</h3>
-                  </Col>
-                  <Col className='status-icons'>
-                    <span style={{backgroundColor:'lightBlue'}}> {statusCount["In_Progress"]} </span>
-                    <h3>In_Progress</h3>
-                  </Col>
-                  <Col className='status-icons'>
-                    <span style={{backgroundColor:'lightgreen'}}> {statusCount["Complete"]} </span>
-                    <h3>Complete</h3>
-                  </Col>
-                  <Col className='status-icons'>
-                    <span style={{backgroundColor:'rgba(256,0,0,0.7)'}}> {statusCount["Cancelled"]} </span>
-                    <h3>Cancelled</h3>
-                  </Col>
-              </Row>
-              <Col style={{paddingTop:'0px'}}>
-                  <Divider type='horizontal' ></Divider>
-              </Col>
-              <Row className="graph" justify={'center'}>
-                <Col xs={24} sm={22} md={20} lg={16} xl={12}>
-                  <Bar data={graphData} options={options} />
+                      xl={duplicateData.length <= 2 ? 20 : 6}>
+                      <NameCard key={item.id}
+                        customerId={item.id}
+                        customerName={item.customerName}
+                        phoneNumber={item.phoneNumber}
+                        address={item.address}
+                        status={item.status}
+                        comments={item.comments}
+                        subscriptions={item.subscriptions}
+                        setDuplicateData={setDuplicateData}
+                        commentBox={commentBox}
+                        setCommentBox={setCommentBox}
+                      />
+                    </Col>
+                  ))}
+                    <Col xs={duplicateData.length <= 1 ? 24 : 12} 
+                        sm={duplicateData.length <= 1 ? 24 : 12} 
+                        md={duplicateData.length <= 2 ? 20 : 8}  
+                        lg={duplicateData.length <= 2 ? 20 : 6} 
+                        xl={duplicateData.length <= 2 ? 20 : 6}
+                      className='nameCard'
+                      onClick={()=>setIsAddNewNameCardModalOpen(true)}
+                      style= {{
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'center',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}>
+                      <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
+                    </Col>
+                </Row>)}
+              <Divider type='horizontal'/>
+              {showDashboard && <div style={{width:"100%"}}>
+                <Row className='status-track-icons'>
+                    <Col className='status-icons'>
+                      <span style={{backgroundColor:'pink'}}> {statusCount["Active"]} </span>
+                      <h3>Active</h3>
+                    </Col>
+                    <Col className='status-icons'>
+                      <span style={{backgroundColor:'lightBlue'}}> {statusCount["In_Progress"]} </span>
+                      <h3>In_Progress</h3>
+                    </Col>
+                    <Col className='status-icons'>
+                      <span style={{backgroundColor:'lightgreen'}}> {statusCount["Complete"]} </span>
+                      <h3>Complete</h3>
+                    </Col>
+                    <Col className='status-icons'>
+                      <span style={{backgroundColor:'rgba(256,0,0,0.7)'}}> {statusCount["Cancelled"]} </span>
+                      <h3>Cancelled</h3>
+                    </Col>
+                </Row>
+                <Col style={{paddingTop:'0px'}}>
+                    <Divider type='horizontal' ></Divider>
                 </Col>
-              </Row>
-            </div>}
-            <Modal
-              open={isAddNewNameCardModalOpen}
-              onCancel={()=> setIsAddNewNameCardModalOpen(false)}
-              footer={null}
-              >
-              <AddNewNameCard
-                setNewRecordName={setNewRecordName}
-                setNewRecordLastName={setNewRecordLastName}
-                setNewRecordPhone={setNewRecordPhone}
-                setNewRecordAddress={setNewRecordAddress}
-                setNewRecordCity={setNewRecordCity}
-                setNewRecordState={setNewRecordState}
-                setNewRecordCountry={setNewRecordCountry}
-                setNewRecordStatus={setNewRecordStatus}
-                newRecordStatus={newRecordStatus}
-                handleAddNewNameCard={handleAddNewNameCard}
-                membersPage={true}
-                />
-            </Modal>
-          </div>
-        ) : (resourcePage ? 
-        <ResourcePage 
-          resourceData={resourceData}
-          setResourceData={setResourceData}
-          dataView={dataView}
-          setDuplicateData = {setDuplicateData}
-          commentBox = {commentBox}
-          setCommentBox = {setCommentBox}
-        /> :openCalendarPage ? 
-        <CalendarPage 
-          sampleData={sampleData} 
-          setSampleData={setSampleData} 
-          duplicateData={duplicateData} 
-          resourceData={resourceData} 
-          /> : <TodosPage sampleData={sampleData}/>)}
-        <Divider type='horizontal'/>
-        {<Footer/>}
-      </div>}
+                <Row className="graph" justify={'center'}>
+                  <Col xs={24} sm={22} md={20} lg={16} xl={12}>
+                    <Bar data={graphData} options={options} />
+                  </Col>
+                </Row>
+              </div>}
+              <Modal
+                open={isAddNewNameCardModalOpen}
+                onCancel={()=> setIsAddNewNameCardModalOpen(false)}
+                footer={null}
+                >
+                <AddNewNameCard
+                  setNewRecordName={setNewRecordName}
+                  setNewRecordLastName={setNewRecordLastName}
+                  setNewRecordPhone={setNewRecordPhone}
+                  setNewRecordAddress={setNewRecordAddress}
+                  setNewRecordCity={setNewRecordCity}
+                  setNewRecordState={setNewRecordState}
+                  setNewRecordCountry={setNewRecordCountry}
+                  setNewRecordStatus={setNewRecordStatus}
+                  newRecordStatus={newRecordStatus}
+                  handleAddNewNameCard={handleAddNewNameCard}
+                  membersPage={true}
+                  />
+              </Modal>
+            </div>
+          ) : (resourcePage ? 
+          <ResourcePage 
+            resourceData={resourceData}
+            setResourceData={setResourceData}
+            dataView={dataView}
+            setDuplicateData = {setDuplicateData}
+            commentBox = {commentBox}
+            setCommentBox = {setCommentBox}
+          /> :openCalendarPage ? 
+          <CalendarPage 
+            sampleData={sampleData} 
+            setSampleData={setSampleData} 
+            duplicateData={duplicateData} 
+            resourceData={resourceData} 
+            /> : <TodosPage sampleData={sampleData}/>)}
+          <Divider type='horizontal'/>
+          {<Footer/>}
+      </div>
     </div>
   );
 }
