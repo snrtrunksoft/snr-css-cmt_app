@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { CALENDAR_API, EVENTS_API, RECURRING_CALENDAR_API } from "../properties/EndPointProperties";
+import { CALENDAR_API, EVENTS_API, RECURRING_CALENDAR_API } from "./properties/EndPointProperties";
 
 import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid } from "antd";
 

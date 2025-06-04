@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button, Checkbox, Col, Row } from "antd";
-import { MEMBERS_API, SUBSCRIPTIONS_API } from "../properties/EndPointProperties";
+import { MEMBERS_API, SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
 import { LoadingOutlined, SwapOutlined } from "@ant-design/icons";
 
 const PunchCardsPage = ({customerId, customerName, setNewComment, handleSend, subscriptions, color}) => {
