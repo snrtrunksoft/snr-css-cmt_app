@@ -42,11 +42,14 @@ const NameCard = _ref => {
   const addressKeys = Object.keys(address[0]);
   // console.log(addressKeys);
   const handleSend = () => {
+    const addTimeForComment = new Date().toLocaleString();
+    console.log(addTimeForComment);
     if (newComment) {
       const commentBody = [...comments, {
         "commentId": parseInt(comments[comments.length - 1].commentId) + 1 || 1,
         "author": customerName,
-        "message": newComment
+        "message": newComment,
+        "time": addTimeForComment
       }];
       const updatedRecord = {
         "customerName": customerName,
@@ -69,7 +72,7 @@ const NameCard = _ref => {
           const data = await response.json();
           console.log("successfully added the comment:", data);
         } catch (error) {
-          console.log("unbale to add Comment:", error);
+          console.log("unable to add Comment:", error);
         }
       };
       uploadComment();
@@ -77,7 +80,8 @@ const NameCard = _ref => {
         comments: [...prev.comments, {
           commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
           message: newComment,
-          author: customerName
+          author: customerName,
+          time: addTimeForComment
         }]
       }) : prev));
       const existingData = commentBox.findIndex(person => person.customerName === customerName);
@@ -86,7 +90,8 @@ const NameCard = _ref => {
           comment: [...prev.comment, {
             commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
             message: newComment,
-            author: customerName
+            author: customerName,
+            time: addTimeForComment
           }]
         }) : prev));
       } else {
@@ -96,7 +101,8 @@ const NameCard = _ref => {
           comment: [{
             commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
             message: newComment,
-            author: customerName
+            author: customerName,
+            time: addTimeForComment
           }]
         }]);
       }
@@ -241,8 +247,20 @@ const NameCard = _ref => {
     text: comment["author"],
     color: color
   }, /*#__PURE__*/React.createElement(Card, {
-    size: "small"
-  }, comment["message"]))))), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(TextArea, {
+    size: "small",
+    style: {
+      position: 'relative',
+      paddingBottom: '24px'
+    }
+  }, comment["message"], /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      bottom: '4px',
+      right: '8px',
+      fontSize: '11px',
+      color: '#888'
+    }
+  }, comment['time'])))))), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(TextArea, {
     placeholder: "Enter your Comments",
     value: newComment,
     style: {

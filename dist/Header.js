@@ -19,7 +19,8 @@ const Header = _ref => {
     setMembersPage,
     setResourcePage,
     setTodosPage,
-    setOpenShoppingApp
+    setOpenShoppingApp,
+    setSelctedApp
   } = _ref;
   const [handleInboxDrawer, setHandleInboxDrawer] = useState(false);
   const [menuDrawerVisible, setMenuDrawerVisible] = useState(false);
@@ -173,7 +174,7 @@ const Header = _ref => {
       backgroundColor: 'transparent',
       color: openShoppingApp ? "#1677ff" : ""
     },
-    onClick: () => setOpenShoppingApp(true)
+    onClick: () => setSelctedApp("Inventory")
   }), /*#__PURE__*/React.createElement("span", {
     className: "icon-label"
   }, "Shop")), /*#__PURE__*/React.createElement("div", {
@@ -240,7 +241,15 @@ const Header = _ref => {
   }, /*#__PURE__*/React.createElement(Card, {
     title: item.customerName,
     size: "small"
-  }, item.comment[item.comment.length - 1].message))))), /*#__PURE__*/React.createElement(Modal, {
+  }, item.comment[item.comment.length - 1].message, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      bottom: '4px',
+      right: '8px',
+      fontSize: '11px',
+      color: '#888'
+    }
+  }, item.comment[item.comment.length - 1].time)))))), /*#__PURE__*/React.createElement(Modal, {
     open: openConfirmationModal,
     footer: null,
     onCancel: () => setOpenConfirmationModal(false)

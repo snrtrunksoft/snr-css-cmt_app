@@ -20,6 +20,7 @@ const Header = ({
   setResourcePage,
   setTodosPage,
   setOpenShoppingApp,
+  setSelctedApp
 }) => {
   
   const [handleInboxDrawer, setHandleInboxDrawer] = useState(false);
@@ -143,7 +144,7 @@ const Header = ({
             </span>
 
             <div className="icon-with-label">
-              <Button icon={<ShoppingCartOutlined />} style={{ backgroundColor: 'transparent', color: openShoppingApp ? "#1677ff" : "" }} onClick={() => setOpenShoppingApp(true)} />
+              <Button icon={<ShoppingCartOutlined />} style={{ backgroundColor: 'transparent', color: openShoppingApp ? "#1677ff" : "" }} onClick={() => setSelctedApp("Inventory")} />
               <span className="icon-label">Shop</span>
             </div>
 

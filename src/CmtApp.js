@@ -13,7 +13,7 @@ const { useBreakpoint } = Grid;
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-function App({cartItems, setCartItems}) {
+function CmtApp({cartItems, setCartItems, setSelctedApp}) {
 
   const [ isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen ] = useState(false);
   const [ dataView, setDataView ] = useState("grid");
@@ -391,6 +391,7 @@ function App({cartItems, setCartItems}) {
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
           setOpenShoppingApp={setOpenShoppingApp}
+          setSelctedApp={setSelctedApp}
           />
         <span style={{display:'flex',alignItems:'center',justifyContent:'center',width:'100%'}}>
           <div hidden={isLoading || openCalendarPage}>
