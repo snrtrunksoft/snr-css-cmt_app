@@ -1,19 +1,27 @@
-import ResourcePage from './ResourcePage';
-import TodosPage from "./TodosPage";
-import AddNewNameCard from './AddNewNameCard';
-import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "./properties/EndPointProperties";
-import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, } from "antd";
-import CalendarPage from "./CalendarPage";
+import React, { useState, useEffect } from 'react';
+import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table } from 'antd';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
+
+// Local component imports
+import Header from './Header';
+import Footer from './Footer';
+import NameCard from './NameCard';
+import ResourcePage from './ResourcePage';
+import TodosPage from './TodosPage';
+import AddNewNameCard from './AddNewNameCard';
+import CalendarPage from './CalendarPage';
+
+// Endpoint constants
+import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from './properties/EndPointProperties';
 
 const { useBreakpoint } = Grid;
 
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-function CmtApp({cartItems, setCartItems, setSelctedApp}) {
+const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
 
   const [ isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen ] = useState(false);
   const [ dataView, setDataView ] = useState("grid");
@@ -391,7 +399,7 @@ function CmtApp({cartItems, setCartItems, setSelctedApp}) {
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
           setOpenShoppingApp={setOpenShoppingApp}
-          setSelctedApp={setSelctedApp}
+          setSelectedApp={setSelectedApp}
           />
         <span style={{display:'flex',alignItems:'center',justifyContent:'center',width:'100%'}}>
           <div hidden={isLoading || openCalendarPage}>
@@ -582,3 +590,5 @@ function CmtApp({cartItems, setCartItems, setSelctedApp}) {
     </div>
   );
 }
+
+export default CmtApp;

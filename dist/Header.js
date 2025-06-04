@@ -20,7 +20,7 @@ const Header = _ref => {
     setResourcePage,
     setTodosPage,
     setOpenShoppingApp,
-    setSelctedApp
+    setSelectedApp
   } = _ref;
   const [handleInboxDrawer, setHandleInboxDrawer] = useState(false);
   const [menuDrawerVisible, setMenuDrawerVisible] = useState(false);
@@ -174,7 +174,7 @@ const Header = _ref => {
       backgroundColor: 'transparent',
       color: openShoppingApp ? "#1677ff" : ""
     },
-    onClick: () => setSelctedApp("Inventory")
+    onClick: () => setSelectedApp("Inventory")
   }), /*#__PURE__*/React.createElement("span", {
     className: "icon-label"
   }, "Shop")), /*#__PURE__*/React.createElement("div", {

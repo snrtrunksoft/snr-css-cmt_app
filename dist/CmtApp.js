@@ -3,26 +3,34 @@ function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t =
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-import ResourcePage from './ResourcePage';
-import TodosPage from "./TodosPage";
-import AddNewNameCard from './AddNewNameCard';
-import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from "./properties/EndPointProperties";
-import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table } from "antd";
-import CalendarPage from "./CalendarPage";
+import React, { useState, useEffect } from 'react';
+import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table } from 'antd';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
+
+// Local component imports
+import Header from './Header';
+import Footer from './Footer';
+import NameCard from './NameCard';
+import ResourcePage from './ResourcePage';
+import TodosPage from './TodosPage';
+import AddNewNameCard from './AddNewNameCard';
+import CalendarPage from './CalendarPage';
+
+// Endpoint constants
+import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from './properties/EndPointProperties';
 const {
   useBreakpoint
 } = Grid;
 
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
-function CmtApp(_ref) {
+const CmtApp = _ref => {
   let {
     cartItems,
     setCartItems,
-    setSelctedApp
+    setSelectedApp
   } = _ref;
   const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = useState(false);
   const [dataView, setDataView] = useState("grid");
@@ -380,7 +388,7 @@ function CmtApp(_ref) {
     setResourcePage: setResourcePage,
     setTodosPage: setTodosPage,
     setOpenShoppingApp: setOpenShoppingApp,
-    setSelctedApp: setSelctedApp
+    setSelectedApp: setSelectedApp
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'flex',
@@ -635,4 +643,5 @@ function CmtApp(_ref) {
   }), /*#__PURE__*/React.createElement(Divider, {
     type: "horizontal"
   }), /*#__PURE__*/React.createElement(Footer, null)));
-}
+};
+export default CmtApp;
