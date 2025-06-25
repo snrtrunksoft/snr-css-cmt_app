@@ -141,7 +141,16 @@ const CmtApp = _ref => {
     // if(isInitialLoad.current){
     const fetchingData = async () => {
       try {
-        const Data = await fetch(MEMBERS_API);
+
+        const Data = await fetch(MEMBERS_API, {
+                  method: "GET",
+                  headers: {
+                    "entityid" : "w_123",
+                    "Content-Type" : "application/json"
+                  }
+                }
+        );
+
         const fetchedData = await Data.json();
         console.log("fetching Data from database is complete");
         console.log("Fetched Data:", fetchedData);
