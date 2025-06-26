@@ -32,6 +32,7 @@ const PunchCardsPage = ({customerId, customerName, setNewComment, handleSend, su
                 const responce = await fetch(SUBSCRIPTIONS_API ,{
                     method:'POST',
                     headers: {
+                        'entityid' : 'w_123',
                         "Content-Type" : "application/json",
                     },
                     body:JSON.stringify(newSub)
@@ -44,7 +45,7 @@ const PunchCardsPage = ({customerId, customerName, setNewComment, handleSend, su
                 console.log("updated Subscription Data:",updatePostId);
                 console.log("The new subscription:",newSub);
 
-                setPunchCards((prev) => [...prev, updatePostId]);
+                setPunchCards((prev) => [...prev, newSub]);
             }catch(error){
                 console.error("unable to update the record",error);
             } finally {
@@ -68,6 +69,7 @@ const PunchCardsPage = ({customerId, customerName, setNewComment, handleSend, su
                 await fetch(SUBSCRIPTIONS_API + value.id,{
                     method : "PUT",
                     headers : {
+                        'entityid' : 'w_123',
                         "Content-Type" : "application/json"
                     },
                     body: JSON.stringify(updatedSubscriptionDetails)
@@ -119,6 +121,7 @@ const PunchCardsPage = ({customerId, customerName, setNewComment, handleSend, su
     
     return(
         <div className="" >
+        {punchCards.length ?  <>
         <h2>Punch cards:</h2>
             <Row>
                 <Button onClick={() => {setFlipped(false);setPunchCardsState((prev) => prev === "Complete" ? "Active": "Complete")}}>View {punchCardsState}</Button> &nbsp;
@@ -188,6 +191,7 @@ const PunchCardsPage = ({customerId, customerName, setNewComment, handleSend, su
                 ))}
                 <span>{filterActiveSubscription.length === 0 ? 
                 <center><Button style={{margin:'5px'}} onClick={() => addNewSubscription()}>Add Active Subscription</Button></center> : ""}</span>
+        </>: ""}
         </div>);
 }
 

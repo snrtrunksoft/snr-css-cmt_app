@@ -85,20 +85,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     return () => clearInterval(interval);
   }, []);
 
-  console.log("time Slot:",timeSlot);
-
-  // useEffect(() => {
-  //   if(calendarUserId !== "All" && calendarUserId !== "Select Resource" && calendarUserId !== "Select Member"){
-  //     setOpenAppointment(sampleData.some(prev => 
-  //       prev.month === monthName && 
-  //       parseInt(prev.year) === currentDate.getFullYear() &&
-  //       parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
-  //       prev.events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") &&
-  //         dayjs(timeSlot,"h A").format("HH") < item.to ? true : false )));
-  //   }
-  //     },[currentDate, timeSlot])
-  // console.log("openAppointment:", openAppointment);
-
   const hours = Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} AM`)
     .concat(Array.from({ length: 12 }, (_, i) => `${i === 0 ? 12 : i} PM`));
 
@@ -120,44 +106,19 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   }, [currentDate]);
 
   useEffect(() => {
-    
-    // if(calendarUserId !== "All" && !memberDropDown){
-    //   const filteredData = sampleData
-    //     .filter(record => record.events.some(event => event.resourceId === calendarUserId)) // Keep records where at least one event has "SNR_2"
-    //     .map(record => ({
-    //         ...record,
-    //         events: record.events.filter(event => event.resourceId === calendarUserId) // Keep only events with "SNR_2"
-    //     }));
-    //   console.log("filteredData:",filteredData);
-    //   // setResourceCalendar(filteredData);
-    // } else if (calendarUserId !== "All" && memberDropDown){
-    //   const filteredData = sampleData
-    //     .filter(record => record.events.some(event => event.memberId === calendarUserId)) // Keep records where at least one event has "SNR_2"
-    //     .map(record => ({
-    //         ...record,
-    //         events: record.events.filter(event => event.memberId === calendarUserId) // Keep only events with "SNR_2"
-    //     }));
-    //   console.log("filteredData:",filteredData);
-    //   // setResourceCalendar(filteredData);
-    // } else {
-    // }
-      // if(calendarUserId === "All") {
-      //   const filteredData = sampleData
-      //     .filter(record => record.events.some(event => event.resourceId !== "")) // Keep records where at least one event has "SNR_2"
-      //     .map(record => ({
-      //         ...record,
-      //         events: record.events.filter(event => event.resourceId !== "" ) // Keep only events with "SNR_2"
-      //     }));
-      //   console.log("filteredData:",filteredData);
-      //   setResourceCalendar(filteredData);
-      // }
 
     if(calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ){
       const fetchMembersCalendar = async () => {
         try {
           const memberData = await fetch(CALENDAR_API + calendarUserId 
             + "/month/" + currentDate.toLocaleString("default", { month: "long" })
-            + "/year/" + currentDate.getFullYear())
+            + "/year/" + currentDate.getFullYear(), {
+              method : "GET",
+              headers : {
+                "entityid" : "w_123",
+                "Content-Type" : "application/json"
+              }
+            })
             const responce = await memberData.json();
             console.log("Filtered Calendar:", responce);
             if(calendarUserId === "All"){
@@ -168,9 +129,15 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         } catch(error) {
           console.log("fetching the monthly calendar:", error);
         }  try {
-            const responce = await fetch(RECURRING_CALENDAR_API + calendarUserId + "/recurring/");
+            const responce = await fetch(RECURRING_CALENDAR_API + calendarUserId + "/recurring/", {
+              method : "GET",
+              headers : {
+                "entityid" : "w_123",
+                "Content-Type" : "application/json"
+              }
+            });
             const recurringResourceData = await responce.json();
-            console.log("recurringResourceData:",recurringResourceData)
+            console.log("recurringResourceData:", recurringResourceData)
             setRecurringResourceCalendar(recurringResourceData);
           } catch(error) {
             console.log("unable to fetch the Recurring Resource Calendar:", error);
@@ -332,6 +299,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         await fetch(EVENTS_API + `${filteredEvents[currentPage - 1].id}`,{
           method: "PUT",
           headers: {
+            "entityid" : "w_123",
             "Content-Type" : "application/json"
           },
           body:JSON.stringify(eventDetails)
@@ -356,6 +324,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
           const response = await fetch(EVENTS_API, {
             method: "POST",
             headers: {
+              'entityid' : 'w_123',
               'Content-Type' : "application/json"
             },
             body:JSON.stringify(eventDetails)
@@ -430,7 +399,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
       }
     handleCloseEventSlot();
     }
-    console.log(eventDetails);
   };
 
   const deleteEvent = () =>{
@@ -439,6 +407,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         await fetch(EVENTS_API + `${filteredEvents[currentPage - 1].id}`,{
           method: "DELETE",
           headers: {
+            'entityid' : 'w_123',
             "Content-Type" : "application/json"
           }
         })
@@ -455,8 +424,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     }
     deleteExistingEvent();
   }
-
-  console.log("sample Data:", sampleData);
 
   const handleCloseEventSlot = () => {
     setOpenEventSlot(false);
@@ -486,50 +453,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
 
   const filterMembers = duplicateData.filter((prev) => prev.customerName.toLowerCase().includes(selectedMemberId.toLowerCase()));
   console.log("filterMembers",filterMembers.map(prev => prev.customerName));
-  // const filterOutAvailableMembers = filterMembers.flatMap(prev => prev.customerName).filter(customerName => {
-  //   return sampleData
-  //     .filter(prev =>
-  //       // Keep filtering by month/year/date ONLY for non-recurring events
-  //       prev.events.some(item => item.recurring === "daily" || item.recurring === "weekly" || item.recurring === "monthly") ||
-  //       (
-  //         prev.month === monthName &&
-  //         parseInt(prev.year) === currentDate.getFullYear() &&
-  //         (parseInt(prev.date) === weekEventDate || parseInt(prev.date) === currentDate.getDate())
-  //       )
-  //     )
-  //     .flatMap(prev =>
-  //       prev.events.filter(item => {
-  //         const hour = parseInt(dayjs(timeSlot, "h A").format("HH"), 10);
-  //         const currentDay = weekdays[currentDate.getDay()];
-  //         const currentDateStr = currentDate.getDate().toString();
-
-  //         if (item.recurring === "daily") {
-  //           return item.from <= hour && hour < item.to;
-  //         } else if (item.recurring === "weekly") {
-  //           return item.day === currentDay && item.from <= hour && hour < item.to;
-  //         } else if (item.recurring === "monthly") {
-  //           return item.date === currentDateStr && item.from <= hour && hour < item.to;
-  //         } else {
-  //           // Non-recurring: must match full date
-  //           return (
-  //             prev.month === monthName &&
-  //             parseInt(prev.year) === currentDate.getFullYear() &&
-  //             (parseInt(prev.date) === weekEventDate || parseInt(prev.date) === currentDate.getDate()) &&
-  //             item.from <= hour && hour < item.to
-  //           );
-  //         }
-  //       })
-  //     )
-  //     .every(event => event.memberId !== customerName);
-  // });
 
   const membersMenu = (
   <Menu onClick={handleMembersMenu}>
-    {/* {filterOutAvailableMembers.map((prev,index) => (<Menu.Item key={index}>{prev}</Menu.Item>))} */}
     {filterMembers.map((prev,index) => (<Menu.Item key={index}>{prev.customerName}</Menu.Item>))}
   </Menu>);
-
-  // console.log("filterOutAvailableMembers:",filterOutAvailableMembers);
 
   const handleResourceMenu = (e) => {
     setSelectedResourceId(e.domEvent.target.textContent);
@@ -555,43 +483,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
     const filterOutAvailableResource = filterResources
       .map(m => m.resourceName)
       .filter(name => ![...bookedNames,...recurringEvents].includes(name));
-  // const filterOutAvailableResource = filterResources.flatMap(prev => prev.resourceName).filter(resourceName => {
-  //   return sampleData
-  //     .filter(prev =>
-  //       // Keep filtering by month/year/date ONLY for non-recurring events
-  //       prev.events.some(item => item.recurring === "daily" || item.recurring === "weekly" || item.recurring === "monthly") ||
-  //       (
-  //         prev.month === monthName &&
-  //         parseInt(prev.year) === currentDate.getFullYear() &&
-  //         (parseInt(prev.date) === weekEventDate || parseInt(prev.date) === currentDate.getDate())
-  //       )
-  //     )
-  //     .flatMap(prev =>
-  //       prev.events.filter(item => {
-  //         const hour = parseInt(dayjs(timeSlot, "h A").format("HH"), 10);
-  //         const currentDay = weekdays[currentDate.getDay()];
-  //         const currentDateStr = currentDate.getDate().toString();
-
-  //         if (item.recurring === "daily") {
-  //           return item.from <= hour && hour < item.to;
-  //         } else if (item.recurring === "weekly") {
-  //           return item.day === currentDay && item.from <= hour && hour < item.to;
-  //         } else if (item.recurring === "monthly") {
-  //           return item.date === currentDateStr && item.from <= hour && hour < item.to;
-  //         } else {
-  //           // Non-recurring: must match full date
-  //           return (
-  //             prev.month === monthName &&
-  //             parseInt(prev.year) === currentDate.getFullYear() &&
-  //             (parseInt(prev.date) === weekEventDate || parseInt(prev.date) === currentDate.getDate()) &&
-  //             item.from <= hour && hour < item.to
-  //           );
-  //         }
-  //       })
-  //     )
-  //     .every(event => event.resourceId !== resourceName);
-  // });
-
+      
   console.log("filterOutAvailableResource:",filterOutAvailableResource);
   const resourceMenu = (
   <Menu onClick={handleResourceMenu}>

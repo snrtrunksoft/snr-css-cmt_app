@@ -88,20 +88,6 @@ const CalendarPage = _ref => {
     const interval = setInterval(updateHour, 3600000);
     return () => clearInterval(interval);
   }, []);
-  console.log("time Slot:", timeSlot);
-
-  // useEffect(() => {
-  //   if(calendarUserId !== "All" && calendarUserId !== "Select Resource" && calendarUserId !== "Select Member"){
-  //     setOpenAppointment(sampleData.some(prev => 
-  //       prev.month === monthName && 
-  //       parseInt(prev.year) === currentDate.getFullYear() &&
-  //       parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) &&
-  //       prev.events.some(item => item.from <= dayjs(timeSlot,"h A").format("HH") &&
-  //         dayjs(timeSlot,"h A").format("HH") < item.to ? true : false )));
-  //   }
-  //     },[currentDate, timeSlot])
-  // console.log("openAppointment:", openAppointment);
-
   const hours = Array.from({
     length: 12
   }, (_, i) => "".concat(i === 0 ? 12 : i, " AM")).concat(Array.from({
@@ -124,43 +110,18 @@ const CalendarPage = _ref => {
     generateCalendar();
   }, [currentDate]);
   useEffect(() => {
-    // if(calendarUserId !== "All" && !memberDropDown){
-    //   const filteredData = sampleData
-    //     .filter(record => record.events.some(event => event.resourceId === calendarUserId)) // Keep records where at least one event has "SNR_2"
-    //     .map(record => ({
-    //         ...record,
-    //         events: record.events.filter(event => event.resourceId === calendarUserId) // Keep only events with "SNR_2"
-    //     }));
-    //   console.log("filteredData:",filteredData);
-    //   // setResourceCalendar(filteredData);
-    // } else if (calendarUserId !== "All" && memberDropDown){
-    //   const filteredData = sampleData
-    //     .filter(record => record.events.some(event => event.memberId === calendarUserId)) // Keep records where at least one event has "SNR_2"
-    //     .map(record => ({
-    //         ...record,
-    //         events: record.events.filter(event => event.memberId === calendarUserId) // Keep only events with "SNR_2"
-    //     }));
-    //   console.log("filteredData:",filteredData);
-    //   // setResourceCalendar(filteredData);
-    // } else {
-    // }
-    // if(calendarUserId === "All") {
-    //   const filteredData = sampleData
-    //     .filter(record => record.events.some(event => event.resourceId !== "")) // Keep records where at least one event has "SNR_2"
-    //     .map(record => ({
-    //         ...record,
-    //         events: record.events.filter(event => event.resourceId !== "" ) // Keep only events with "SNR_2"
-    //     }));
-    //   console.log("filteredData:",filteredData);
-    //   setResourceCalendar(filteredData);
-    // }
-
     if (calendarUserId !== "Select Member" && calendarUserId !== "Select Resource") {
       const fetchMembersCalendar = async () => {
         try {
           const memberData = await fetch(CALENDAR_API + calendarUserId + "/month/" + currentDate.toLocaleString("default", {
             month: "long"
-          }) + "/year/" + currentDate.getFullYear());
+          }) + "/year/" + currentDate.getFullYear(), {
+            method: "GET",
+            headers: {
+              "entityid": "w_123",
+              "Content-Type": "application/json"
+            }
+          });
           const responce = await memberData.json();
           console.log("Filtered Calendar:", responce);
           if (calendarUserId === "All") {
@@ -172,7 +133,13 @@ const CalendarPage = _ref => {
           console.log("fetching the monthly calendar:", error);
         }
         try {
-          const responce = await fetch(RECURRING_CALENDAR_API + calendarUserId + "/recurring/");
+          const responce = await fetch(RECURRING_CALENDAR_API + calendarUserId + "/recurring/", {
+            method: "GET",
+            headers: {
+              "entityid": "w_123",
+              "Content-Type": "application/json"
+            }
+          });
           const recurringResourceData = await responce.json();
           console.log("recurringResourceData:", recurringResourceData);
           setRecurringResourceCalendar(recurringResourceData);
@@ -310,6 +277,7 @@ const CalendarPage = _ref => {
         await fetch(EVENTS_API + "".concat(filteredEvents[currentPage - 1].id), {
           method: "PUT",
           headers: {
+            "entityid": "w_123",
             "Content-Type": "application/json"
           },
           body: JSON.stringify(eventDetails)
@@ -326,6 +294,7 @@ const CalendarPage = _ref => {
         const response = await fetch(EVENTS_API, {
           method: "POST",
           headers: {
+            'entityid': 'w_123',
             'Content-Type': "application/json"
           },
           body: JSON.stringify(eventDetails)
@@ -392,7 +361,6 @@ const CalendarPage = _ref => {
       }
       handleCloseEventSlot();
     }
-    console.log(eventDetails);
   };
   const deleteEvent = () => {
     const deleteExistingEvent = async () => {
@@ -400,6 +368,7 @@ const CalendarPage = _ref => {
         await fetch(EVENTS_API + "".concat(filteredEvents[currentPage - 1].id), {
           method: "DELETE",
           headers: {
+            'entityid': 'w_123',
             "Content-Type": "application/json"
           }
         }).then(responce => responce.json()).then(data => console.log("Deleted event Successfully", data));
@@ -412,7 +381,6 @@ const CalendarPage = _ref => {
     };
     deleteExistingEvent();
   };
-  console.log("sample Data:", sampleData);
   const handleCloseEventSlot = () => {
     setOpenEventSlot(false);
     setSelectedMemberId("");
@@ -437,51 +405,11 @@ const CalendarPage = _ref => {
   };
   const filterMembers = duplicateData.filter(prev => prev.customerName.toLowerCase().includes(selectedMemberId.toLowerCase()));
   console.log("filterMembers", filterMembers.map(prev => prev.customerName));
-  // const filterOutAvailableMembers = filterMembers.flatMap(prev => prev.customerName).filter(customerName => {
-  //   return sampleData
-  //     .filter(prev =>
-  //       // Keep filtering by month/year/date ONLY for non-recurring events
-  //       prev.events.some(item => item.recurring === "daily" || item.recurring === "weekly" || item.recurring === "monthly") ||
-  //       (
-  //         prev.month === monthName &&
-  //         parseInt(prev.year) === currentDate.getFullYear() &&
-  //         (parseInt(prev.date) === weekEventDate || parseInt(prev.date) === currentDate.getDate())
-  //       )
-  //     )
-  //     .flatMap(prev =>
-  //       prev.events.filter(item => {
-  //         const hour = parseInt(dayjs(timeSlot, "h A").format("HH"), 10);
-  //         const currentDay = weekdays[currentDate.getDay()];
-  //         const currentDateStr = currentDate.getDate().toString();
-
-  //         if (item.recurring === "daily") {
-  //           return item.from <= hour && hour < item.to;
-  //         } else if (item.recurring === "weekly") {
-  //           return item.day === currentDay && item.from <= hour && hour < item.to;
-  //         } else if (item.recurring === "monthly") {
-  //           return item.date === currentDateStr && item.from <= hour && hour < item.to;
-  //         } else {
-  //           // Non-recurring: must match full date
-  //           return (
-  //             prev.month === monthName &&
-  //             parseInt(prev.year) === currentDate.getFullYear() &&
-  //             (parseInt(prev.date) === weekEventDate || parseInt(prev.date) === currentDate.getDate()) &&
-  //             item.from <= hour && hour < item.to
-  //           );
-  //         }
-  //       })
-  //     )
-  //     .every(event => event.memberId !== customerName);
-  // });
-
   const membersMenu = /*#__PURE__*/React.createElement(Menu, {
     onClick: handleMembersMenu
   }, filterMembers.map((prev, index) => /*#__PURE__*/React.createElement(Menu.Item, {
     key: index
   }, prev.customerName)));
-
-  // console.log("filterOutAvailableMembers:",filterOutAvailableMembers);
-
   const handleResourceMenu = e => {
     setSelectedResourceId(e.domEvent.target.textContent);
   };
@@ -497,43 +425,6 @@ const CalendarPage = _ref => {
 
   // Step 3: Filter out booked members
   const filterOutAvailableResource = filterResources.map(m => m.resourceName).filter(name => ![...bookedNames, ...recurringEvents].includes(name));
-  // const filterOutAvailableResource = filterResources.flatMap(prev => prev.resourceName).filter(resourceName => {
-  //   return sampleData
-  //     .filter(prev =>
-  //       // Keep filtering by month/year/date ONLY for non-recurring events
-  //       prev.events.some(item => item.recurring === "daily" || item.recurring === "weekly" || item.recurring === "monthly") ||
-  //       (
-  //         prev.month === monthName &&
-  //         parseInt(prev.year) === currentDate.getFullYear() &&
-  //         (parseInt(prev.date) === weekEventDate || parseInt(prev.date) === currentDate.getDate())
-  //       )
-  //     )
-  //     .flatMap(prev =>
-  //       prev.events.filter(item => {
-  //         const hour = parseInt(dayjs(timeSlot, "h A").format("HH"), 10);
-  //         const currentDay = weekdays[currentDate.getDay()];
-  //         const currentDateStr = currentDate.getDate().toString();
-
-  //         if (item.recurring === "daily") {
-  //           return item.from <= hour && hour < item.to;
-  //         } else if (item.recurring === "weekly") {
-  //           return item.day === currentDay && item.from <= hour && hour < item.to;
-  //         } else if (item.recurring === "monthly") {
-  //           return item.date === currentDateStr && item.from <= hour && hour < item.to;
-  //         } else {
-  //           // Non-recurring: must match full date
-  //           return (
-  //             prev.month === monthName &&
-  //             parseInt(prev.year) === currentDate.getFullYear() &&
-  //             (parseInt(prev.date) === weekEventDate || parseInt(prev.date) === currentDate.getDate()) &&
-  //             item.from <= hour && hour < item.to
-  //           );
-  //         }
-  //       })
-  //     )
-  //     .every(event => event.resourceId !== resourceName);
-  // });
-
   console.log("filterOutAvailableResource:", filterOutAvailableResource);
   const resourceMenu = /*#__PURE__*/React.createElement(Menu, {
     onClick: handleResourceMenu
