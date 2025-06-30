@@ -17,9 +17,11 @@ import ResourcePage from './ResourcePage';
 import TodosPage from './TodosPage';
 import AddNewNameCard from './AddNewNameCard';
 import CalendarPage from './CalendarPage';
+import './CmtApp.css';
 
 // Endpoint constants
 import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from './properties/EndPointProperties';
+import dayjs from 'dayjs';
 const {
   useBreakpoint
 } = Grid;
@@ -56,172 +58,104 @@ const CmtApp = _ref => {
   const [resourceData, setResourceData] = useState([]);
   const [resourceData1, setResourceData1] = useState([]);
   const screens = useBreakpoint();
-  const [data, setData] = useState([
-    // {
-    //     "id": "8",
-    //     "customerName": "SNR",
-    //     "phoneNumber": "8876543210",
-    //     "address": [
-    //         {
-    //             "street1": "test street5",
-    //             "street2": "test street6",
-    //             "city": "Test City",
-    //             "state": "TX",
-    //             "country": "USA"
-    //         }
-    //     ],
-    //     "comments": [
-    //         {
-    //             "commentId": "2034",
-    //             "message": "test Comment5",
-    //             "author": "SNR"
-    //         },
-    //         {
-    //             "commentId": "2346",
-    //             "message": "test comment 2",
-    //             "author": "SNR"
-    //         }
-    //     ],
-    //     "status": "Active",
-    //     "subscriptions": [
-    //     {
-    //         "id": "001",
-    //         "status": "Complete",
-    //         "noOfServicesLeft": "0",
-    //         "noOfServicesCompleted": "10",
-    //         "totalNumberOfServices": "10",
-    //         "purchasedDate": "Mar-02-2023",
-    //         "compltedData": "Feb-20-2024"
-    //     },
-    //     {
-    //         "id": "002",
-    //         "status": "Complete",
-    //         "noOfServicesLeft": "0",
-    //         "noOfServicesCompleted": "10",
-    //         "totalNumberOfServices": "10",
-    //         "purchasedDate": "Mar-30-2024",
-    //         "compltedData": "Jan-20-2025"
-
-    //     },
-    //     {
-    //         "id": "003",
-    //         "status": "Complete",
-    //         "noOfServicesLeft": "9",
-    //         "noOfServicesCompleted": "1",
-    //         "totalNumberOfServices": "10",
-    //         "purchasedDate": "Jan-30-2025"
-    //     }
-    // ],
-    // },
-  ]);
-  const [sampleData, setSampleData] = useState([
-
-    // {
-    //   "month": "April",
-    //   "year": "2025",
-    //   "userId": "ABC123",
-    //   "date":"25",
-    //   "events":[{
-    //       "memberId": "ABC123",
-    //       "resourceId": "R_2",
-    //       "date": "25",
-    //       "year": "2025",
-    //       "month": "March",
-    //       "from": "02",
-    //       "to": "03",
-    //       "recurring":"weekly",
-    //       "day":"Fri",
-    //       "title": "Test title2",
-    //       "notes": "Appointment for dentist"
-    //     },]
-    // },
-  ]);
+  const [data, setData] = useState([]);
+  const [sampleData, setSampleData] = useState([]);
   useEffect(() => {
-    console.log("initial loading, fetching user data from the Database");
-    // if(isInitialLoad.current){
-    const fetchingData = async () => {
-      try {
-
-        const Data = await fetch(MEMBERS_API, {
-                  method: "GET",
-                  headers: {
-                    "entityid" : "w_123",
-                    "Content-Type" : "application/json"
-                  }
-                }
-        );
-
-        const fetchedData = await Data.json();
-        console.log("fetching Data from database is complete");
-        console.log("Fetched Data:", fetchedData);
-        setData(fetchedData);
-      } catch (error) {
-        console.log("fail in fetching Data");
-        console.error("Error while fetching Data", error);
-      }
-      try {
-        const calendarData = await fetch(CALENDAR_API);
-        const fetchedCalendarData = await calendarData.json();
-        console.log("fetching Calendar Data from database is complete");
-        console.log("Fetched Calendar Data:", fetchedCalendarData);
-        setSampleData(fetchedCalendarData);
-      } catch (error) {
-        console.log("fail in fetching Calendar Data");
-        console.error("Error while fetching Calendar Data", error);
-      }
-      try {
-        const Data = await fetch(RESOURCES_API);
-        const fetchedData = await Data.json();
-        console.log("fetching Resource Data from database is complete");
-        console.log("Fetched Resource Data:", fetchedData);
-        setResourceData1(fetchedData);
-      } catch (error) {
-        console.log("fail in fetching resource Data");
-        console.error("Error while fetching resource Data", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchingData();
-    // isInitialLoad.current = false;
-    // }
-  }, []);
+    if (membersPage) {
+      console.log("initial loading, fetching data from the Database");
+      const fetchingData = async () => {
+        try {
+          const Data = await fetch(MEMBERS_API, {
+            method: "GET",
+            headers: {
+              "entityid": "w_123",
+              "Content-Type": "application/json"
+            }
+          });
+          const fetchedData = await Data.json();
+          console.log("fetching Data from database is complete");
+          console.log("Fetched Data:", fetchedData);
+          setData(fetchedData);
+        } catch (error) {
+          console.log("fail in fetching Data");
+          console.error("Error while fetching Data", error);
+        }
+        try {
+          const Data = await fetch(RESOURCES_API, {
+            method: "GET",
+            headers: {
+              "entityid": "w_123",
+              "Content-Type": "application/json"
+            }
+          });
+          const fetchedData = await Data.json();
+          console.log("fetching Resource Data from database is complete");
+          console.log("Fetched Resource Data:", fetchedData);
+          setResourceData1(fetchedData);
+        } catch (error) {
+          console.log("fail in fetching resource Data");
+          console.error("Error while fetching resource Data", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchingData();
+    } else if (openCalendarPage) {
+      const fetchCalendar = async () => {
+        try {
+          const calendarData = await fetch(CALENDAR_API + "All/month/" + dayjs().format("MMM") + "/year/" + dayjs().year(), {
+            method: "GET",
+            headers: {
+              "entityid": "w_123",
+              "Content-Type": "application/json"
+            }
+          });
+          const fetchedCalendarData = await calendarData.json();
+          console.log("fetching Calendar Data from database is complete");
+          console.log("Fetched Calendar Data:", fetchedCalendarData);
+          setSampleData(fetchedCalendarData);
+        } catch (error) {
+          console.log("fail in fetching Calendar Data");
+          console.error("Error while fetching Calendar Data", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchCalendar();
+    }
+  }, [membersPage, openCalendarPage]);
   useEffect(() => {
     setResourceData(resourceData1);
   }, [resourceData1]);
   const [duplicateData, setDuplicateData] = useState(data);
   const [commentBox, setCommentBox] = useState([]);
-  console.log("comment Box:", commentBox);
-  console.log("data:", duplicateData);
   useEffect(() => {
     setDuplicateData(data);
   }, [data]);
   const statusCount = data.reduce((acc, item) => {
-    acc[item.status] = (acc[item.status] || 0) + 1;
+    acc[item.address[0].city] = (acc[item.address[0].city] || 0) + 1;
     return acc;
   }, {});
-  console.log(statusCount);
-  if (!("Active" in statusCount)) {
-    statusCount["Active"] = 0;
+  if (!("Hyd" in statusCount)) {
+    statusCount["Hyd"] = 0;
   }
   ;
-  if (!("In_Progress" in statusCount)) {
-    statusCount["In_Progress"] = 0;
+  if (!("HYD" in statusCount)) {
+    statusCount["HYD"] = 0;
   }
   ;
-  if (!("Complete" in statusCount)) {
-    statusCount["Complete"] = 0;
+  if (!("Test City" in statusCount)) {
+    statusCount["Test City"] = 0;
   }
   ;
   if (!("Cancelled" in statusCount)) {
     statusCount["Cancelled"] = 0;
   }
   ;
-  console.log("StatusCount:", statusCount);
   const legendLabels = {
-    "Active": "Active Status",
-    "In_Progress": "In Progress Status",
-    "Complete": "Completed Status"
+    "Hyd": "Hyd",
+    "HYD": "HYD",
+    "Test City": "Test City"
   };
   const graphData = {
     labels: Object.keys(statusCount),
@@ -256,44 +190,6 @@ const CmtApp = _ref => {
       }
     }
   };
-  const columns = [{
-    title: 'Name',
-    dataIndex: 'customerName',
-    key: 'customerName',
-    render: text => /*#__PURE__*/React.createElement("a", null, text)
-  }, {
-    title: 'Phone',
-    dataIndex: 'phoneNumber',
-    key: 'phoneNumber'
-  }, {
-    title: 'Address',
-    dataIndex: "address",
-    key: 'address',
-    render: address => {
-      return /*#__PURE__*/React.createElement("div", {
-        style: {
-          maxHeight: '60px',
-          // Limit the height
-          overflow: 'hidden',
-          // Hide overflow content
-          textOverflow: 'ellipsis',
-          // Optional: show ellipsis if text overflows
-          display: 'inline-block',
-          // Ensure it behaves like a block element
-          whiteSpace: 'nowrap'
-        }
-      }, Object.keys(address[0]).map((key, index) => /*#__PURE__*/React.createElement("div", {
-        key: index
-      }, address[0][key])));
-    }
-  }, {
-    title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
-    sorter: (a, b) => a.status.localeCompare(b.status),
-    // Sorting by status alphabetically
-    sortDirections: ['ascend', 'descend']
-  }];
   const handleAddNewNameCard = () => {
     const newRecord = {
       customerName: newRecordName + newRecordLastName,
@@ -319,6 +215,7 @@ const CmtApp = _ref => {
         const response = await fetch(MEMBERS_API, {
           method: "POST",
           headers: {
+            "entityid": "w_123",
             'Content-Type': "application/json"
           },
           body: JSON.stringify(newRecord)
@@ -344,10 +241,8 @@ const CmtApp = _ref => {
       // setResourceData(resourceData1);
       setShowDashboard(false);
     } else {
-      const filteredRecords = data.filter(prev => prev.status === value);
-      // const filteredResourceData = resourceData1.filter((prev) => prev.status === value);
+      const filteredRecords = data.filter(prev => prev.address.some(prev1 => prev1.city === value));
       setDuplicateData(filteredRecords);
-      // setResourceData(filteredResourceData);
     }
     ;
   };
@@ -374,15 +269,13 @@ const CmtApp = _ref => {
     onChange: e => handleStatusSelection(e.target.value)
   }, /*#__PURE__*/React.createElement("option", {
     value: "All"
-  }, "All"), /*#__PURE__*/React.createElement("option", {
-    value: "Active"
-  }, "Active"), /*#__PURE__*/React.createElement("option", {
-    value: "In_Progress"
-  }, "In_Progress"), /*#__PURE__*/React.createElement("option", {
-    value: "Complete"
-  }, "Complete"), /*#__PURE__*/React.createElement("option", {
-    value: "Cancelled"
-  }, "Cancelled"));
+  }, "Select City"), /*#__PURE__*/React.createElement("option", {
+    value: "Hyd"
+  }, "Hyd"), /*#__PURE__*/React.createElement("option", {
+    value: "HYD"
+  }, "HYD"), /*#__PURE__*/React.createElement("option", {
+    value: "Test City"
+  }, "Test City"));
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "home_app"
   }, /*#__PURE__*/React.createElement(Header, {
@@ -583,19 +476,19 @@ const CmtApp = _ref => {
     style: {
       backgroundColor: 'pink'
     }
-  }, " ", statusCount["Active"], " "), /*#__PURE__*/React.createElement("h3", null, "Active")), /*#__PURE__*/React.createElement(Col, {
+  }, " ", statusCount["HYD"], " "), /*#__PURE__*/React.createElement("h3", null, "HYD")), /*#__PURE__*/React.createElement(Col, {
     className: "status-icons"
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       backgroundColor: 'lightBlue'
     }
-  }, " ", statusCount["In_Progress"], " "), /*#__PURE__*/React.createElement("h3", null, "In_Progress")), /*#__PURE__*/React.createElement(Col, {
+  }, " ", statusCount["Hyd"], " "), /*#__PURE__*/React.createElement("h3", null, "Hyd")), /*#__PURE__*/React.createElement(Col, {
     className: "status-icons"
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       backgroundColor: 'lightgreen'
     }
-  }, " ", statusCount["Complete"], " "), /*#__PURE__*/React.createElement("h3", null, "Complete")), /*#__PURE__*/React.createElement(Col, {
+  }, " ", statusCount["Test City"], " "), /*#__PURE__*/React.createElement("h3", null, "Test City")), /*#__PURE__*/React.createElement(Col, {
     className: "status-icons"
   }, /*#__PURE__*/React.createElement("span", {
     style: {

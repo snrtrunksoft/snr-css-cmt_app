@@ -46,6 +46,7 @@ const PunchCardsPage = _ref => {
         const responce = await fetch(SUBSCRIPTIONS_API, {
           method: 'POST',
           headers: {
+            'entityid': 'w_123',
             "Content-Type": "application/json"
           },
           body: JSON.stringify(newSub)
@@ -56,7 +57,7 @@ const PunchCardsPage = _ref => {
         });
         console.log("updated Subscription Data:", updatePostId);
         console.log("The new subscription:", newSub);
-        setPunchCards(prev => [...prev, updatePostId]);
+        setPunchCards(prev => [...prev, newSub]);
       } catch (error) {
         console.error("unable to update the record", error);
       } finally {
@@ -80,6 +81,7 @@ const PunchCardsPage = _ref => {
         await fetch(SUBSCRIPTIONS_API + value.id, {
           method: "PUT",
           headers: {
+            'entityid': 'w_123',
             "Content-Type": "application/json"
           },
           body: JSON.stringify(updatedSubscriptionDetails)
@@ -122,7 +124,7 @@ const PunchCardsPage = _ref => {
   };
   return /*#__PURE__*/React.createElement("div", {
     className: ""
-  }, /*#__PURE__*/React.createElement("h2", null, "Punch cards:"), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(Button, {
+  }, punchCards.length ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h2", null, "Punch cards:"), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(Button, {
     onClick: () => {
       setFlipped(false);
       setPunchCardsState(prev => prev === "Complete" ? "Active" : "Complete");
@@ -190,6 +192,6 @@ const PunchCardsPage = _ref => {
       margin: '5px'
     },
     onClick: () => addNewSubscription()
-  }, "Add Active Subscription")) : ""));
+  }, "Add Active Subscription")) : "")) : "");
 };
 export default PunchCardsPage;
