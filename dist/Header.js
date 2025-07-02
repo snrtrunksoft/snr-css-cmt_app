@@ -14,12 +14,10 @@ const Header = _ref => {
     openCalendarPage,
     todosPage,
     resourcePage,
-    openShoppingApp,
     setOpenCalendarPage,
     setMembersPage,
     setResourcePage,
     setTodosPage,
-    setOpenShoppingApp,
     setSelectedApp
   } = _ref;
   const [handleInboxDrawer, setHandleInboxDrawer] = useState(false);
@@ -59,7 +57,6 @@ const Header = _ref => {
     if (key === "members") setMembersPage(true);
     if (key === "calendar") setOpenCalendarPage(true);
     if (key === "todos") setTodosPage(true);
-    if (key === "shopping") setOpenShoppingApp(true);
   };
   return /*#__PURE__*/React.createElement("header", {
     className: "CMTheader"
@@ -110,10 +107,6 @@ const Header = _ref => {
     count: commentBox.length,
     offset: [10, -2]
   })), /*#__PURE__*/React.createElement(Menu.Item, {
-    key: "shopping",
-    icon: /*#__PURE__*/React.createElement(ShoppingCartOutlined, null),
-    onClick: () => handleMenuClick("shopping")
-  }, "Shopping"), /*#__PURE__*/React.createElement(Menu.Item, {
     key: "logout",
     icon: /*#__PURE__*/React.createElement(LogoutOutlined, null),
     onClick: () => {
@@ -167,17 +160,6 @@ const Header = _ref => {
   }), /*#__PURE__*/React.createElement("span", {
     className: "icon-label"
   }, "Calendar")), /*#__PURE__*/React.createElement("div", {
-    className: "icon-with-label"
-  }, /*#__PURE__*/React.createElement(Button, {
-    icon: /*#__PURE__*/React.createElement(ShoppingCartOutlined, null),
-    style: {
-      backgroundColor: 'transparent',
-      color: openShoppingApp ? "#1677ff" : ""
-    },
-    onClick: () => setSelectedApp("Inventory")
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "icon-label"
-  }, "Shop")), /*#__PURE__*/React.createElement("div", {
     className: "icon-with-label"
   }, /*#__PURE__*/React.createElement(Button, {
     icon: /*#__PURE__*/React.createElement(LuListTodo, null),
