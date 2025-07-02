@@ -40,11 +40,10 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
   const [ showDashboard, setShowDashboard ] = useState(false);
   const [ openCalendarPage, setOpenCalendarPage ] = useState(false);
   const [ resourcePage, setResourcePage ] = useState(false);
-  const [ membersPage, setMembersPage ] = useState(false);
+  const [ membersPage, setMembersPage ] = useState(true);
   const [ todosPage, setTodosPage ] = useState(false);
   const [ isLoading, setIsLoading ] = useState(true);
   const [ searchText, setSearchText ] = useState("");
-  const [ openShoppingApp, setOpenShoppingApp ] = useState(true);
   const [view, setView] = useState("Grid");
   const [ resourceData, setResourceData ] = useState([]);
   const [ resourceData1, setResourceData1 ] = useState([]);
@@ -287,12 +286,10 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
           openCalendarPage={openCalendarPage}
           todosPage={todosPage}
           resourcePage={resourcePage}
-          openShoppingApp={openShoppingApp}
           setOpenCalendarPage={setOpenCalendarPage}
           setMembersPage={setMembersPage}
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
-          setOpenShoppingApp={setOpenShoppingApp}
           setSelectedApp={setSelectedApp}
           />
         <span style={{display:'flex',alignItems:'center',justifyContent:'center',width:'100%'}}>
