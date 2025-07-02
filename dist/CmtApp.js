@@ -49,11 +49,10 @@ const CmtApp = _ref => {
   const [showDashboard, setShowDashboard] = useState(false);
   const [openCalendarPage, setOpenCalendarPage] = useState(false);
   const [resourcePage, setResourcePage] = useState(false);
-  const [membersPage, setMembersPage] = useState(false);
+  const [membersPage, setMembersPage] = useState(true);
   const [todosPage, setTodosPage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
-  const [openShoppingApp, setOpenShoppingApp] = useState(true);
   const [view, setView] = useState("Grid");
   const [resourceData, setResourceData] = useState([]);
   const [resourceData1, setResourceData1] = useState([]);
@@ -284,12 +283,10 @@ const CmtApp = _ref => {
     openCalendarPage: openCalendarPage,
     todosPage: todosPage,
     resourcePage: resourcePage,
-    openShoppingApp: openShoppingApp,
     setOpenCalendarPage: setOpenCalendarPage,
     setMembersPage: setMembersPage,
     setResourcePage: setResourcePage,
     setTodosPage: setTodosPage,
-    setOpenShoppingApp: setOpenShoppingApp,
     setSelectedApp: setSelectedApp
   }), /*#__PURE__*/React.createElement("span", {
     style: {

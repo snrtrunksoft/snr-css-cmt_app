@@ -14,12 +14,10 @@ const Header = ({
   openCalendarPage,
   todosPage,
   resourcePage,
-  openShoppingApp,
   setOpenCalendarPage,
   setMembersPage,
   setResourcePage,
   setTodosPage,
-  setOpenShoppingApp,
   setSelectedApp
 }) => {
   
@@ -65,7 +63,6 @@ const Header = ({
     if (key === "members") setMembersPage(true);
     if (key === "calendar") setOpenCalendarPage(true);
     if (key === "todos") setTodosPage(true);
-    if (key === "shopping") setOpenShoppingApp(true);
   };
 
   return (
@@ -104,22 +101,8 @@ const Header = ({
               <Menu.Item key="inbox" icon={<InboxOutlined />} onClick={() => { setHandleInboxDrawer(true); setMenuDrawerVisible(false); }}>
                 Inbox <Badge count={commentBox.length} offset={[10, -2]} />
               </Menu.Item>
-              <Menu.Item key="shopping" icon={<ShoppingCartOutlined />} onClick={() => handleMenuClick("shopping")}>
-                Shopping
-              </Menu.Item>
-              {/* <Menu.SubMenu key="settings" title="Settings">
-                <Menu.Item key="view" onClick={() => {
-                  setDataView(dataView === "grid" ? "table" : "grid");
-                  setView(view === "Grid" ? "List" : "Grid");
-                  setMenuDrawerVisible(false);
-                }}>
-                  {view} View
-                </Menu.Item>
-                <Menu.Item key="dashboard">
-                  Dashboard Off{" "}
-                  <Switch checked={hideDashboard} onClick={() => { setHideDashboard((prev) => !prev); setMenuDrawerVisible(false); }} />
-                </Menu.Item>
-              </Menu.SubMenu> */}
+              
+             
               <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={() => {setMenuDrawerVisible(false);setOpenConfirmationModal(true);}}>
                 Logout
               </Menu.Item>
@@ -144,11 +127,6 @@ const Header = ({
             </span>
 
             <div className="icon-with-label">
-              <Button icon={<ShoppingCartOutlined />} style={{ backgroundColor: 'transparent', color: openShoppingApp ? "#1677ff" : "" }} onClick={() => setSelectedApp("Inventory")} />
-              <span className="icon-label">Shop</span>
-            </div>
-
-            <div className="icon-with-label">
               <Button icon={<LuListTodo />} style={{ fontSize: '20px', padding: '0px', backgroundColor: 'transparent', color: todosPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(false); setTodosPage(true); }}></Button>
               <span className="icon-label">Todos</span>
             </div>
@@ -164,22 +142,6 @@ const Header = ({
               <span className="icon-label">Logout</span>
             </div>
           </span>
-          {/* <span hidden={openCalendarPage || todosPage || resourcePage}>
-            Status: {dropDownList} {view + " View"}
-            <Switch
-              style={{ margin: '0px 10px' }}
-              onClick={() => {
-                setDataView(dataView === "grid" ? "table" : "grid");
-                setView(view === "Grid" ? "List" : "Grid");
-              }}
-            />
-            Dashboard Off
-            <Switch
-              checked={hideDashboard}
-              style={{ margin: '0px 10px' }}
-              onClick={() => setHideDashboard(prev => !prev)}
-            />
-          </span> */}
           
         </div>
       )}
