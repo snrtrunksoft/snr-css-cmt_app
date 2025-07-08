@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaUser } from "react-icons/fa";
 import { IoIosGlobe } from "react-icons/io";
 import { LuCalendar, LuListTodo } from "react-icons/lu";
+import { HEADER_TITLE, LOGO_PATH } from "./properties/properties";
 const Header = _ref => {
   let {
     commentBox,
@@ -60,13 +61,16 @@ const Header = _ref => {
   };
   return /*#__PURE__*/React.createElement("header", {
     className: "CMTheader"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "CMTheader-left"
-  }, /*#__PURE__*/React.createElement("h1", {
-    style: {
-      color: '#FF5F09'
-    }
-  }, "SNR\xA0"), /*#__PURE__*/React.createElement("h1", null, "CMT APP")), isMobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: LOGO_PATH,
+    alt: "logosnr",
+    className: "app-logo"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "CMTheader-left",
+    style: isMobile ? {
+      padding: '0px'
+    } : {}
+  }, HEADER_TITLE), isMobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
     icon: /*#__PURE__*/React.createElement(MenuOutlined, null),
     onClick: () => setMenuDrawerVisible(true),
     style: {
@@ -113,95 +117,76 @@ const Header = _ref => {
       setMenuDrawerVisible(false);
       setOpenConfirmationModal(true);
     }
-  }, "Logout")))) : /*#__PURE__*/React.createElement("div", {
-    className: "CMTheader-right"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "CMTheader-icons"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "icon-with-label"
-  }, /*#__PURE__*/React.createElement(Button, {
+  }, "Logout")))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Menu, {
+    theme: "dark",
+    mode: "horizontal",
+    className: "app-menu",
+    style: {
+      backgroundColor: 'transparent'
+    }
+  }, /*#__PURE__*/React.createElement(Menu.Item, {
+    key: "WebSite",
     icon: /*#__PURE__*/React.createElement(IoIosGlobe, null),
     onClick: () => navigate("/"),
     style: {
       backgroundColor: 'transparent'
     }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "icon-label"
-  }, "WebSite")), /*#__PURE__*/React.createElement("span", {
-    className: "icon-with-label"
-  }, /*#__PURE__*/React.createElement(Button, {
+  }, "WebSite"), /*#__PURE__*/React.createElement(Menu.Item, {
+    key: "Members",
     icon: /*#__PURE__*/React.createElement(FaUser, null),
-    style: {
-      backgroundColor: 'transparent',
-      color: membersPage ? "#1677ff" : ""
-    },
     onClick: () => {
       setOpenCalendarPage(false);
       setResourcePage(false);
       setMembersPage(true);
       setTodosPage(false);
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "icon-label"
-  }, "Members")), /*#__PURE__*/React.createElement("span", {
-    className: "icon-with-label"
-  }, /*#__PURE__*/React.createElement(Button, {
-    icon: /*#__PURE__*/React.createElement(LuCalendar, null),
+    },
     style: {
       backgroundColor: 'transparent',
-      color: openCalendarPage ? "#1677ff" : ""
-    },
+      color: membersPage ? '#1677ff' : ''
+    }
+  }, "Members"), /*#__PURE__*/React.createElement(Menu.Item, {
+    key: "Calendar",
+    icon: /*#__PURE__*/React.createElement(LuCalendar, null),
     onClick: () => {
       setOpenCalendarPage(true);
       setResourcePage(false);
       setMembersPage(false);
       setTodosPage(false);
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "icon-label"
-  }, "Calendar")), /*#__PURE__*/React.createElement("div", {
-    className: "icon-with-label"
-  }, /*#__PURE__*/React.createElement(Button, {
-    icon: /*#__PURE__*/React.createElement(LuListTodo, null),
-    style: {
-      fontSize: '20px',
-      padding: '0px',
-      backgroundColor: 'transparent',
-      color: todosPage ? "#1677ff" : ""
     },
+    style: {
+      backgroundColor: 'transparent',
+      color: openCalendarPage ? '#1677ff' : ''
+    }
+  }, "Calendar"), /*#__PURE__*/React.createElement(Menu.Item, {
+    key: "Todos",
+    icon: /*#__PURE__*/React.createElement(LuListTodo, null),
     onClick: () => {
       setOpenCalendarPage(false);
       setResourcePage(false);
       setMembersPage(false);
       setTodosPage(true);
+    },
+    style: {
+      backgroundColor: 'transparent',
+      color: todosPage ? '#1677ff' : ''
     }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "icon-label"
-  }, "Todos")), /*#__PURE__*/React.createElement("div", {
-    className: "icon-with-label"
-  }, /*#__PURE__*/React.createElement(Badge, {
-    count: commentBox.length,
-    offset: [-10, 2]
-  }, /*#__PURE__*/React.createElement(Button, {
-    icon: /*#__PURE__*/React.createElement(InboxOutlined, null),
+  }, "Todos"), /*#__PURE__*/React.createElement(Menu.Item, {
+    key: "Inbox",
+    icon: /*#__PURE__*/React.createElement(Badge, {
+      count: commentBox.length,
+      offset: [-5, 5]
+    }, /*#__PURE__*/React.createElement(InboxOutlined, null)),
+    onClick: () => setHandleInboxDrawer(true),
     style: {
       backgroundColor: 'transparent'
-    },
-    onClick: () => setHandleInboxDrawer(true)
-  })), /*#__PURE__*/React.createElement("span", {
-    className: "icon-label"
-  }, "Inbox")), /*#__PURE__*/React.createElement("div", {
-    className: "icon-with-label"
-  }, /*#__PURE__*/React.createElement(Button, {
-    icon: /*#__PURE__*/React.createElement(LogoutOutlined, null),
+    }
+  }, "Inbox")), /*#__PURE__*/React.createElement(Button, {
     onClick: () => setOpenConfirmationModal(true),
     style: {
-      backgroundColor: 'inherit',
-      color: 'white'
+      marginLeft: '10px',
+      marginRight: '20px'
     }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "icon-label"
-  }, "Logout")))), /*#__PURE__*/React.createElement(Drawer, {
+  }, "Logout")), /*#__PURE__*/React.createElement(Drawer, {
     open: handleInboxDrawer,
     title: "Inbox",
     width: isMobile ? "90%" : "40%",
