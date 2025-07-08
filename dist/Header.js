@@ -170,17 +170,17 @@ const Header = _ref => {
       backgroundColor: 'transparent',
       color: todosPage ? '#1677ff' : ''
     }
-  }, "Todos"), /*#__PURE__*/React.createElement(Menu.Item, {
+  }, "Todos"), /*#__PURE__*/React.createElement(Badge, {
+    count: commentBox.length,
+    offset: [0, 0]
+  }, /*#__PURE__*/React.createElement(Menu.Item, {
     key: "Inbox",
-    icon: /*#__PURE__*/React.createElement(Badge, {
-      count: commentBox.length,
-      offset: [-5, 5]
-    }, /*#__PURE__*/React.createElement(InboxOutlined, null)),
+    icon: /*#__PURE__*/React.createElement(InboxOutlined, null),
     onClick: () => setHandleInboxDrawer(true),
     style: {
       backgroundColor: 'transparent'
     }
-  }, "Inbox")), /*#__PURE__*/React.createElement(Button, {
+  }, "Inbox"))), /*#__PURE__*/React.createElement(Button, {
     onClick: () => setOpenConfirmationModal(true),
     style: {
       marginLeft: '10px',

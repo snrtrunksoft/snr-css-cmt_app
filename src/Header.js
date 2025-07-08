@@ -163,18 +163,16 @@ const Header = ({
             Todos
           </Menu.Item>
 
-          <Menu.Item
-            key="Inbox"
-            icon={
-              <Badge count={commentBox.length} offset={[-5, 5]}>
-                <InboxOutlined />
-              </Badge>
-            }
-            onClick={() => setHandleInboxDrawer(true)}
-            style={{ backgroundColor: 'transparent' }}
-          >
-            Inbox
-          </Menu.Item>
+          <Badge count={commentBox.length} offset={[0, 0]}>
+            <Menu.Item
+              key="Inbox"
+              icon={<InboxOutlined />}
+              onClick={() => setHandleInboxDrawer(true)}
+              style={{ backgroundColor: 'transparent' }}
+            >
+              Inbox
+            </Menu.Item>
+          </Badge>
         </Menu>
         <Button onClick={() => setOpenConfirmationModal(true)} style={{ marginLeft: '10px', marginRight: '20px' }}>Logout</Button>
         </>
