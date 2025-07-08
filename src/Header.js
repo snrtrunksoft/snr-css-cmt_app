@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaUser } from "react-icons/fa";
 import { IoIosGlobe } from "react-icons/io";
 import { LuCalendar, LuListTodo  } from "react-icons/lu";
+import { HEADER_TITLE, LOGO_PATH } from "./properties/properties";
 
 const Header = ({
   commentBox,
@@ -67,10 +68,10 @@ const Header = ({
 
   return (
     <header className="CMTheader">
-      <div className="CMTheader-left">
-        <h1 style={{ color: '#FF5F09' }}>SNR&nbsp;</h1>
-        <h1>CMT APP</h1>
-      </div>
+      <img src={LOGO_PATH} alt="logosnr" className="app-logo" />
+        <div className="CMTheader-left" style={isMobile ? { padding: '0px' } : {}}>
+          {HEADER_TITLE}
+        </div>
 
       {isMobile ? (
         <>
@@ -110,40 +111,73 @@ const Header = ({
           </Drawer>
         </>
       ) : (
-        <div className="CMTheader-right" >
-          <span className="CMTheader-icons">
-            <span className="icon-with-label">
-              <Button icon={<IoIosGlobe />} onClick={() => navigate("/")} style={{backgroundColor: 'transparent'}}></Button>
-              <span className="icon-label">WebSite</span>
-            </span>
-            <span className="icon-with-label">
-              <Button icon={<FaUser />} style={{ backgroundColor: 'transparent', color: membersPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(true); setTodosPage(false); }} />
-              <span className="icon-label">Members</span>
-            </span>
+        <>
+        <Menu
+          theme="dark"
+          mode="horizontal"
+          className="app-menu"
+          style={{ backgroundColor: 'transparent' }}
+        >
+          <Menu.Item
+            key="WebSite"
+            icon={<IoIosGlobe />}
+            onClick={() => navigate("/")}
+            style={{ backgroundColor: 'transparent' }}
+          >
+            WebSite
+          </Menu.Item>
 
-            <span className="icon-with-label">
-              <Button icon={<LuCalendar />} style={{ backgroundColor: 'transparent', color: openCalendarPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(true); setResourcePage(false); setMembersPage(false); setTodosPage(false); }} />
-              <span className="icon-label">Calendar</span>
-            </span>
+          <Menu.Item
+            key="Members"
+            icon={<FaUser />}
+            onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(true); setTodosPage(false); }}
+            style={{
+              backgroundColor: 'transparent',
+              color: membersPage ? '#1677ff' : '',
+            }}
+          >
+            Members
+          </Menu.Item>
 
-            <div className="icon-with-label">
-              <Button icon={<LuListTodo />} style={{ fontSize: '20px', padding: '0px', backgroundColor: 'transparent', color: todosPage ? "#1677ff" : "" }} onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(false); setTodosPage(true); }}></Button>
-              <span className="icon-label">Todos</span>
-            </div>
+          <Menu.Item
+            key="Calendar"
+            icon={<LuCalendar />}
+            onClick={() => { setOpenCalendarPage(true); setResourcePage(false); setMembersPage(false); setTodosPage(false); }}
+            style={{
+              backgroundColor: 'transparent',
+              color: openCalendarPage ? '#1677ff' : '',
+            }}
+          >
+            Calendar
+          </Menu.Item>
 
-            <div className="icon-with-label">
-              <Badge count={commentBox.length} offset={[-10, 2]}>
-                <Button icon={<InboxOutlined />} style={{ backgroundColor: 'transparent' }} onClick={() => setHandleInboxDrawer(true)} />
+          <Menu.Item
+            key="Todos"
+            icon={<LuListTodo />}
+            onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(false); setTodosPage(true); }}
+            style={{
+              backgroundColor: 'transparent',
+              color: todosPage ? '#1677ff' : '',
+            }}
+          >
+            Todos
+          </Menu.Item>
+
+          <Menu.Item
+            key="Inbox"
+            icon={
+              <Badge count={commentBox.length} offset={[-5, 5]}>
+                <InboxOutlined />
               </Badge>
-              <span className="icon-label">Inbox</span>
-            </div>
-            <div className="icon-with-label">
-              <Button icon={<LogoutOutlined />} onClick={() => setOpenConfirmationModal(true)} style={{ backgroundColor: 'inherit', color: 'white' }} />
-              <span className="icon-label">Logout</span>
-            </div>
-          </span>
-          
-        </div>
+            }
+            onClick={() => setHandleInboxDrawer(true)}
+            style={{ backgroundColor: 'transparent' }}
+          >
+            Inbox
+          </Menu.Item>
+        </Menu>
+        <Button onClick={() => setOpenConfirmationModal(true)} style={{ marginLeft: '10px', marginRight: '20px' }}>Logout</Button>
+        </>
       )}
 
       <Drawer
