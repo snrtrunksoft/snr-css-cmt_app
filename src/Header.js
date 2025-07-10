@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { FaUser } from "react-icons/fa";
 import { IoIosGlobe } from "react-icons/io";
 import { LuCalendar, LuListTodo  } from "react-icons/lu";
-import { HEADER_TITLE, LOGO_PATH } from "./properties/properties";
+import { HEADER_TITLE } from "./properties/properties";
+import image from "./assets/logosnr.png";
 
 const Header = ({
   commentBox,
@@ -68,7 +69,7 @@ const Header = ({
 
   return (
     <header className="CMTheader">
-      <img src={LOGO_PATH} alt="logosnr" className="app-logo" />
+      <img src={image} alt="logosnr" className="app-logo"/>
         <div className="CMTheader-left" style={isMobile ? { padding: '0px' } : {}}>
           {HEADER_TITLE}
         </div>
@@ -87,8 +88,8 @@ const Header = ({
             onClose={() => setMenuDrawerVisible(false)}
           >
             <Menu mode="vertical" theme="light">
-              <Menu.Item key="Website" icon={<IoIosGlobe />} onClick={() => navigate('/')}>
-                WebSite
+              <Menu.Item key="Home" icon={<IoIosGlobe />} onClick={() => navigate('/')}>
+                Home
               </Menu.Item>
               <Menu.Item key="members" icon={<FaUser />} onClick={() => handleMenuClick("members")}>
                 Home
@@ -119,12 +120,12 @@ const Header = ({
           style={{ backgroundColor: 'transparent' }}
         >
           <Menu.Item
-            key="WebSite"
+            key="Home"
             icon={<IoIosGlobe />}
             onClick={() => navigate("/")}
             style={{ backgroundColor: 'transparent' }}
           >
-            WebSite
+            Home
           </Menu.Item>
 
           <Menu.Item

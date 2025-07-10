@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { FaUser } from "react-icons/fa";
 import { IoIosGlobe } from "react-icons/io";
 import { LuCalendar, LuListTodo } from "react-icons/lu";
-import { HEADER_TITLE, LOGO_PATH } from "./properties/properties";
+import { HEADER_TITLE } from "./properties/properties";
+import image from "./assets/logosnr.png";
 const Header = _ref => {
   let {
     commentBox,
@@ -62,7 +63,7 @@ const Header = _ref => {
   return /*#__PURE__*/React.createElement("header", {
     className: "CMTheader"
   }, /*#__PURE__*/React.createElement("img", {
-    src: LOGO_PATH,
+    src: image,
     alt: "logosnr",
     className: "app-logo"
   }), /*#__PURE__*/React.createElement("div", {
@@ -85,10 +86,10 @@ const Header = _ref => {
     mode: "vertical",
     theme: "light"
   }, /*#__PURE__*/React.createElement(Menu.Item, {
-    key: "Website",
+    key: "Home",
     icon: /*#__PURE__*/React.createElement(IoIosGlobe, null),
     onClick: () => navigate('/')
-  }, "WebSite"), /*#__PURE__*/React.createElement(Menu.Item, {
+  }, "Home"), /*#__PURE__*/React.createElement(Menu.Item, {
     key: "members",
     icon: /*#__PURE__*/React.createElement(FaUser, null),
     onClick: () => handleMenuClick("members")
@@ -125,13 +126,13 @@ const Header = _ref => {
       backgroundColor: 'transparent'
     }
   }, /*#__PURE__*/React.createElement(Menu.Item, {
-    key: "WebSite",
+    key: "Home",
     icon: /*#__PURE__*/React.createElement(IoIosGlobe, null),
     onClick: () => navigate("/"),
     style: {
       backgroundColor: 'transparent'
     }
-  }, "WebSite"), /*#__PURE__*/React.createElement(Menu.Item, {
+  }, "Home"), /*#__PURE__*/React.createElement(Menu.Item, {
     key: "Members",
     icon: /*#__PURE__*/React.createElement(FaUser, null),
     onClick: () => {
