@@ -7,6 +7,7 @@ import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage  from "./PunchCardsPage";
 
 const NameCard = ({ 
+    data,
     setData,
     customerId, 
     customerName,
@@ -49,6 +50,20 @@ const NameCard = ({
     function onFinish(values) {
         setIsEditable(false);
         console.log("form values:", values);
+        const filterData = data.find(prev => prev.id === values.customerId);
+        const updated_name_record = {
+            ...filterData,
+            customerName : values.customerName,
+            phoneNumber : values.phoneNumber,
+            status : values.status,
+            address : [{
+                ...filterData.address?.[0],
+                city : values.address.city,
+                state : values.address.state,
+                country : values.address.country
+            }],
+        };
+        const { id, entityId, ...cleanCustomer } = updated_name_record;
         setData((prev) => {
             return prev.map((customer) => 
                 customer.id === values.customerId ?
@@ -65,24 +80,24 @@ const NameCard = ({
                         }]
                     }   : customer)
         })
-        // const updatedNameCard = async() => {
-        //     try{
-        //         await fetch(MEMBERS_API, {
-        //             method : "PUT",
-        //             headers : {
-        //                 entityid : "w_123",
-        //                 "Content-Type" : "application/json"
-        //             },
-        //             body : JSON.stringify()
-        //         })
-        //         .then(responce => responce.json())
-        //         .then(data => console.log("successfully updated the record", data))
-        //     } catch(error) {
-        //         console.log("error in updating the Name card", error);
-        //     }
-        // };
+        const updatedNameCard = async() => {
+            try{
+                await fetch(MEMBERS_API + values.customerId, {
+                    method : "PUT",
+                    headers : {
+                        entityid : "w_123",
+                        "Content-Type" : "application/json"
+                    },
+                    body : JSON.stringify(cleanCustomer)
+                })
+                .then(responce => responce.json())
+                .then(data => console.log("successfully updated the record", data))
+            } catch(error) {
+                console.log("error in updating the Name card", error);
+            }
+        };
 
-        // updatedNameCard();
+        updatedNameCard();
     }
     
     const addressKeys = Object.keys(address[0]);

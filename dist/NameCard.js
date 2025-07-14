@@ -1,3 +1,6 @@
+const _excluded = ["id", "entityId"];
+function _objectWithoutProperties(e, t) { if (null == e) return {}; var o, r, i = _objectWithoutPropertiesLoose(e, t); if (Object.getOwnPropertySymbols) { var n = Object.getOwnPropertySymbols(e); for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]); } return i; }
+function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t = {}; for (var n in r) if ({}.hasOwnProperty.call(r, n)) { if (-1 !== e.indexOf(n)) continue; t[n] = r[n]; } return t; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
@@ -12,6 +15,7 @@ import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage from "./PunchCardsPage";
 const NameCard = _ref => {
   let {
+    data,
     setData,
     customerId,
     customerName,
@@ -50,8 +54,25 @@ const NameCard = _ref => {
     return '100%';
   };
   function onFinish(values) {
+    var _filterData$address;
     setIsEditable(false);
     console.log("form values:", values);
+    const filterData = data.find(prev => prev.id === values.customerId);
+    const updated_name_record = _objectSpread(_objectSpread({}, filterData), {}, {
+      customerName: values.customerName,
+      phoneNumber: values.phoneNumber,
+      status: values.status,
+      address: [_objectSpread(_objectSpread({}, (_filterData$address = filterData.address) === null || _filterData$address === void 0 ? void 0 : _filterData$address[0]), {}, {
+        city: values.address.city,
+        state: values.address.state,
+        country: values.address.country
+      })]
+    });
+    const {
+        id,
+        entityId
+      } = updated_name_record,
+      cleanCustomer = _objectWithoutProperties(updated_name_record, _excluded);
     setData(prev => {
       return prev.map(customer => customer.id === values.customerId ? _objectSpread(_objectSpread({}, customer), {}, {
         customerName: values.customerName,
@@ -64,24 +85,21 @@ const NameCard = _ref => {
         })]
       }) : customer);
     });
-    // const updatedNameCard = async() => {
-    //     try{
-    //         await fetch(MEMBERS_API, {
-    //             method : "PUT",
-    //             headers : {
-    //                 entityid : "w_123",
-    //                 "Content-Type" : "application/json"
-    //             },
-    //             body : JSON.stringify()
-    //         })
-    //         .then(responce => responce.json())
-    //         .then(data => console.log("successfully updated the record", data))
-    //     } catch(error) {
-    //         console.log("error in updating the Name card", error);
-    //     }
-    // };
-
-    // updatedNameCard();
+    const updatedNameCard = async () => {
+      try {
+        await fetch(MEMBERS_API + values.customerId, {
+          method: "PUT",
+          headers: {
+            entityid: "w_123",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(cleanCustomer)
+        }).then(responce => responce.json()).then(data => console.log("successfully updated the record", data));
+      } catch (error) {
+        console.log("error in updating the Name card", error);
+      }
+    };
+    updatedNameCard();
   }
   const addressKeys = Object.keys(address[0]);
   // console.log(addressKeys);
