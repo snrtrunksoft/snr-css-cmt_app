@@ -90,7 +90,14 @@ const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataVie
                             <Col span={3} className="table-cell">{item.resourceId}</Col>
                             <Col span={5} className="table-cell">{item.resourceName}</Col>
                             <Col span={10} className="table-cell">
-                                {`${item.address[0].houseNo}, ${item.address[0].street1}, ${item.address[0].street2}, ${item.address[0].city}, ${item.address[0].state}, ${item.address[0].country}`}
+                                {[
+                                    item.address?.[0]?.houseNo,
+                                    item.address?.[0]?.street1,
+                                    item.address?.[0]?.street2,
+                                    item.address?.[0]?.city,
+                                    item.address?.[0]?.state,
+                                    item.address?.[0]?.country
+                                    ].filter(Boolean).join(', ')}
                             </Col>
                             <Col span={6} className="table-cell">{item.phoneNumber}</Col>
                         </Row>
@@ -112,6 +119,8 @@ const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataVie
                             lg={resourceData.length <= 2 ? 20 : 6}
                             xl={resourceData.length <= 2 ? 20 : 6}>
                                 <NameCard key={item.resourceId}
+                                    resourceData={resourceData}
+                                    setResourceData={setResourceData}
                                     customerId={item.resourceId}
                                     customerName={item.resourceName}
                                     phoneNumber={item.phoneNumber}
