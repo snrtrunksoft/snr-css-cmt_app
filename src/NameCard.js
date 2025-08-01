@@ -9,6 +9,8 @@ import PunchCardsPage  from "./PunchCardsPage";
 const NameCard = ({ 
     data,
     setData,
+    resourceData,
+    setResourceData,
     customerId, 
     customerName,
     phoneNumber, 
@@ -46,12 +48,11 @@ const NameCard = ({
         if (screens.sm) return 300;
         return '100%';
     };
-
     function onFinish(values) {
         setIsEditable(false);
         console.log("form values:", values);
-        const filterData = data.find(prev => prev.id === values.customerId);
-        const updated_name_record = {
+        const filterData =  data ? data.find((prev) => prev.id === values.customerId) : resourceData.find((prev) => prev.resourceId === values.customerId);
+        const updated_member_name_record = {
             ...filterData,
             customerName : values.customerName,
             phoneNumber : values.phoneNumber,
@@ -63,26 +64,25 @@ const NameCard = ({
                 country : values.address.country
             }],
         };
-        const { id, entityId, ...cleanCustomer } = updated_name_record;
-        setData((prev) => {
-            return prev.map((customer) => 
-                customer.id === values.customerId ?
-                    {
-                        ...customer,
-                        customerName : values.customerName,
-                        phoneNumber : values.phoneNumber,
-                        status : values.status,
-                        address : [{
-                            ...customer.address[0],
-                            city : values.address.city,
-                            state : values.address.state,
-                            country : values.address.country
-                        }]
-                    }   : customer)
-        })
+
+        const updated_resource_name_record = {
+            ...filterData,
+            resourceName : values.customerName,
+            phoneNumber : values.phoneNumber,
+            status : values.status,
+            address : [{
+                ...filterData.address?.[0],
+                city : values.address.city,
+                state : values.address.state,
+                country : values.address.country
+            }],
+        }
+        const { id, entityId, ...cleanCustomer } = (data ? updated_member_name_record : updated_resource_name_record);
+        console.log(cleanCustomer);
+
         const updatedNameCard = async() => {
             try{
-                await fetch(MEMBERS_API + values.customerId, {
+                await fetch((data ? MEMBERS_API : RESOURCES_API) + values.customerId, {
                     method : "PUT",
                     headers : {
                         entityid : "w_123",
@@ -96,12 +96,46 @@ const NameCard = ({
                 console.log("error in updating the Name card", error);
             }
         };
-
         updatedNameCard();
+
+        if(data) {
+            setData((prev) => {
+                return prev.map((customer) => 
+                    customer.id === values.customerId ?
+                        {
+                            ...customer,
+                            customerName : values.customerName,
+                            phoneNumber : values.phoneNumber,
+                            status : values.status,
+                            address : [{
+                                ...customer.address?.[0],
+                                city : values.address.city,
+                                state : values.address.state,
+                                country : values.address.country
+                            }]
+                        }   : customer)
+                    })
+        } else {
+            setResourceData((prev) => {
+                return prev.map((customer) => 
+                    customer.resourceId === values.customerId ?
+                        {
+                            ...customer,
+                            resourceName : values.customerName,
+                            phoneNumber : values.phoneNumber,
+                            status : values.status,
+                            address : [{
+                                ...customer.address?.[0],
+                                city : values.address.city,
+                                state : values.address.state,
+                                country : values.address.country
+                            }]
+                        }   : customer)
+            })
+        }
     }
     
-    const addressKeys = Object.keys(address[0]);
-    // console.log(addressKeys);
+    const addressKeys = Object.keys(address?.[0] ?? {});
     const handleSend = () => {
         const addTimeForComment = new Date().toLocaleString();
         console.log(addTimeForComment);
@@ -271,7 +305,7 @@ const NameCard = ({
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace:'nowrap'}}>
-                                    Address : { addressKeys.map((item,index) => 
+                                    Address : { addressKeys?.map((item,index) => 
                                         <span key={index}>
                                             {address[0][item]}{ item !== "country" ? ", " : "." }
                                             {(item === "city") || (item === "state") ? "" : (<br/>) }
@@ -322,7 +356,7 @@ const NameCard = ({
                             color={color} />
                     <h3>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
-                        {comments.map((comment,index) =>(
+                        {comments?.map((comment,index) =>(
                             <Space 
                                 key={index}
                                 direction="vertical"
