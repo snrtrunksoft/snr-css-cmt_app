@@ -1,14 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Checkbox, Col, Drawer,Grid, Row, Space } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, Row, Space } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
-import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage  from "./PunchCardsPage";
-import { SwapOutlined } from "@ant-design/icons";
 
 const NameCard = ({ 
+    data,
+    setData,
     customerId, 
     customerName,
     phoneNumber, 
@@ -16,15 +16,28 @@ const NameCard = ({
     status, 
     comments,
     subscriptions,
-    setDuplicateData, 
     commentBox, 
     setCommentBox,
     }) => {
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
+    const [ isEditable, setIsEditable] = useState(false);
     const { useBreakpoint } = Grid;
+    const [ form ] = Form.useForm();
     const screens = useBreakpoint();
+
+    const [defaultValues] = useState({
+        customerId : customerId,
+        customerName: customerName,
+        phoneNumber: phoneNumber,
+        status: status,
+        address: { ...address[0] }
+    })
+
+    useEffect(() => {
+        form.setFieldsValue(defaultValues);
+    },[form, defaultValues]);
 
     const getDrawerWidth = () => {
         if (screens.xl) return 600;
@@ -33,6 +46,59 @@ const NameCard = ({
         if (screens.sm) return 300;
         return '100%';
     };
+
+    function onFinish(values) {
+        setIsEditable(false);
+        console.log("form values:", values);
+        const filterData = data.find(prev => prev.id === values.customerId);
+        const updated_name_record = {
+            ...filterData,
+            customerName : values.customerName,
+            phoneNumber : values.phoneNumber,
+            status : values.status,
+            address : [{
+                ...filterData.address?.[0],
+                city : values.address.city,
+                state : values.address.state,
+                country : values.address.country
+            }],
+        };
+        const { id, entityId, ...cleanCustomer } = updated_name_record;
+        setData((prev) => {
+            return prev.map((customer) => 
+                customer.id === values.customerId ?
+                    {
+                        ...customer,
+                        customerName : values.customerName,
+                        phoneNumber : values.phoneNumber,
+                        status : values.status,
+                        address : [{
+                            ...customer.address[0],
+                            city : values.address.city,
+                            state : values.address.state,
+                            country : values.address.country
+                        }]
+                    }   : customer)
+        })
+        const updatedNameCard = async() => {
+            try{
+                await fetch(MEMBERS_API + values.customerId, {
+                    method : "PUT",
+                    headers : {
+                        entityid : "w_123",
+                        "Content-Type" : "application/json"
+                    },
+                    body : JSON.stringify(cleanCustomer)
+                })
+                .then(responce => responce.json())
+                .then(data => console.log("successfully updated the record", data))
+            } catch(error) {
+                console.log("error in updating the Name card", error);
+            }
+        };
+
+        updatedNameCard();
+    }
     
     const addressKeys = Object.keys(address[0]);
     // console.log(addressKeys);
@@ -72,7 +138,7 @@ const NameCard = ({
             }
             uploadComment();
 
-            setDuplicateData(prevData =>
+            setData(prevData =>
                 prevData.map(prev =>
                     prev.id === customerId ? {
                         ...prev,
@@ -178,7 +244,19 @@ const NameCard = ({
                 width= {getDrawerWidth()}
                 onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
                 >
-                <div className="nameDrawer">
+                <div className="nameDrawer" style={{position:'relative'}}>
+                    <Button
+                        type="primary"
+                        style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '10px',
+                        zIndex: 1,
+                        }}
+                        onClick={() => setIsEditable(true)}
+                    >
+                        Edit
+                    </Button>
                     <Row className="personalNameCard">
                         <Col style={{padding:'5px',width:'40%'}}>
                             <img src={maleAvatar} style={{width:'100%',height:'95%'}}/>
@@ -201,6 +279,40 @@ const NameCard = ({
                             </h3>
                         </Col>
                     </Row>
+                    <Form hidden={!isEditable} layout="vertical" form={form} onFinish={onFinish} style={{padding:'20px'}}>
+                        <Form.Item name="customerId" label="Customer Id">
+                            <Input readOnly/>
+                        </Form.Item>
+
+                        <Form.Item name="customerName" label="Customer Name">
+                            <Input />
+                        </Form.Item>
+
+                        <Form.Item name="phoneNumber" label="Phone">
+                            <Input inputMode="numeric" pattern="[0-9]*" maxLength={10}/>
+                        </Form.Item>
+
+                        <Form.Item name="status" label="Status">
+                            <Input />
+                        </Form.Item>
+
+                        <Form.Item label="City" name={['address', 'city']}>
+                            <Input />
+                        </Form.Item>
+
+                        <Form.Item label="State" name={['address', 'state']}>
+                            <Input />
+                        </Form.Item>
+
+                        <Form.Item label="Country" name={['address', 'country']}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item style={{ marginTop: 24 }}>
+                            <Button type="primary" htmlType="submit" block>
+                                Save Changes
+                            </Button>
+                        </Form.Item>
+                    </Form>
                         <PunchCardsPage
                             customerId={customerId}
                             customerName={customerName}

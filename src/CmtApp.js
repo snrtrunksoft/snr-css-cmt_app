@@ -382,6 +382,8 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
                     lg={duplicateData.length <= 2 ? 20 : 6} 
                     xl={duplicateData.length <= 2 ? 20 : 6}>
                     <NameCard key={item.id}
+                      data={data}
+                      setData={setData}
                       customerId={item.id}
                       customerName={item.customerName}
                       phoneNumber={item.phoneNumber}

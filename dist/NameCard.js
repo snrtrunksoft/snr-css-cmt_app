@@ -1,19 +1,22 @@
+const _excluded = ["id", "entityId"];
+function _objectWithoutProperties(e, t) { if (null == e) return {}; var o, r, i = _objectWithoutPropertiesLoose(e, t); if (Object.getOwnPropertySymbols) { var n = Object.getOwnPropertySymbols(e); for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]); } return i; }
+function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t = {}; for (var n in r) if ({}.hasOwnProperty.call(r, n)) { if (-1 !== e.indexOf(n)) continue; t[n] = r[n]; } return t; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Checkbox, Col, Drawer, Grid, Row, Space } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, Row, Space } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
-import femaleAvatar from "./assets/female_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage from "./PunchCardsPage";
-import { SwapOutlined } from "@ant-design/icons";
 const NameCard = _ref => {
   let {
+    data,
+    setData,
     customerId,
     customerName,
     phoneNumber,
@@ -21,17 +24,28 @@ const NameCard = _ref => {
     status,
     comments,
     subscriptions,
-    setDuplicateData,
     commentBox,
     setCommentBox
   } = _ref;
   const [isHovered, setIsHovered] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [nameCardDrawer, setNameCardDrawer] = useState(false);
+  const [isEditable, setIsEditable] = useState(false);
   const {
     useBreakpoint
   } = Grid;
+  const [form] = Form.useForm();
   const screens = useBreakpoint();
+  const [defaultValues] = useState({
+    customerId: customerId,
+    customerName: customerName,
+    phoneNumber: phoneNumber,
+    status: status,
+    address: _objectSpread({}, address[0])
+  });
+  useEffect(() => {
+    form.setFieldsValue(defaultValues);
+  }, [form, defaultValues]);
   const getDrawerWidth = () => {
     if (screens.xl) return 600;
     if (screens.lg) return 550;
@@ -39,6 +53,54 @@ const NameCard = _ref => {
     if (screens.sm) return 300;
     return '100%';
   };
+  function onFinish(values) {
+    var _filterData$address;
+    setIsEditable(false);
+    console.log("form values:", values);
+    const filterData = data.find(prev => prev.id === values.customerId);
+    const updated_name_record = _objectSpread(_objectSpread({}, filterData), {}, {
+      customerName: values.customerName,
+      phoneNumber: values.phoneNumber,
+      status: values.status,
+      address: [_objectSpread(_objectSpread({}, (_filterData$address = filterData.address) === null || _filterData$address === void 0 ? void 0 : _filterData$address[0]), {}, {
+        city: values.address.city,
+        state: values.address.state,
+        country: values.address.country
+      })]
+    });
+    const {
+        id,
+        entityId
+      } = updated_name_record,
+      cleanCustomer = _objectWithoutProperties(updated_name_record, _excluded);
+    setData(prev => {
+      return prev.map(customer => customer.id === values.customerId ? _objectSpread(_objectSpread({}, customer), {}, {
+        customerName: values.customerName,
+        phoneNumber: values.phoneNumber,
+        status: values.status,
+        address: [_objectSpread(_objectSpread({}, customer.address[0]), {}, {
+          city: values.address.city,
+          state: values.address.state,
+          country: values.address.country
+        })]
+      }) : customer);
+    });
+    const updatedNameCard = async () => {
+      try {
+        await fetch(MEMBERS_API + values.customerId, {
+          method: "PUT",
+          headers: {
+            entityid: "w_123",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(cleanCustomer)
+        }).then(responce => responce.json()).then(data => console.log("successfully updated the record", data));
+      } catch (error) {
+        console.log("error in updating the Name card", error);
+      }
+    };
+    updatedNameCard();
+  }
   const addressKeys = Object.keys(address[0]);
   // console.log(addressKeys);
   const handleSend = () => {
@@ -76,7 +138,7 @@ const NameCard = _ref => {
         }
       };
       uploadComment();
-      setDuplicateData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+      setData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
         comments: [...prev.comments, {
           commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
           message: newComment,
@@ -188,8 +250,20 @@ const NameCard = _ref => {
       setNewComment("");
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "nameDrawer"
-  }, /*#__PURE__*/React.createElement(Row, {
+    className: "nameDrawer",
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    type: "primary",
+    style: {
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      zIndex: 1
+    },
+    onClick: () => setIsEditable(true)
+  }, "Edit"), /*#__PURE__*/React.createElement(Row, {
     className: "personalNameCard"
   }, /*#__PURE__*/React.createElement(Col, {
     style: {
@@ -223,7 +297,50 @@ const NameCard = _ref => {
     }
   }, "Address : ", addressKeys.map((item, index) => /*#__PURE__*/React.createElement("span", {
     key: index
-  }, address[0][item], item !== "country" ? ", " : ".", item === "city" || item === "state" ? "" : /*#__PURE__*/React.createElement("br", null)))))), /*#__PURE__*/React.createElement(PunchCardsPage, {
+  }, address[0][item], item !== "country" ? ", " : ".", item === "city" || item === "state" ? "" : /*#__PURE__*/React.createElement("br", null)))))), /*#__PURE__*/React.createElement(Form, {
+    hidden: !isEditable,
+    layout: "vertical",
+    form: form,
+    onFinish: onFinish,
+    style: {
+      padding: '20px'
+    }
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: "customerId",
+    label: "Customer Id"
+  }, /*#__PURE__*/React.createElement(Input, {
+    readOnly: true
+  })), /*#__PURE__*/React.createElement(Form.Item, {
+    name: "customerName",
+    label: "Customer Name"
+  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+    name: "phoneNumber",
+    label: "Phone"
+  }, /*#__PURE__*/React.createElement(Input, {
+    inputMode: "numeric",
+    pattern: "[0-9]*",
+    maxLength: 10
+  })), /*#__PURE__*/React.createElement(Form.Item, {
+    name: "status",
+    label: "Status"
+  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+    label: "City",
+    name: ['address', 'city']
+  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+    label: "State",
+    name: ['address', 'state']
+  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+    label: "Country",
+    name: ['address', 'country']
+  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+    style: {
+      marginTop: 24
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    type: "primary",
+    htmlType: "submit",
+    block: true
+  }, "Save Changes"))), /*#__PURE__*/React.createElement(PunchCardsPage, {
     customerId: customerId,
     customerName: customerName,
     setNewComment: setNewComment,

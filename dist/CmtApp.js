@@ -430,6 +430,8 @@ const CmtApp = _ref => {
     xl: duplicateData.length <= 2 ? 20 : 6
   }, /*#__PURE__*/React.createElement(NameCard, {
     key: item.id,
+    data: data,
+    setData: setData,
     customerId: item.id,
     customerName: item.customerName,
     phoneNumber: item.phoneNumber,
