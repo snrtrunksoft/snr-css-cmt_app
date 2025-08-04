@@ -14,9 +14,12 @@ import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage from "./PunchCardsPage";
 const NameCard = _ref => {
+  var _address$;
   let {
     data,
     setData,
+    resourceData,
+    setResourceData,
     customerId,
     customerName,
     phoneNumber,
@@ -54,11 +57,11 @@ const NameCard = _ref => {
     return '100%';
   };
   function onFinish(values) {
-    var _filterData$address;
+    var _filterData$address, _filterData$address2;
     setIsEditable(false);
     console.log("form values:", values);
-    const filterData = data.find(prev => prev.id === values.customerId);
-    const updated_name_record = _objectSpread(_objectSpread({}, filterData), {}, {
+    const filterData = data ? data.find(prev => prev.id === values.customerId) : resourceData.find(prev => prev.resourceId === values.customerId);
+    const updated_member_name_record = _objectSpread(_objectSpread({}, filterData), {}, {
       customerName: values.customerName,
       phoneNumber: values.phoneNumber,
       status: values.status,
@@ -68,26 +71,26 @@ const NameCard = _ref => {
         country: values.address.country
       })]
     });
-    const {
+    const updated_resource_name_record = _objectSpread(_objectSpread({}, filterData), {}, {
+      resourceName: values.customerName,
+      phoneNumber: values.phoneNumber,
+      status: values.status,
+      address: [_objectSpread(_objectSpread({}, (_filterData$address2 = filterData.address) === null || _filterData$address2 === void 0 ? void 0 : _filterData$address2[0]), {}, {
+        city: values.address.city,
+        state: values.address.state,
+        country: values.address.country
+      })]
+    });
+    const _ref2 = data ? updated_member_name_record : updated_resource_name_record,
+      {
         id,
         entityId
-      } = updated_name_record,
-      cleanCustomer = _objectWithoutProperties(updated_name_record, _excluded);
-    setData(prev => {
-      return prev.map(customer => customer.id === values.customerId ? _objectSpread(_objectSpread({}, customer), {}, {
-        customerName: values.customerName,
-        phoneNumber: values.phoneNumber,
-        status: values.status,
-        address: [_objectSpread(_objectSpread({}, customer.address[0]), {}, {
-          city: values.address.city,
-          state: values.address.state,
-          country: values.address.country
-        })]
-      }) : customer);
-    });
+      } = _ref2,
+      cleanCustomer = _objectWithoutProperties(_ref2, _excluded);
+    console.log(cleanCustomer);
     const updatedNameCard = async () => {
       try {
-        await fetch(MEMBERS_API + values.customerId, {
+        await fetch((data ? MEMBERS_API : RESOURCES_API) + values.customerId, {
           method: "PUT",
           headers: {
             entityid: "w_123",
@@ -100,9 +103,41 @@ const NameCard = _ref => {
       }
     };
     updatedNameCard();
+    if (data) {
+      setData(prev => {
+        return prev.map(customer => {
+          var _customer$address;
+          return customer.id === values.customerId ? _objectSpread(_objectSpread({}, customer), {}, {
+            customerName: values.customerName,
+            phoneNumber: values.phoneNumber,
+            status: values.status,
+            address: [_objectSpread(_objectSpread({}, (_customer$address = customer.address) === null || _customer$address === void 0 ? void 0 : _customer$address[0]), {}, {
+              city: values.address.city,
+              state: values.address.state,
+              country: values.address.country
+            })]
+          }) : customer;
+        });
+      });
+    } else {
+      setResourceData(prev => {
+        return prev.map(customer => {
+          var _customer$address2;
+          return customer.resourceId === values.customerId ? _objectSpread(_objectSpread({}, customer), {}, {
+            resourceName: values.customerName,
+            phoneNumber: values.phoneNumber,
+            status: values.status,
+            address: [_objectSpread(_objectSpread({}, (_customer$address2 = customer.address) === null || _customer$address2 === void 0 ? void 0 : _customer$address2[0]), {}, {
+              city: values.address.city,
+              state: values.address.state,
+              country: values.address.country
+            })]
+          }) : customer;
+        });
+      });
+    }
   }
-  const addressKeys = Object.keys(address[0]);
-  // console.log(addressKeys);
+  const addressKeys = Object.keys((_address$ = address === null || address === void 0 ? void 0 : address[0]) !== null && _address$ !== void 0 ? _address$ : {});
   const handleSend = () => {
     const addTimeForComment = new Date().toLocaleString();
     console.log(addTimeForComment);
@@ -295,7 +330,7 @@ const NameCard = _ref => {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     }
-  }, "Address : ", addressKeys.map((item, index) => /*#__PURE__*/React.createElement("span", {
+  }, "Address : ", addressKeys === null || addressKeys === void 0 ? void 0 : addressKeys.map((item, index) => /*#__PURE__*/React.createElement("span", {
     key: index
   }, address[0][item], item !== "country" ? ", " : ".", item === "city" || item === "state" ? "" : /*#__PURE__*/React.createElement("br", null)))))), /*#__PURE__*/React.createElement(Form, {
     hidden: !isEditable,
@@ -353,7 +388,7 @@ const NameCard = _ref => {
       flexDirection: 'column',
       marginBottom: '20px'
     }
-  }, comments.map((comment, index) => /*#__PURE__*/React.createElement(Space, {
+  }, comments === null || comments === void 0 ? void 0 : comments.map((comment, index) => /*#__PURE__*/React.createElement(Space, {
     key: index,
     direction: "vertical",
     size: "middle",
