@@ -100,25 +100,28 @@ const ResourcePage = _ref => {
   }, "Address"), /*#__PURE__*/React.createElement(Col, {
     span: 6,
     className: "table-cell"
-  }, "Phone Number")), resourceData.map((item, index) => /*#__PURE__*/React.createElement(Row, {
-    key: index,
-    className: "table-row",
-    style: {
-      width: screens.xl || screens.lg ? '60vw' : ""
-    }
-  }, /*#__PURE__*/React.createElement(Col, {
-    span: 3,
-    className: "table-cell"
-  }, item.resourceId), /*#__PURE__*/React.createElement(Col, {
-    span: 5,
-    className: "table-cell"
-  }, item.resourceName), /*#__PURE__*/React.createElement(Col, {
-    span: 10,
-    className: "table-cell"
-  }, "".concat(item.address[0].houseNo, ", ").concat(item.address[0].street1, ", ").concat(item.address[0].street2, ", ").concat(item.address[0].city, ", ").concat(item.address[0].state, ", ").concat(item.address[0].country)), /*#__PURE__*/React.createElement(Col, {
-    span: 6,
-    className: "table-cell"
-  }, item.phoneNumber))), /*#__PURE__*/React.createElement(Row, {
+  }, "Phone Number")), resourceData.map((item, index) => {
+    var _item$address, _item$address2, _item$address3, _item$address4, _item$address5, _item$address6;
+    return /*#__PURE__*/React.createElement(Row, {
+      key: index,
+      className: "table-row",
+      style: {
+        width: screens.xl || screens.lg ? '60vw' : ""
+      }
+    }, /*#__PURE__*/React.createElement(Col, {
+      span: 3,
+      className: "table-cell"
+    }, item.resourceId), /*#__PURE__*/React.createElement(Col, {
+      span: 5,
+      className: "table-cell"
+    }, item.resourceName), /*#__PURE__*/React.createElement(Col, {
+      span: 10,
+      className: "table-cell"
+    }, [(_item$address = item.address) === null || _item$address === void 0 || (_item$address = _item$address[0]) === null || _item$address === void 0 ? void 0 : _item$address.houseNo, (_item$address2 = item.address) === null || _item$address2 === void 0 || (_item$address2 = _item$address2[0]) === null || _item$address2 === void 0 ? void 0 : _item$address2.street1, (_item$address3 = item.address) === null || _item$address3 === void 0 || (_item$address3 = _item$address3[0]) === null || _item$address3 === void 0 ? void 0 : _item$address3.street2, (_item$address4 = item.address) === null || _item$address4 === void 0 || (_item$address4 = _item$address4[0]) === null || _item$address4 === void 0 ? void 0 : _item$address4.city, (_item$address5 = item.address) === null || _item$address5 === void 0 || (_item$address5 = _item$address5[0]) === null || _item$address5 === void 0 ? void 0 : _item$address5.state, (_item$address6 = item.address) === null || _item$address6 === void 0 || (_item$address6 = _item$address6[0]) === null || _item$address6 === void 0 ? void 0 : _item$address6.country].filter(Boolean).join(', ')), /*#__PURE__*/React.createElement(Col, {
+      span: 6,
+      className: "table-cell"
+    }, item.phoneNumber));
+  }), /*#__PURE__*/React.createElement(Row, {
     className: "table-row add-record-row"
   }, /*#__PURE__*/React.createElement(Col, {
     span: 24,
@@ -142,6 +145,8 @@ const ResourcePage = _ref => {
     xl: resourceData.length <= 2 ? 20 : 6
   }, /*#__PURE__*/React.createElement(NameCard, {
     key: item.resourceId,
+    resourceData: resourceData,
+    setResourceData: setResourceData,
     customerId: item.resourceId,
     customerName: item.resourceName,
     phoneNumber: item.phoneNumber,
