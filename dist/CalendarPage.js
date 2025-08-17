@@ -954,7 +954,7 @@ const CalendarPage = _ref => {
     value: "weekly"
   }, "Weekly"), /*#__PURE__*/React.createElement(Option, {
     value: "monthly"
-  }, "Monthly"))), " \xA0\xA0", /*#__PURE__*/React.createElement("h2", null, "Day : ", " ", /*#__PURE__*/React.createElement("select", {
+  }, "Monthly"))), " \xA0\xA0", frequencyOfEvent === "monthly" && /*#__PURE__*/React.createElement("h2", null, "Day : ", " ", /*#__PURE__*/React.createElement("select", {
     value: frequencyOfEvent === "monthly" ? monthlyRecurring : weeklyDayRecurring,
     onChange: e => {
       frequencyOfEvent === "weekly" ? setWeeklyDayRecurring(e.target.value) : setMonthlyRecurring(e.target.value);
