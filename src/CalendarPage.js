@@ -1006,6 +1006,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                           <Option value="weekly">Weekly</Option>
                           <Option value="monthly">Monthly</Option>
                       </Select></h2> &nbsp;&nbsp;
+                    {frequencyOfEvent === "monthly" &&  
                     <h2>Day : {" "}
                         <select 
                             value={frequencyOfEvent === "monthly" ? monthlyRecurring : weeklyDayRecurring}
@@ -1016,7 +1017,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                             {days.map((day,index) => 
                             <option value={day.day}>{" "+ day.day}</option>)}
                         </select>
-                    </h2>
+                    </h2>}
                   </Row>
                   <h3>From :<TimePicker 
                                 format="h A"

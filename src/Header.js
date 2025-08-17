@@ -92,7 +92,7 @@ const Header = ({
                 Home
               </Menu.Item>
               <Menu.Item key="members" icon={<FaUser />} onClick={() => handleMenuClick("members")}>
-                Home
+                Members
               </Menu.Item>
               <Menu.Item key="calendar" icon={<LuCalendar />} onClick={() => handleMenuClick("calendar")}>
                 Calendar

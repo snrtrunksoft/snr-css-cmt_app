@@ -93,7 +93,7 @@ const Header = _ref => {
     key: "members",
     icon: /*#__PURE__*/React.createElement(FaUser, null),
     onClick: () => handleMenuClick("members")
-  }, "Home"), /*#__PURE__*/React.createElement(Menu.Item, {
+  }, "Members"), /*#__PURE__*/React.createElement(Menu.Item, {
     key: "calendar",
     icon: /*#__PURE__*/React.createElement(LuCalendar, null),
     onClick: () => handleMenuClick("calendar")
