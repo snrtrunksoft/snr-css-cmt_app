@@ -9,7 +9,7 @@ import { RESOURCES_API } from "./properties/EndPointProperties";
 
 const { useBreakpoint } = Grid;
 
-const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataView, commentBox, setCommentBox }) =>{
+const ResourcePage = ({ resourceData, setResourceData, dataView, commentBox, setCommentBox }) =>{
     const [ isLoading, setIsLoading ] = useState(true);
     const [ addNewResourceModal, setAddNewResourceModal ] = useState(false);
     const [ newRecordName, setNewRecordName ] = useState('');
@@ -19,9 +19,14 @@ const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataVie
     const [ newRecordStatus, setNewRecordStatus ] = useState("Active");
     const [ newRecordCountry, setNewRecordCountry ] = useState("");
     const [ newRecordState, setNewRecordState ] = useState("");
+    const [ newRecordPincode, setNewRecordPincode] = useState("");
     const [ newRecordCity, setNewRecordCity ] = useState("");
 
     const screens = useBreakpoint();
+
+    const colSize = resourceData.length <= 3 
+    ? 24 / resourceData.length
+    : 6;
 
     const handleAddNewResource = () =>{
         const newRecord = {
@@ -30,9 +35,10 @@ const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataVie
             address: [{
                         "country": newRecordCountry,
                         "city": newRecordCity,
-                        "houseNo": "",
-                        "street1": newRecordAddress,
-                        "street2": "",
+                        "houseNo": "NA",
+                        "street1": newRecordAddress || "NA",
+                        "street2": "NA",
+                        "pincode": newRecordPincode || "NA",
                         "state": newRecordState
                     }],
             comments:[{
@@ -42,11 +48,13 @@ const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataVie
                     }],
             status: newRecordStatus,
         }
+        console.log("newRecord:", newRecord);
         const addNewResource = async () => {
             try{
                 const response = await fetch(RESOURCES_API, {
                     method:"POST",
                     headers: {
+                    'entityid' : 'w_123',
                     'Content-Type' : "application/json"
                     },
                     body:JSON.stringify(newRecord)
@@ -111,14 +119,14 @@ const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataVie
                     </Row>
             </div> : 
                 <Row className="resource-grid" gutter={[16,16]}>
-                    {resourceData.map((item)=>(
+                    {resourceData !== 0 ? resourceData.map((item)=>(
                         <Col key={item.resourceId}
-                            xs={resourceData.length <= 1 ? 24 : 12} 
-                            sm={resourceData.length <= 1 ? 24 : 12} 
-                            md={resourceData.length <= 2 ? 20 : 8}  
-                            lg={resourceData.length <= 2 ? 20 : 6}
-                            xl={resourceData.length <= 2 ? 20 : 6}>
+                            xs={20} 
+                            md={12}
+                            lg={colSize}
+                            >
                                 <NameCard key={item.resourceId}
+                                    membersPage={false}
                                     resourceData={resourceData}
                                     setResourceData={setResourceData}
                                     customerId={item.resourceId}
@@ -128,17 +136,14 @@ const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataVie
                                     status={item.status}
                                     comments={item.comments}
                                     subscriptions={""}
-                                    setDuplicateData={setDuplicateData}
                                     commentBox = {commentBox}
                                     setCommentBox = {setCommentBox}
                                 />
                         </Col>
-                    ))}
-                    <Col xs={resourceData.length <= 1 ? 24 : 12} 
-                        sm={resourceData.length <= 1 ? 24 : 12} 
-                        md={resourceData.length <= 2 ? 20 : 8}  
-                        lg={resourceData.length <= 2 ? 20 : 6} 
-                        xl={resourceData.length <= 2 ? 20 : 6}
+                    )) : <h2>No NameCards Found...</h2>}
+                    <Col xs={20} 
+                        md={12}
+                        lg={colSize}
                         className='nameCard'
                         onClick={()=> setAddNewResourceModal(true)}
                         style= {{
@@ -164,6 +169,7 @@ const ResourcePage = ({ resourceData, setResourceData, setDuplicateData, dataVie
                 setNewRecordAddress={setNewRecordAddress}
                 setNewRecordCity={setNewRecordCity}
                 setNewRecordState={setNewRecordState}
+                setNewRecordPincode={setNewRecordPincode}
                 setNewRecordCountry={setNewRecordCountry}
                 setNewRecordStatus={setNewRecordStatus}
                 newRecordStatus={newRecordStatus}

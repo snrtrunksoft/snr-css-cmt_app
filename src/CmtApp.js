@@ -32,9 +32,10 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
   const [ newRecordPhone, setNewRecordPhone ] = useState('');
   const [ newRecordAddress, setNewRecordAddress ] = useState('');
   const [ newRecordLastName, setNewRecordLastName ] = useState('');
-  const [ newRecordStatus, setNewRecordStatus ] = useState("Active");
+  const [ newRecordStatus, setNewRecordStatus ] = useState("ACTIVE");
   const [ newRecordCountry, setNewRecordCountry ] = useState("");
   const [ newRecordState, setNewRecordState ] = useState("");
+  const [ newRecordPincode, setNewRecordPincode] = useState("");
   const [ newRecordCity, setNewRecordCity ] = useState("");
   const [ statusSelection, setStatusSelection ] = useState("All");
   const [ showDashboard, setShowDashboard ] = useState(false);
@@ -145,9 +146,6 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
   if(!("Test City" in statusCount)){
     statusCount["Test City"] = 0;
   };
-  if (!("Cancelled" in statusCount)) {
-    statusCount["Cancelled"] = 0;
-  };
 
 
   const legendLabels = {
@@ -201,9 +199,10 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
     address: [{
                 "country": newRecordCountry,
                 "city": newRecordCity,
-                "houseNo": "",
-                "street1": newRecordAddress,
-                "street2": "",
+                "houseNo": "NA",
+                "street1": newRecordAddress || "NA",
+                "street2": "NA",
+                "pincode": newRecordPincode || "NA",
                 "state": newRecordState
             }],
     comments:[{
@@ -212,7 +211,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
                 "message": "test comment 101"
             }],
     status: newRecordStatus,
-    subscriptions:[{}],
+    subscriptions:[],
   }
   const addNewMember = async () => {
     try{
@@ -276,6 +275,10 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
       <option value="Test City">Test City</option>
     </select>
   );
+
+  const colSize = duplicateData.length <= 3 
+  ? 24 / duplicateData.length 
+  : 6;
 
   return (
     <div>
@@ -352,36 +355,16 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
                     </center>
                     </Col>
                 </Row>
-              {/* <div className='members-table'>
-                <Table 
-                  columns={columns}
-                  dataSource={duplicateData} 
-                  pagination={{pageSize:5,simple:true}}
-                  footer={()=>(
-                    <tr style={{display:'flex',alignItems:'center',justifyContent:'center',height:'10px'}}>
-                      <td colSpan={columns.length}>
-                        <Button 
-                          onClick={()=>setIsAddNewNameCardModalOpen(true)}
-                          style={{
-                            border:'transparent',
-                            fontSize:'40px',
-                            backgroundColor:'transparent'
-                            }}>+</Button>
-                      </td>
-                    </tr>
-                  )}
-                ></Table> </div> */}
               </div>
                : (
               <Row gutter={[16, 16]} className="home-grid">
-                {duplicateData.map((item) => (
+                {duplicateData.length !== 0 ? duplicateData.map((item) => (
                   <Col key={item.id} 
-                    xs={duplicateData.length <= 1 ? 24 : 12} 
-                    sm={duplicateData.length <= 1 ? 24 : 12} 
-                    md={duplicateData.length <= 2 ? 20 : 8}
-                    lg={duplicateData.length <= 2 ? 20 : 6} 
-                    xl={duplicateData.length <= 2 ? 20 : 6}>
+                    xs={20} 
+                    md={12}
+                    lg={colSize}>
                     <NameCard key={item.id}
+                      membersPage={true}
                       data={data}
                       setData={setData}
                       customerId={item.id}
@@ -396,12 +379,10 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
                       setCommentBox={setCommentBox}
                     />
                   </Col>
-                ))}
-                  <Col xs={duplicateData.length <= 1 ? 24 : 12} 
-                      sm={duplicateData.length <= 1 ? 24 : 12} 
-                      md={duplicateData.length <= 2 ? 20 : 8}
-                      lg={duplicateData.length <= 2 ? 20 : 6}
-                      xl={duplicateData.length <= 2 ? 20 : 6}
+                )) : <h2>No NameCards Found...</h2>}
+                  <Col xs={20} 
+                    md={12}
+                    lg={colSize}
                     className='nameCard'
                     onClick={()=>setIsAddNewNameCardModalOpen(true)}
                     style= {{
@@ -428,10 +409,6 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
                     <span style={{backgroundColor:'lightgreen'}}> {statusCount["Test City"]} </span>
                     <h3>Test City</h3>
                   </Col>
-                  <Col className='status-icons'>
-                    <span style={{backgroundColor:'rgba(256,0,0,0.7)'}}> {statusCount["Cancelled"]} </span>
-                    <h3>Cancelled</h3>
-                  </Col>
               </Row>
               <Col style={{paddingTop:'0px'}}>
                   <Divider type='horizontal' ></Divider>
@@ -454,6 +431,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
                 setNewRecordAddress={setNewRecordAddress}
                 setNewRecordCity={setNewRecordCity}
                 setNewRecordState={setNewRecordState}
+                setNewRecordPincode={setNewRecordPincode}
                 setNewRecordCountry={setNewRecordCountry}
                 setNewRecordStatus={setNewRecordStatus}
                 newRecordStatus={newRecordStatus}
@@ -467,7 +445,6 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
           resourceData={resourceData}
           setResourceData={setResourceData}
           dataView={dataView}
-          setDuplicateData = {setDuplicateData}
           commentBox = {commentBox}
           setCommentBox = {setCommentBox}
         /> :openCalendarPage ? 

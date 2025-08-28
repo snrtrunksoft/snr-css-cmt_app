@@ -41,9 +41,10 @@ const CmtApp = _ref => {
   const [newRecordPhone, setNewRecordPhone] = useState('');
   const [newRecordAddress, setNewRecordAddress] = useState('');
   const [newRecordLastName, setNewRecordLastName] = useState('');
-  const [newRecordStatus, setNewRecordStatus] = useState("Active");
+  const [newRecordStatus, setNewRecordStatus] = useState("ACTIVE");
   const [newRecordCountry, setNewRecordCountry] = useState("");
   const [newRecordState, setNewRecordState] = useState("");
+  const [newRecordPincode, setNewRecordPincode] = useState("");
   const [newRecordCity, setNewRecordCity] = useState("");
   const [statusSelection, setStatusSelection] = useState("All");
   const [showDashboard, setShowDashboard] = useState(false);
@@ -147,10 +148,6 @@ const CmtApp = _ref => {
     statusCount["Test City"] = 0;
   }
   ;
-  if (!("Cancelled" in statusCount)) {
-    statusCount["Cancelled"] = 0;
-  }
-  ;
   const legendLabels = {
     "Hyd": "Hyd",
     "HYD": "HYD",
@@ -196,9 +193,10 @@ const CmtApp = _ref => {
       address: [{
         "country": newRecordCountry,
         "city": newRecordCity,
-        "houseNo": "",
-        "street1": newRecordAddress,
-        "street2": "",
+        "houseNo": "NA",
+        "street1": newRecordAddress || "NA",
+        "street2": "NA",
+        "pincode": newRecordPincode || "NA",
         "state": newRecordState
       }],
       comments: [{
@@ -207,7 +205,7 @@ const CmtApp = _ref => {
         "message": "test comment 101"
       }],
       status: newRecordStatus,
-      subscriptions: [{}]
+      subscriptions: []
     };
     const addNewMember = async () => {
       try {
@@ -275,6 +273,7 @@ const CmtApp = _ref => {
   }, "HYD"), /*#__PURE__*/React.createElement("option", {
     value: "Test City"
   }, "Test City"));
+  const colSize = duplicateData.length <= 3 ? 24 / duplicateData.length : 6;
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "home_app"
   }, /*#__PURE__*/React.createElement(Header, {
@@ -421,15 +420,14 @@ const CmtApp = _ref => {
   }, "+ Add New Record"))))) : /*#__PURE__*/React.createElement(Row, {
     gutter: [16, 16],
     className: "home-grid"
-  }, duplicateData.map(item => /*#__PURE__*/React.createElement(Col, {
+  }, duplicateData.length !== 0 ? duplicateData.map(item => /*#__PURE__*/React.createElement(Col, {
     key: item.id,
-    xs: duplicateData.length <= 1 ? 24 : 12,
-    sm: duplicateData.length <= 1 ? 24 : 12,
-    md: duplicateData.length <= 2 ? 20 : 8,
-    lg: duplicateData.length <= 2 ? 20 : 6,
-    xl: duplicateData.length <= 2 ? 20 : 6
+    xs: 20,
+    md: 12,
+    lg: colSize
   }, /*#__PURE__*/React.createElement(NameCard, {
     key: item.id,
+    membersPage: true,
     data: data,
     setData: setData,
     customerId: item.id,
@@ -442,12 +440,10 @@ const CmtApp = _ref => {
     setDuplicateData: setDuplicateData,
     commentBox: commentBox,
     setCommentBox: setCommentBox
-  }))), /*#__PURE__*/React.createElement(Col, {
-    xs: duplicateData.length <= 1 ? 24 : 12,
-    sm: duplicateData.length <= 1 ? 24 : 12,
-    md: duplicateData.length <= 2 ? 20 : 8,
-    lg: duplicateData.length <= 2 ? 20 : 6,
-    xl: duplicateData.length <= 2 ? 20 : 6,
+  }))) : /*#__PURE__*/React.createElement("h2", null, "No NameCards Found..."), /*#__PURE__*/React.createElement(Col, {
+    xs: 20,
+    md: 12,
+    lg: colSize,
     className: "nameCard",
     onClick: () => setIsAddNewNameCardModalOpen(true),
     style: {
@@ -487,13 +483,7 @@ const CmtApp = _ref => {
     style: {
       backgroundColor: 'lightgreen'
     }
-  }, " ", statusCount["Test City"], " "), /*#__PURE__*/React.createElement("h3", null, "Test City")), /*#__PURE__*/React.createElement(Col, {
-    className: "status-icons"
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      backgroundColor: 'rgba(256,0,0,0.7)'
-    }
-  }, " ", statusCount["Cancelled"], " "), /*#__PURE__*/React.createElement("h3", null, "Cancelled"))), /*#__PURE__*/React.createElement(Col, {
+  }, " ", statusCount["Test City"], " "), /*#__PURE__*/React.createElement("h3", null, "Test City"))), /*#__PURE__*/React.createElement(Col, {
     style: {
       paddingTop: '0px'
     }
@@ -522,6 +512,7 @@ const CmtApp = _ref => {
     setNewRecordAddress: setNewRecordAddress,
     setNewRecordCity: setNewRecordCity,
     setNewRecordState: setNewRecordState,
+    setNewRecordPincode: setNewRecordPincode,
     setNewRecordCountry: setNewRecordCountry,
     setNewRecordStatus: setNewRecordStatus,
     newRecordStatus: newRecordStatus,
@@ -531,7 +522,6 @@ const CmtApp = _ref => {
     resourceData: resourceData,
     setResourceData: setResourceData,
     dataView: dataView,
-    setDuplicateData: setDuplicateData,
     commentBox: commentBox,
     setCommentBox: setCommentBox
   }) : openCalendarPage ? /*#__PURE__*/React.createElement(CalendarPage, {

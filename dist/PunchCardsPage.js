@@ -5,10 +5,11 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useState } from "react";
 import { Button, Checkbox, Col, Row } from "antd";
-import { MEMBERS_API, SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
+import { SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
 import { LoadingOutlined, SwapOutlined } from "@ant-design/icons";
 const PunchCardsPage = _ref => {
   let {
+    data,
     customerId,
     customerName,
     setNewComment,
@@ -17,7 +18,7 @@ const PunchCardsPage = _ref => {
     color
   } = _ref;
   const [flipped, setFlipped] = useState(false);
-  const [punchCardsState, setPunchCardsState] = useState("Complete");
+  const [punchCardsState, setPunchCardsState] = useState("COMPLETED");
   const [checkedCount, setCheckedCount] = useState(0);
   const [punchCards, setPunchCards] = useState(subscriptions);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +32,7 @@ const PunchCardsPage = _ref => {
     const updateSubscriptionData = async () => {
       try {
         const newSub = {
-          status: "Active",
+          status: "ACTIVE",
           noOfServicesLeft: "10",
           noOfServicesCompleted: "0",
           totalNumberOfServices: "10",
@@ -74,7 +75,7 @@ const PunchCardsPage = _ref => {
         "totalNumberOfServices": value.totalNumberOfServices,
         "purchasedDate": value.purchasedDate,
         "completedDate": value.completedDate,
-        "status": Math.max(0, value.noOfServicesLeft - checkedCount) === 0 ? "Complete" : value.status,
+        "status": Math.max(0, value.noOfServicesLeft - checkedCount) === 0 ? "COMPLETED" : value.status,
         "memberId": value.memberId
       };
       try {
@@ -85,7 +86,7 @@ const PunchCardsPage = _ref => {
             "Content-Type": "application/json"
           },
           body: JSON.stringify(updatedSubscriptionDetails)
-        }).then(response => response.json()).then(data => console.log("subscriptions details updated:", updatedSubscriptionDetails));
+        }).then(response => response.json()).then(data => console.log("subscriptions details updated:", data));
       } catch (error) {
         console.log("unable to update the subscriptions:", error);
       }
@@ -96,38 +97,24 @@ const PunchCardsPage = _ref => {
         return _objectSpread(_objectSpread({}, prev), {}, {
           noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
           noOfServicesLeft: Math.max(0, value.noOfServicesLeft - checkedCount),
-          status: Math.max(0, prev.noOfServicesLeft - checkedCount) === 0 ? 'Complete' : value.status
+          status: Math.max(0, prev.noOfServicesLeft - checkedCount) === 0 ? 'COMPLETED' : value.status
         });
-        // const servicesLeft = Math.max(0, prev.noOfServicesLeft - checkedCount);
-        // if(servicesLeft === 0){
-        //     return {
-        //         ...prev,
-        //         noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
-        //         noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
-        //         status:'Complete'
-        //     }
-        // }
-        // return {
-        //     ...prev,
-        //     noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + checkedCount,
-        //     noOfServicesLeft: Math.max(0, prev.noOfServicesLeft - checkedCount),
-        // }
       }
       return prev;
     }));
     handleSend();
     setCheckedCount(0);
   };
-  const filterActiveSubscription = punchCards !== "" ? punchCards.filter(prev => prev.status === "Active") : "";
+  const filterActiveSubscription = punchCards !== "" ? punchCards.filter(prev => prev.status === "ACTIVE") : "";
   const toggleFlip = () => {
     setFlipped(prev => !prev);
   };
   return /*#__PURE__*/React.createElement("div", {
     className: ""
-  }, punchCards.length ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h2", null, "Punch cards:"), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(Button, {
+  }, data && /*#__PURE__*/React.createElement("h2", null, "Punch cards:"), punchCards.length ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(Button, {
     onClick: () => {
       setFlipped(false);
-      setPunchCardsState(prev => prev === "Complete" ? "Active" : "Complete");
+      setPunchCardsState(prev => prev === "COMPLETED" ? "ACTIVE" : "COMPLETED");
     }
   }, "View ", punchCardsState), " \xA0"), isLoading ? /*#__PURE__*/React.createElement("center", {
     style: {
@@ -187,11 +174,11 @@ const PunchCardsPage = _ref => {
   }, /*#__PURE__*/React.createElement(Button, {
     type: "primary",
     onClick: () => handleSave(card)
-  }, "Save")) : "")), /*#__PURE__*/React.createElement("span", null, filterActiveSubscription.length === 0 ? /*#__PURE__*/React.createElement("center", null, /*#__PURE__*/React.createElement(Button, {
+  }, "Save")) : ""))) : /*#__PURE__*/React.createElement("h3", null, data && /*#__PURE__*/React.createElement("center", null, "No PunchCards availabe..")), data && /*#__PURE__*/React.createElement("span", null, filterActiveSubscription.length === 0 ? /*#__PURE__*/React.createElement("center", null, /*#__PURE__*/React.createElement(Button, {
     style: {
       margin: '5px'
     },
     onClick: () => addNewSubscription()
-  }, "Add Active Subscription")) : "")) : "");
+  }, "Add Active Subscription")) : ""));
 };
 export default PunchCardsPage;
