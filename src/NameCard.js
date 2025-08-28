@@ -7,6 +7,7 @@ import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage  from "./PunchCardsPage";
 
 const NameCard = ({ 
+    membersPage,
     data,
     setData,
     resourceData,
@@ -51,7 +52,7 @@ const NameCard = ({
     function onFinish(values) {
         setIsEditable(false);
         console.log("form values:", values);
-        const filterData =  data ? data.find((prev) => prev.id === values.customerId) : resourceData.find((prev) => prev.resourceId === values.customerId);
+        const filterData =  membersPage ? data.find((prev) => prev.id === values.customerId) : resourceData.find((prev) => prev.resourceId === values.customerId);
         const updated_member_name_record = {
             ...filterData,
             customerName : values.customerName,
@@ -77,15 +78,15 @@ const NameCard = ({
                 country : values.address.country
             }],
         }
-        const { id, entityId, ...cleanCustomer } = (data ? updated_member_name_record : updated_resource_name_record);
+        const { id, entityId, ...cleanCustomer } = (membersPage ? updated_member_name_record : updated_resource_name_record);
         console.log(cleanCustomer);
 
         const updatedNameCard = async() => {
             try{
-                await fetch((data ? MEMBERS_API : RESOURCES_API) + values.customerId, {
+                await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId, {
                     method : "PUT",
                     headers : {
-                        entityid : "w_123",
+                        "entityid" : "w_123",
                         "Content-Type" : "application/json"
                     },
                     body : JSON.stringify(cleanCustomer)
@@ -98,7 +99,7 @@ const NameCard = ({
         };
         updatedNameCard();
 
-        if(data) {
+        if(membersPage) {
             setData((prev) => {
                 return prev.map((customer) => 
                     customer.id === values.customerId ?
@@ -138,7 +139,7 @@ const NameCard = ({
     const addressKeys = Object.keys(address?.[0] ?? {});
     const handleSend = () => {
         const addTimeForComment = new Date().toLocaleString();
-        console.log(addTimeForComment);
+        // console.log(addTimeForComment);
         if(newComment){
             const commentBody = [...comments, {
                 "commentId" : parseInt(comments[comments.length - 1].commentId) + 1 || 1,
@@ -154,12 +155,17 @@ const NameCard = ({
                 "phoneNumber" : phoneNumber,
                 "comments" : commentBody
             }
+            Object.values(updatedRecord.subscriptions).forEach(sub => {
+                delete sub.entityId;
+                delete sub.id;
+            });
             console.log("updatedRecord:",updatedRecord);
             const uploadComment = async () => {
                 try {
-                    const response = await fetch(MEMBERS_API + customerId, {
+                    const response = await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + customerId, {
                     method: "PUT",
                     headers: {
+                        "entityid" : "w_123",
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify(updatedRecord)
@@ -172,19 +178,35 @@ const NameCard = ({
             }
             uploadComment();
 
-            setData(prevData =>
-                prevData.map(prev =>
-                    prev.id === customerId ? {
-                        ...prev,
-                        comments: [...prev.comments, {
-                            commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
-                            message: newComment,
-                            author: customerName,
-                            time: addTimeForComment
-                        }]
-                    } : prev)
-            );
-            const existingData = commentBox.findIndex((person) => person.customerName === customerName);
+            if(membersPage) {
+                setData(prevData =>
+                    prevData.map(prev =>
+                        prev.id === customerId ? {
+                            ...prev,
+                            comments: [...prev.comments, {
+                                commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                                message: newComment,
+                                author: customerName,
+                                time: addTimeForComment
+                            }]
+                        } : prev)
+                );
+            } else {
+                setResourceData(prevData =>
+                    prevData.map(prev =>
+                        prev.resourceId === customerId ? {
+                            ...prev,
+                            comments: [...prev.comments, {
+                                commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                                message: newComment,
+                                author: customerName,
+                                time: addTimeForComment
+                            }]
+                        } : prev)
+                );
+            }
+            
+            const existingData = commentBox.findIndex((person) =>( membersPage ? person.customerName : person.resourceName) === customerName);
 
             if(existingData !== -1){
                 setCommentBox(prevComments => 
@@ -217,16 +239,16 @@ const NameCard = ({
         setNewComment("");
     }
     let color = "red";
-    if(status === "Complete"){
+    if(status === "COMPLETED"){
         color = "lightgreen";
     }
-    if(status === "New"){
+    if(status === "ACTIVE"){
         color = "pink";
     }
-    if(status === "In_Progress"){
+    if(status === "IN_PROGRESS"){
         color = "lightblue";
     }
-    if(status === "Cancelled"){
+    if(status === "CANCELLED"){
         color = "red";
     }
     return(
@@ -348,6 +370,7 @@ const NameCard = ({
                         </Form.Item>
                     </Form>
                         <PunchCardsPage
+                            data={data}
                             customerId={customerId}
                             customerName={customerName}
                             setNewComment={setNewComment}

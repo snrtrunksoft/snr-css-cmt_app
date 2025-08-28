@@ -12,6 +12,7 @@ const AddNewNameCard = ({
     setNewRecordAddress,
     setNewRecordCity,
     setNewRecordState,
+    setNewRecordPincode,
     setNewRecordCountry,
     setNewRecordStatus,
     newRecordStatus,
@@ -31,7 +32,8 @@ const AddNewNameCard = ({
         setNewRecordCity("");
         setNewRecordState("");
         setNewRecordCountry("");
-        setNewRecordStatus("Active");
+        setNewRecordPincode("");
+        setNewRecordStatus("ACTIVE");
     };
     const [form] = Form.useForm();
 
@@ -52,9 +54,10 @@ const AddNewNameCard = ({
             style={{borderRadius:'5px',padding:'5px'}}
             onChange={(e) => setNewRecordStatus(e.target.value)}
             >
-            <option value="Active">Active</option>
-            <option value="In_Progress">In_Progress</option>
-            <option value="Complete">Complete</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="CANCELLED">CANCELLED</option>
         </select>
     );
 
@@ -97,8 +100,8 @@ const AddNewNameCard = ({
 
                 <Row gutter={16}>
                 <Col span={12}>
-                    <Form.Item name="email" label="Email">
-                    <Input />
+                    <Form.Item name="pincode" label="Pincode">
+                    <Input onChange={(e) => {setNewRecordPincode(e.target.value)}}/>
                     </Form.Item>
                 </Col>
                 <Col span={12}>

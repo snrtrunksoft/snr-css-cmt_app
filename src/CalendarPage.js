@@ -43,7 +43,13 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
   useEffect(() => {
     const fetchRecurringCalendar = async() => {
       try{
-        const responce = await fetch(RECURRING_CALENDAR_API + "All/recurring/");
+        const responce = await fetch(RECURRING_CALENDAR_API + "All/recurring/", {
+          method: "GET",
+          headers:{
+            "entityid" : "w_123",
+            "Content-Type" : "application/json"
+          }
+        });
         const recurringCalendarData = await responce.json();
         console.log("recurringCalendarData:", recurringCalendarData);
         setRecurringAllCalendar(recurringCalendarData);
@@ -290,7 +296,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
       isRecurring: recurring,
       frequency: frequencyOfEvent,
 
-      day: frequencyOfEvent === "weekly" ? weeklyDayRecurring : ""
+      // day: frequencyOfEvent === "weekly" ? weeklyDayRecurring : ""
 
     };
 
@@ -668,7 +674,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                     item.from <= i && i < item.to;
                 }))
                 const dayOfWeekCaps = weekday.toUpperCase();
-                console.log(weekday, currentDate);
                 const matchingEventsSlot = recurringResourceCalendar[dayOfWeekCaps]?.[hourKey] || [];
                 const recurringResourceEvents = matchingEventsSlot.filter(item => {
                   if (item.isRecurring) {
@@ -845,7 +850,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
                             });
                           })
 
-                          const dayOfWeekCaps = weekday.toUpperCase();
+                          const dayOfWeekCaps = weekday.charAt(0).toUpperCase();
                           const matchingEventsSlot = recurringResourceCalendar?.[dayOfWeekCaps]?.[hourKey] || [];
                           const recurringResourceEvents = matchingEventsSlot.filter(item => {
                             if (item.isRecurring) {

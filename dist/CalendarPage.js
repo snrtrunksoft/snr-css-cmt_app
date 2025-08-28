@@ -52,7 +52,13 @@ const CalendarPage = _ref => {
   useEffect(() => {
     const fetchRecurringCalendar = async () => {
       try {
-        const responce = await fetch(RECURRING_CALENDAR_API + "All/recurring/");
+        const responce = await fetch(RECURRING_CALENDAR_API + "All/recurring/", {
+          method: "GET",
+          headers: {
+            "entityid": "w_123",
+            "Content-Type": "application/json"
+          }
+        });
         const recurringCalendarData = await responce.json();
         console.log("recurringCalendarData:", recurringCalendarData);
         setRecurringAllCalendar(recurringCalendarData);
@@ -269,8 +275,9 @@ const CalendarPage = _ref => {
       to: toTimeSlot.toString(),
       notes: eventNotes,
       isRecurring: recurring,
-      frequency: frequencyOfEvent,
-      day: frequencyOfEvent === "weekly" ? weeklyDayRecurring : ""
+      frequency: frequencyOfEvent
+
+      // day: frequencyOfEvent === "weekly" ? weeklyDayRecurring : ""
     };
     const updateEventSlot = async () => {
       try {
@@ -631,7 +638,6 @@ const CalendarPage = _ref => {
       return prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === currentDate.getDate() && item.from <= i && i < item.to;
     }));
     const dayOfWeekCaps = weekday.toUpperCase();
-    console.log(weekday, currentDate);
     const matchingEventsSlot = ((_recurringResourceCal = recurringResourceCalendar[dayOfWeekCaps]) === null || _recurringResourceCal === void 0 ? void 0 : _recurringResourceCal[hourKey]) || [];
     const recurringResourceEvents = matchingEventsSlot.filter(item => {
       if (item.isRecurring) {
@@ -777,7 +783,7 @@ const CalendarPage = _ref => {
         return item.from <= currentHourSlot && currentHourSlot < item.to;
       });
     });
-    const dayOfWeekCaps = weekday.toUpperCase();
+    const dayOfWeekCaps = weekday.charAt(0).toUpperCase();
     const matchingEventsSlot = (recurringResourceCalendar === null || recurringResourceCalendar === void 0 || (_recurringResourceCal2 = recurringResourceCalendar[dayOfWeekCaps]) === null || _recurringResourceCal2 === void 0 ? void 0 : _recurringResourceCal2[hourKey]) || [];
     const recurringResourceEvents = matchingEventsSlot.filter(item => {
       if (item.isRecurring) {

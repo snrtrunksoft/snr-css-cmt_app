@@ -16,6 +16,7 @@ import PunchCardsPage from "./PunchCardsPage";
 const NameCard = _ref => {
   var _address$;
   let {
+    membersPage,
     data,
     setData,
     resourceData,
@@ -60,7 +61,7 @@ const NameCard = _ref => {
     var _filterData$address, _filterData$address2;
     setIsEditable(false);
     console.log("form values:", values);
-    const filterData = data ? data.find(prev => prev.id === values.customerId) : resourceData.find(prev => prev.resourceId === values.customerId);
+    const filterData = membersPage ? data.find(prev => prev.id === values.customerId) : resourceData.find(prev => prev.resourceId === values.customerId);
     const updated_member_name_record = _objectSpread(_objectSpread({}, filterData), {}, {
       customerName: values.customerName,
       phoneNumber: values.phoneNumber,
@@ -81,7 +82,7 @@ const NameCard = _ref => {
         country: values.address.country
       })]
     });
-    const _ref2 = data ? updated_member_name_record : updated_resource_name_record,
+    const _ref2 = membersPage ? updated_member_name_record : updated_resource_name_record,
       {
         id,
         entityId
@@ -90,10 +91,10 @@ const NameCard = _ref => {
     console.log(cleanCustomer);
     const updatedNameCard = async () => {
       try {
-        await fetch((data ? MEMBERS_API : RESOURCES_API) + values.customerId, {
+        await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId, {
           method: "PUT",
           headers: {
-            entityid: "w_123",
+            "entityid": "w_123",
             "Content-Type": "application/json"
           },
           body: JSON.stringify(cleanCustomer)
@@ -103,7 +104,7 @@ const NameCard = _ref => {
       }
     };
     updatedNameCard();
-    if (data) {
+    if (membersPage) {
       setData(prev => {
         return prev.map(customer => {
           var _customer$address;
@@ -140,7 +141,7 @@ const NameCard = _ref => {
   const addressKeys = Object.keys((_address$ = address === null || address === void 0 ? void 0 : address[0]) !== null && _address$ !== void 0 ? _address$ : {});
   const handleSend = () => {
     const addTimeForComment = new Date().toLocaleString();
-    console.log(addTimeForComment);
+    // console.log(addTimeForComment);
     if (newComment) {
       const commentBody = [...comments, {
         "commentId": parseInt(comments[comments.length - 1].commentId) + 1 || 1,
@@ -156,12 +157,17 @@ const NameCard = _ref => {
         "phoneNumber": phoneNumber,
         "comments": commentBody
       };
+      Object.values(updatedRecord.subscriptions).forEach(sub => {
+        delete sub.entityId;
+        delete sub.id;
+      });
       console.log("updatedRecord:", updatedRecord);
       const uploadComment = async () => {
         try {
-          const response = await fetch(MEMBERS_API + customerId, {
+          const response = await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + customerId, {
             method: "PUT",
             headers: {
+              "entityid": "w_123",
               "Content-Type": "application/json"
             },
             body: JSON.stringify(updatedRecord)
@@ -173,15 +179,26 @@ const NameCard = _ref => {
         }
       };
       uploadComment();
-      setData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
-        comments: [...prev.comments, {
-          commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
-          message: newComment,
-          author: customerName,
-          time: addTimeForComment
-        }]
-      }) : prev));
-      const existingData = commentBox.findIndex(person => person.customerName === customerName);
+      if (membersPage) {
+        setData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+          comments: [...prev.comments, {
+            commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+            message: newComment,
+            author: customerName,
+            time: addTimeForComment
+          }]
+        }) : prev));
+      } else {
+        setResourceData(prevData => prevData.map(prev => prev.resourceId === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+          comments: [...prev.comments, {
+            commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+            message: newComment,
+            author: customerName,
+            time: addTimeForComment
+          }]
+        }) : prev));
+      }
+      const existingData = commentBox.findIndex(person => (membersPage ? person.customerName : person.resourceName) === customerName);
       if (existingData !== -1) {
         setCommentBox(prevComments => prevComments.map((prev, index) => index === existingData ? _objectSpread(_objectSpread({}, prev), {}, {
           comment: [...prev.comment, {
@@ -210,16 +227,16 @@ const NameCard = _ref => {
     setNewComment("");
   };
   let color = "red";
-  if (status === "Complete") {
+  if (status === "COMPLETED") {
     color = "lightgreen";
   }
-  if (status === "New") {
+  if (status === "ACTIVE") {
     color = "pink";
   }
-  if (status === "In_Progress") {
+  if (status === "IN_PROGRESS") {
     color = "lightblue";
   }
-  if (status === "Cancelled") {
+  if (status === "CANCELLED") {
     color = "red";
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -376,6 +393,7 @@ const NameCard = _ref => {
     htmlType: "submit",
     block: true
   }, "Save Changes"))), /*#__PURE__*/React.createElement(PunchCardsPage, {
+    data: data,
     customerId: customerId,
     customerName: customerName,
     setNewComment: setNewComment,

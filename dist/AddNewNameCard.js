@@ -16,6 +16,7 @@ const AddNewNameCard = _ref => {
     setNewRecordAddress,
     setNewRecordCity,
     setNewRecordState,
+    setNewRecordPincode,
     setNewRecordCountry,
     setNewRecordStatus,
     newRecordStatus,
@@ -34,7 +35,8 @@ const AddNewNameCard = _ref => {
     setNewRecordCity("");
     setNewRecordState("");
     setNewRecordCountry("");
-    setNewRecordStatus("Active");
+    setNewRecordPincode("");
+    setNewRecordStatus("ACTIVE");
   };
   const [form] = Form.useForm();
   const handleSubmit = values => {
@@ -55,12 +57,14 @@ const AddNewNameCard = _ref => {
     },
     onChange: e => setNewRecordStatus(e.target.value)
   }, /*#__PURE__*/React.createElement("option", {
-    value: "Active"
-  }, "Active"), /*#__PURE__*/React.createElement("option", {
-    value: "In_Progress"
-  }, "In_Progress"), /*#__PURE__*/React.createElement("option", {
-    value: "Complete"
-  }, "Complete"));
+    value: "ACTIVE"
+  }, "ACTIVE"), /*#__PURE__*/React.createElement("option", {
+    value: "IN_PROGRESS"
+  }, "IN_PROGRESS"), /*#__PURE__*/React.createElement("option", {
+    value: "COMPLETED"
+  }, "COMPLETED"), /*#__PURE__*/React.createElement("option", {
+    value: "CANCELLED"
+  }, "CANCELLED"));
   return /*#__PURE__*/React.createElement("div", {
     style: {
       margin: '0 auto',
@@ -130,9 +134,13 @@ const AddNewNameCard = _ref => {
   }, /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
-    name: "email",
-    label: "Email"
-  }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
+    name: "pincode",
+    label: "Pincode"
+  }, /*#__PURE__*/React.createElement(Input, {
+    onChange: e => {
+      setNewRecordPincode(e.target.value);
+    }
+  }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "country",
