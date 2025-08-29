@@ -275,9 +275,8 @@ const CalendarPage = _ref => {
       to: toTimeSlot.toString(),
       notes: eventNotes,
       isRecurring: recurring,
-      frequency: frequencyOfEvent
-
-      // day: frequencyOfEvent === "weekly" ? weeklyDayRecurring : ""
+      frequency: frequencyOfEvent,
+      day: weeklyDayRecurring
     };
     const updateEventSlot = async () => {
       try {
@@ -622,7 +621,7 @@ const CalendarPage = _ref => {
   }, Array.from({
     length: 24
   }, (_, i) => {
-    var _recurringAllCalendar3, _recurringAllCalendar4, _recurringResourceCal;
+    var _recurringAllCalendar3, _recurringAllCalendar4, _recurringAllCalendar5, _recurringAllCalendar6, _recurringResourceCal, _recurringResourceCal2;
     const hourKey = "hour_".concat(i);
     const weekday = dayjs(currentDate).format("dddd");
     const dailySampleEvents = sampleData.flatMap(day => {
@@ -633,25 +632,30 @@ const CalendarPage = _ref => {
       return hourEvents;
     });
     const dailyRecurringEvents = (_recurringAllCalendar3 = recurringAllCalendar === null || recurringAllCalendar === void 0 || (_recurringAllCalendar4 = recurringAllCalendar.AllEvents) === null || _recurringAllCalendar4 === void 0 || (_recurringAllCalendar4 = _recurringAllCalendar4[weekday]) === null || _recurringAllCalendar4 === void 0 ? void 0 : _recurringAllCalendar4[hourKey]) !== null && _recurringAllCalendar3 !== void 0 ? _recurringAllCalendar3 : [];
+    const monthlyRecurringAttribute = "Day_" + currentDate.getDate();
+    const fetchingMonthlyAllRecurringEvents = (_recurringAllCalendar5 = recurringAllCalendar === null || recurringAllCalendar === void 0 || (_recurringAllCalendar6 = recurringAllCalendar.AllEvents) === null || _recurringAllCalendar6 === void 0 || (_recurringAllCalendar6 = _recurringAllCalendar6[monthlyRecurringAttribute]) === null || _recurringAllCalendar6 === void 0 ? void 0 : _recurringAllCalendar6[hourKey]) !== null && _recurringAllCalendar5 !== void 0 ? _recurringAllCalendar5 : [];
     const resourceCalendarEvents = resourceCalendar.flatMap(prev => prev.events.filter(item => {
       // For non-daily recurring events, check the month/year/date too
       return prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === currentDate.getDate() && item.from <= i && i < item.to;
     }));
     const dayOfWeekCaps = weekday.toUpperCase();
-    const matchingEventsSlot = ((_recurringResourceCal = recurringResourceCalendar[dayOfWeekCaps]) === null || _recurringResourceCal === void 0 ? void 0 : _recurringResourceCal[hourKey]) || [];
+    const resourceMonthlyRecurringEvents = (recurringResourceCalendar === null || recurringResourceCalendar === void 0 || (_recurringResourceCal = recurringResourceCalendar[monthlyRecurringAttribute.toLowerCase()]) === null || _recurringResourceCal === void 0 ? void 0 : _recurringResourceCal[hourKey]) || [];
+    const matchingEventsSlot = ((_recurringResourceCal2 = recurringResourceCalendar[dayOfWeekCaps]) === null || _recurringResourceCal2 === void 0 ? void 0 : _recurringResourceCal2[hourKey]) || [];
     const recurringResourceEvents = matchingEventsSlot.filter(item => {
       if (item.isRecurring) {
         if (item.frequency === "daily") {
           return item.from <= i && i < item.to;
         } else if (item.frequency === "weekly") {
-          return item.days === weekday && item.from <= i && i < item.to;
-        } else if (item.frequency === "monthly") {
-          return item.date === currentDate.getDate().toString() && item.from <= i && i < item.to;
+          return item.days === weekday.toUpperCase() && item.from <= i && i < item.to;
         }
+        {/* else if (item.frequency === "monthly") {
+           return item.date === currentDate.getDate().toString() &&
+           item.from <= i && i < item.to;
+         } */}
       }
       return false;
     });
-    const eventsAtTimeSlot = calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? [...resourceCalendarEvents, ...recurringResourceEvents] : [...dailySampleEvents, ...dailyRecurringEvents];
+    const eventsAtTimeSlot = calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? [...resourceCalendarEvents, ...recurringResourceEvents, ...resourceMonthlyRecurringEvents] : [...dailySampleEvents, ...dailyRecurringEvents, ...fetchingMonthlyAllRecurringEvents];
     let backgroundColor = "";
     if (eventsAtTimeSlot.length < parseInt(resourceData.length / 2)) backgroundColor = "green";else if (eventsAtTimeSlot.length >= resourceData.length) backgroundColor = "red";else backgroundColor = "orangered";
     return /*#__PURE__*/React.createElement("div", {
@@ -763,7 +767,7 @@ const CalendarPage = _ref => {
       borderBottom: '1px solid gray'
     }
   }), hours.map((hour, index) => {
-    var _recurringAllCalendar5, _recurringAllCalendar6, _recurringResourceCal2;
+    var _recurringAllCalendar7, _recurringAllCalendar8, _recurringAllCalendar9, _recurringAllCalendar0, _recurringResourceCal3, _recurringResourceCal4;
     const weekday = dayjs(day).format('dddd');
     const currentHourSlot = parseInt(dayjs(hour, "h A").format("HH"), 10);
     const hourKey = "hour_".concat(parseInt(dayjs(hour, "h A").format("HH"), 10));
@@ -773,7 +777,9 @@ const CalendarPage = _ref => {
       if (!isMatchingDay) return [];
       return (_prev$allEvents$hourK = (_prev$allEvents3 = prev.allEvents) === null || _prev$allEvents3 === void 0 ? void 0 : _prev$allEvents3[hourKey]) !== null && _prev$allEvents$hourK !== void 0 ? _prev$allEvents$hourK : [];
     });
-    const recurringEvents = (_recurringAllCalendar5 = recurringAllCalendar === null || recurringAllCalendar === void 0 || (_recurringAllCalendar6 = recurringAllCalendar.AllEvents) === null || _recurringAllCalendar6 === void 0 || (_recurringAllCalendar6 = _recurringAllCalendar6[weekday]) === null || _recurringAllCalendar6 === void 0 ? void 0 : _recurringAllCalendar6[hourKey]) !== null && _recurringAllCalendar5 !== void 0 ? _recurringAllCalendar5 : [];
+    const recurringEvents = (_recurringAllCalendar7 = recurringAllCalendar === null || recurringAllCalendar === void 0 || (_recurringAllCalendar8 = recurringAllCalendar.AllEvents) === null || _recurringAllCalendar8 === void 0 || (_recurringAllCalendar8 = _recurringAllCalendar8[weekday]) === null || _recurringAllCalendar8 === void 0 ? void 0 : _recurringAllCalendar8[hourKey]) !== null && _recurringAllCalendar7 !== void 0 ? _recurringAllCalendar7 : [];
+    const monthlyRecurringAttribute = "Day_" + parseInt(day.getDate()).toString();
+    const fetchingMonthlyAllRecurringEvent = (_recurringAllCalendar9 = recurringAllCalendar === null || recurringAllCalendar === void 0 || (_recurringAllCalendar0 = recurringAllCalendar.AllEvents) === null || _recurringAllCalendar0 === void 0 || (_recurringAllCalendar0 = _recurringAllCalendar0[monthlyRecurringAttribute]) === null || _recurringAllCalendar0 === void 0 ? void 0 : _recurringAllCalendar0[hourKey]) !== null && _recurringAllCalendar9 !== void 0 ? _recurringAllCalendar9 : [];
     const resourceCalendarEvents = resourceCalendar.flatMap(prev => {
       var _prev$events2;
       const isMatchingDay = prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate();
@@ -783,20 +789,23 @@ const CalendarPage = _ref => {
         return item.from <= currentHourSlot && currentHourSlot < item.to;
       });
     });
-    const dayOfWeekCaps = weekday.charAt(0).toUpperCase();
-    const matchingEventsSlot = (recurringResourceCalendar === null || recurringResourceCalendar === void 0 || (_recurringResourceCal2 = recurringResourceCalendar[dayOfWeekCaps]) === null || _recurringResourceCal2 === void 0 ? void 0 : _recurringResourceCal2[hourKey]) || [];
+    const dayOfWeekCaps = weekday.toUpperCase();
+    const matchingEventsSlot = (recurringResourceCalendar === null || recurringResourceCalendar === void 0 || (_recurringResourceCal3 = recurringResourceCalendar[dayOfWeekCaps]) === null || _recurringResourceCal3 === void 0 ? void 0 : _recurringResourceCal3[hourKey]) || [];
+    const resourceMonthlyRecurringEvents = (recurringResourceCalendar === null || recurringResourceCalendar === void 0 || (_recurringResourceCal4 = recurringResourceCalendar[monthlyRecurringAttribute.toLowerCase()]) === null || _recurringResourceCal4 === void 0 ? void 0 : _recurringResourceCal4[hourKey]) || [];
     const recurringResourceEvents = matchingEventsSlot.filter(item => {
       if (item.isRecurring) {
         if (item.frequency === "daily") {
           return item.from <= currentHourSlot && currentHourSlot < item.to;
         } else if (item.frequency === "weekly") {
-          return item.days === weekday && item.from <= currentHourSlot && currentHourSlot < item.to;
-        } else if (item.frequency === "monthly") {
-          return item.date === day.getDate().toString() && item.from <= currentHourSlot && currentHourSlot < item.to;
+          return item.days === weekday.toUpperCase() && item.from <= currentHourSlot && currentHourSlot < item.to;
         }
+        {/* else if (item.frequency === "monthly") {
+           return item.date === day.getDate().toString() &&
+           item.from <= currentHourSlot && currentHourSlot < item.to;
+         } */}
       }
     });
-    const eventsAtTimeSlot = calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? [...resourceCalendarEvents, ...recurringResourceEvents] : [...sampleEvents, ...recurringEvents];
+    const eventsAtTimeSlot = calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? [...resourceCalendarEvents, ...recurringResourceEvents, ...resourceMonthlyRecurringEvents] : [...sampleEvents, ...recurringEvents, ...fetchingMonthlyAllRecurringEvent];
     let backgroundColor = "";
     if (eventsAtTimeSlot.length < resourceData.length / 2) backgroundColor = "green";else if (eventsAtTimeSlot.length >= resourceData.length) backgroundColor = "red";else backgroundColor = "orangered";
     return /*#__PURE__*/React.createElement("div", {
