@@ -23,7 +23,7 @@ const { useBreakpoint } = Grid;
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
+const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
 
   const [ isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen ] = useState(false);
   const [ dataView, setDataView ] = useState("grid");
@@ -64,7 +64,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
             const Data = await fetch(MEMBERS_API, {
               method: "GET",
               headers : {
-                "entityid" : "w_123",
+                "entityid" : entityId,
                 "Content-Type" : "application/json",
               }
             });
@@ -80,7 +80,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
             const Data = await fetch(RESOURCES_API, {
               method : "GET",
               headers : {
-                "entityid" : "w_123",
+                "entityid" : entityId,
                 "Content-Type" : "application/json"
               }
             });
@@ -102,7 +102,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
               const calendarData = await fetch(CALENDAR_API + "All/month/"+ dayjs().format("MMM") + "/year/" + dayjs().year(), {
                 method : "GET",
                 headers : {
-                  "entityid" : "w_123",
+                  "entityid" : entityId,
                   "Content-Type" : "application/json"
                 }
               });
@@ -218,7 +218,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
       const response = await fetch(MEMBERS_API, {
         method:"POST",
         headers: {
-          "entityid" : "w_123",
+          "entityid" : entityId,
           'Content-Type' : "application/json"
         },
         body:JSON.stringify(newRecord)
@@ -365,6 +365,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
                     lg={colSize}>
                     <NameCard key={item.id}
                       membersPage={true}
+                      entityId={entityId}
                       data={data}
                       setData={setData}
                       customerId={item.id}
@@ -445,12 +446,14 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp}) => {
           resourceData={resourceData}
           setResourceData={setResourceData}
           dataView={dataView}
+          entityId={entityId}
           commentBox = {commentBox}
           setCommentBox = {setCommentBox}
         /> :openCalendarPage ? 
         <CalendarPage 
           sampleData={sampleData} 
           setSampleData={setSampleData} 
+          entityId={entityId}
           duplicateData={duplicateData} 
           resourceData={resourceData} 
           /> : <TodosPage sampleData={sampleData}/>)}

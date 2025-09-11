@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const { useBreakpoint } = Grid;
 
-const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData}) => {
+const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, resourceData}) => {
   const [ currentDate, setCurrentDate] = useState(new Date());
   const [ openWeekCalendar, setOpenWeekCalendar ] = useState(true);
   const [ openMonthCalendar, setOpenMonthCalendar ] = useState(false);
@@ -46,7 +46,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         const responce = await fetch(RECURRING_CALENDAR_API + "All/recurring/", {
           method: "GET",
           headers:{
-            "entityid" : "w_123",
+            "entityid" : entityId,
             "Content-Type" : "application/json"
           }
         });
@@ -121,7 +121,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             + "/year/" + currentDate.getFullYear(), {
               method : "GET",
               headers : {
-                "entityid" : "w_123",
+                "entityid" : entityId,
                 "Content-Type" : "application/json"
               }
             })
@@ -138,7 +138,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
             const responce = await fetch(RECURRING_CALENDAR_API + calendarUserId + "/recurring/", {
               method : "GET",
               headers : {
-                "entityid" : "w_123",
+                "entityid" : entityId,
                 "Content-Type" : "application/json"
               }
             });
@@ -305,7 +305,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, resourceData})
         await fetch(EVENTS_API + `${filteredEvents[currentPage - 1].id}`,{
           method: "PUT",
           headers: {
-            "entityid" : "w_123",
+            "entityid" : entityId,
             "Content-Type" : "application/json"
           },
           body:JSON.stringify(eventDetails)

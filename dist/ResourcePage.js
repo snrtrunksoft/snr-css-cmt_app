@@ -18,6 +18,7 @@ const ResourcePage = _ref => {
   let {
     resourceData,
     setResourceData,
+    entityId,
     dataView,
     commentBox,
     setCommentBox
@@ -140,7 +141,7 @@ const ResourcePage = _ref => {
   }, "+ Add New Record"))))) : /*#__PURE__*/React.createElement(Row, {
     className: "resource-grid",
     gutter: [16, 16]
-  }, resourceData !== 0 ? resourceData.map(item => /*#__PURE__*/React.createElement(Col, {
+  }, resourceData.length !== 0 ? resourceData.map(item => /*#__PURE__*/React.createElement(Col, {
     key: item.resourceId,
     xs: 20,
     md: 12,
@@ -148,6 +149,7 @@ const ResourcePage = _ref => {
   }, /*#__PURE__*/React.createElement(NameCard, {
     key: item.resourceId,
     membersPage: false,
+    entityId: entityId,
     resourceData: resourceData,
     setResourceData: setResourceData,
     customerId: item.resourceId,

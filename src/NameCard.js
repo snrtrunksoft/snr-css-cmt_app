@@ -10,6 +10,7 @@ const NameCard = ({
     membersPage,
     data,
     setData,
+    entityId,
     resourceData,
     setResourceData,
     customerId, 
@@ -86,7 +87,7 @@ const NameCard = ({
                 await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId, {
                     method : "PUT",
                     headers : {
-                        "entityid" : "w_123",
+                        "entityid" : entityId,
                         "Content-Type" : "application/json"
                     },
                     body : JSON.stringify(cleanCustomer)
@@ -165,7 +166,7 @@ const NameCard = ({
                     const response = await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + customerId, {
                     method: "PUT",
                     headers: {
-                        "entityid" : "w_123",
+                        "entityid" : entityId,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify(updatedRecord)
