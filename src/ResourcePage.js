@@ -9,7 +9,7 @@ import { RESOURCES_API } from "./properties/EndPointProperties";
 
 const { useBreakpoint } = Grid;
 
-const ResourcePage = ({ resourceData, setResourceData, dataView, commentBox, setCommentBox }) =>{
+const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, commentBox, setCommentBox }) =>{
     const [ isLoading, setIsLoading ] = useState(true);
     const [ addNewResourceModal, setAddNewResourceModal ] = useState(false);
     const [ newRecordName, setNewRecordName ] = useState('');
@@ -119,7 +119,7 @@ const ResourcePage = ({ resourceData, setResourceData, dataView, commentBox, set
                     </Row>
             </div> : 
                 <Row className="resource-grid" gutter={[16,16]}>
-                    {resourceData !== 0 ? resourceData.map((item)=>(
+                    {resourceData.length !== 0 ? resourceData.map((item)=>(
                         <Col key={item.resourceId}
                             xs={20} 
                             md={12}
@@ -127,6 +127,7 @@ const ResourcePage = ({ resourceData, setResourceData, dataView, commentBox, set
                             >
                                 <NameCard key={item.resourceId}
                                     membersPage={false}
+                                    entityId={entityId}
                                     resourceData={resourceData}
                                     setResourceData={setResourceData}
                                     customerId={item.resourceId}

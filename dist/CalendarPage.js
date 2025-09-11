@@ -19,6 +19,7 @@ const CalendarPage = _ref => {
     sampleData,
     setSampleData,
     duplicateData,
+    entityId,
     resourceData
   } = _ref;
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -55,7 +56,7 @@ const CalendarPage = _ref => {
         const responce = await fetch(RECURRING_CALENDAR_API + "All/recurring/", {
           method: "GET",
           headers: {
-            "entityid": "w_123",
+            "entityid": entityId,
             "Content-Type": "application/json"
           }
         });
@@ -124,7 +125,7 @@ const CalendarPage = _ref => {
           }) + "/year/" + currentDate.getFullYear(), {
             method: "GET",
             headers: {
-              "entityid": "w_123",
+              "entityid": entityId,
               "Content-Type": "application/json"
             }
           });
@@ -142,7 +143,7 @@ const CalendarPage = _ref => {
           const responce = await fetch(RECURRING_CALENDAR_API + calendarUserId + "/recurring/", {
             method: "GET",
             headers: {
-              "entityid": "w_123",
+              "entityid": entityId,
               "Content-Type": "application/json"
             }
           });
@@ -283,7 +284,7 @@ const CalendarPage = _ref => {
         await fetch(EVENTS_API + "".concat(filteredEvents[currentPage - 1].id), {
           method: "PUT",
           headers: {
-            "entityid": "w_123",
+            "entityid": entityId,
             "Content-Type": "application/json"
           },
           body: JSON.stringify(eventDetails)
