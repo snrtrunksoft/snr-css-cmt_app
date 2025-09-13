@@ -4,6 +4,15 @@ import './index.css';
 import CmtApp from './CmtApp';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
+
+// ✅ Amplify Auth config
+import { configureAuth } from './authConfig';
+import localExports from './aws-exports-dev.local';
+
+// If running in standalone mode, configure Amplify with local exports
+if (process.env.REACT_APP_STANDALONE === "1") {
+  configureAuth(localExports);
+}
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(/*#__PURE__*/React.createElement(React.StrictMode, null, /*#__PURE__*/React.createElement(BrowserRouter, null, /*#__PURE__*/React.createElement(CmtApp, null))));
 

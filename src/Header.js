@@ -34,26 +34,35 @@ const Header = ({
   };
 
   const handleLogout = async () => {
+    try {
       await signOut();
-      console.log("logout");
-      // setIsLoggedIn(false);
+      console.log("logout successful");
       navigate('/');
-    };
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
-  useEffect(() => {
-    const checkLogin = async () => {
-          try {
-            await getCurrentUser();
-            // setIsLoggedIn(true);
-          } catch {
-            // setIsLoggedIn(false);
-          }
-        };
-        checkLogin();
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    useEffect(() => {
+      const checkLogin = async () => {
+        try {
+          const user = await getCurrentUser();
+          console.log("Logged in user:", user);
+    
+          // you can also inspect session if needed
+          // const session = await fetchAuthSession();
+          // console.log("TenantId:", session.tokens.idToken.payload.tenantId);
+        } catch {
+          console.log("No current user, redirecting to login");
+          navigate("/login");
+        }
+      };
+    
+      checkLogin();
+      handleResize();
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }, [navigate]);
 
   const handleMenuClick = (key) => {
     setOpenCalendarPage(false);
@@ -129,7 +138,7 @@ const Header = ({
           </Menu.Item>
 
           <Menu.Item
-            key="Members"
+            key="members"
             icon={<FaUser />}
             onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(true); setTodosPage(false); }}
             style={{
@@ -141,7 +150,7 @@ const Header = ({
           </Menu.Item>
 
           <Menu.Item
-            key="Calendar"
+            key="calendar"
             icon={<LuCalendar />}
             onClick={() => { setOpenCalendarPage(true); setResourcePage(false); setMembersPage(false); setTodosPage(false); }}
             style={{
@@ -153,7 +162,7 @@ const Header = ({
           </Menu.Item>
 
           <Menu.Item
-            key="Todos"
+            key="todos"
             icon={<LuListTodo />}
             onClick={() => { setOpenCalendarPage(false); setResourcePage(false); setMembersPage(false); setTodosPage(true); }}
             style={{
@@ -166,7 +175,7 @@ const Header = ({
 
           <Badge count={commentBox.length} offset={[0, 0]}>
             <Menu.Item
-              key="Inbox"
+              key="inbox"
               icon={<InboxOutlined />}
               onClick={() => setHandleInboxDrawer(true)}
               style={{ backgroundColor: 'transparent' }}

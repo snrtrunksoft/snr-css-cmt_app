@@ -14,8 +14,8 @@ import AddNewNameCard from './AddNewNameCard';
 import CalendarPage from './CalendarPage';
 import './CmtApp.css';
 
-// Endpoint constants
-import { MEMBERS_API, RESOURCES_API, CALENDAR_API } from './properties/EndPointProperties';
+// Amplify API imports
+import { get, post } from "aws-amplify/api";
 import dayjs from 'dayjs';
 
 const { useBreakpoint } = Grid;
@@ -56,70 +56,73 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
 
   const [ sampleData, setSampleData ] = useState([]);
 
-  useEffect(() =>{
-      if (membersPage) {
-        console.log("initial loading, fetching data from the Database");
-        const fetchingData = async() => {
-          try {
-            const Data = await fetch(MEMBERS_API, {
-              method: "GET",
-              headers : {
-                "entityid" : entityId,
-                "Content-Type" : "application/json",
-              }
-            });
-            const fetchedData = await Data.json();
-            console.log("fetching Data from database is complete");
-            console.log("Fetched Data:",fetchedData);
-            setData(fetchedData);
-          } catch (error){
-            console.log("fail in fetching Data");
-            console.error("Error while fetching Data",error);
-          }
+  useEffect(() => {
+    if (membersPage) {
+      console.log("initial loading, fetching data from the Database");
+      const fetchingData = async () => {
         try {
-            const Data = await fetch(RESOURCES_API, {
-              method : "GET",
-              headers : {
-                "entityid" : entityId,
-                "Content-Type" : "application/json"
-              }
-            });
-            const fetchedData = await Data.json();
-            console.log("fetching Resource Data from database is complete");
-            console.log("Fetched Resource Data:",fetchedData);
-            setResourceData1(fetchedData);
-          } catch (error){
-            console.log("fail in fetching resource Data");
-            console.error("Error while fetching resource Data",error);
-          } finally {
-            setIsLoading(false);
-          }
+          // Fetch members using Amplify get
+          const op = get({
+            apiName: "UsersAPI",
+            path: "/users",
+            options: { headers: { entityid: "w_123" } },
+            authMode: "userPool"
+          });
+          const { body } = await op.response;
+          const fetchedData = await body.json();
+          console.log("fetching Data from database is complete");
+          console.log("Fetched Data:", fetchedData);
+          setData(fetchedData);
+        } catch (error) {
+          console.log("fail in fetching Data");
+          console.error("Error while fetching Data", error);
         }
-        fetchingData();
-      } else if (openCalendarPage) {
-          const fetchCalendar = async () => {
-            try {
-              const calendarData = await fetch(CALENDAR_API + "All/month/"+ dayjs().format("MMM") + "/year/" + dayjs().year(), {
-                method : "GET",
-                headers : {
-                  "entityid" : entityId,
-                  "Content-Type" : "application/json"
-                }
-              });
-              const fetchedCalendarData = await calendarData.json();
-              console.log("fetching Calendar Data from database is complete");
-              console.log("Fetched Calendar Data:",fetchedCalendarData);
-              setSampleData(fetchedCalendarData);
-            } catch (error){
-              console.log("fail in fetching Calendar Data");
-              console.error("Error while fetching Calendar Data",error);
-            } finally {
-              setIsLoading(false);
-            }
-          }
-          fetchCalendar();
+        try {
+          // Fetch resources using Amplify get
+          const op = get({
+            apiName: "ResourcesAPI",
+            path: "/resources",
+            options: { headers: { entityid: "w_123" } },
+            authMode: "userPool"
+          });
+          const { body } = await op.response;
+          const fetchedData = await body.json();
+          console.log("fetching Resource Data from database is complete");
+          console.log("Fetched Resource Data:", fetchedData);
+          setResourceData1(fetchedData);
+        } catch (error) {
+          console.log("fail in fetching resource Data");
+          console.error("Error while fetching resource Data", error);
+        } finally {
+          setIsLoading(false);
         }
-  },[membersPage, openCalendarPage]);
+      };
+      fetchingData();
+    } else if (openCalendarPage) {
+      const fetchCalendar = async () => {
+        try {
+          // Fetch calendar using Amplify get
+          const op = get({
+            apiName: "CalendarAPI",
+            path: `/calendar/user/All/month/${dayjs().format("MMM")}/year/${dayjs().year()}`,
+            options: { headers: { entityid: "w_123" } },
+            authMode: "userPool"
+          });
+          const { body } = await op.response;
+          const fetchedCalendarData = await body.json();
+          console.log("fetching Calendar Data from database is complete");
+          console.log("Fetched Calendar Data:", fetchedCalendarData);
+          setSampleData(fetchedCalendarData);
+        } catch (error) {
+          console.log("fail in fetching Calendar Data");
+          console.error("Error while fetching Calendar Data", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchCalendar();
+    }
+  }, [membersPage, openCalendarPage]);
 
   useEffect(() => {
     setResourceData(resourceData1);
@@ -192,48 +195,48 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
   };
 
 
-  const handleAddNewNameCard = () =>{
-  const newRecord = {
-    customerName: newRecordName + newRecordLastName,
-    phoneNumber: newRecordPhone,                                          
-    address: [{
-                "country": newRecordCountry,
-                "city": newRecordCity,
-                "houseNo": "NA",
-                "street1": newRecordAddress || "NA",
-                "street2": "NA",
-                "pincode": newRecordPincode || "NA",
-                "state": newRecordState
-            }],
-    comments:[{
-                "author": newRecordName,
-                "commentId": "test id 101",
-                "message": "test comment 101"
-            }],
-    status: newRecordStatus,
-    subscriptions:[],
-  }
-  const addNewMember = async () => {
-    try{
-      const response = await fetch(MEMBERS_API, {
-        method:"POST",
-        headers: {
-          "entityid" : entityId,
-          'Content-Type' : "application/json"
-        },
-        body:JSON.stringify(newRecord)
-      })
-      const postData = await response.json();
-      console.log("postData:",postData);
-      const updatedRecord = {
-        ...newRecord,
-        id: postData.userId
+  const handleAddNewNameCard = () => {
+    const newRecord = {
+      customerName: newRecordName + newRecordLastName,
+      phoneNumber: newRecordPhone,
+      address: [{
+        "country": newRecordCountry,
+        "city": newRecordCity,
+        "houseNo": "NA",
+        "street1": newRecordAddress || "NA",
+        "street2": "NA",
+        "pincode": newRecordPincode || "NA",
+        "state": newRecordState
+      }],
+      comments: [{
+        "author": newRecordName,
+        "commentId": "test id 101",
+        "message": "test comment 101"
+      }],
+      status: newRecordStatus,
+      subscriptions: [],
+    };
+    const addNewMember = async () => {
+      try {
+        // Add new member using Amplify post
+        const op = post({
+          apiName: "UsersAPI",
+          path: "/users",
+          options: { headers: { entityid: "w_123" }, body: newRecord },
+          authMode: "userPool"
+        });
+        const { body } = await op.response;
+        const postData = await body.json();
+        console.log("postData:", postData);
+        const updatedRecord = {
+          ...newRecord,
+          id: postData.userId
+        };
+        setDuplicateData(prevData => [...prevData, updatedRecord]);
+      } catch (error) {
+        console.log("unable to add new member", error);
       }
-      setDuplicateData(prevData => [...prevData, updatedRecord]);
-      } catch (error){
-        console.log("unable to add new member",error);
-      }
-    }
+    };
     addNewMember();
     setIsAddNewNameCardModalOpen(false);
   };

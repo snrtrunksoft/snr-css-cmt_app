@@ -31,25 +31,33 @@ const Header = _ref => {
     setIsMobile(window.innerWidth <= 1030);
   };
   const handleLogout = async () => {
-    await signOut();
-    console.log("logout");
-    // setIsLoggedIn(false);
-    navigate('/');
+    try {
+      await signOut();
+      console.log("logout successful");
+      navigate('/');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
   useEffect(() => {
     const checkLogin = async () => {
       try {
-        await getCurrentUser();
-        // setIsLoggedIn(true);
+        const user = await getCurrentUser();
+        console.log("Logged in user:", user);
+
+        // you can also inspect session if needed
+        // const session = await fetchAuthSession();
+        // console.log("TenantId:", session.tokens.idToken.payload.tenantId);
       } catch (_unused) {
-        // setIsLoggedIn(false);
+        console.log("No current user, redirecting to login");
+        navigate("/login");
       }
     };
     checkLogin();
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [navigate]);
   const handleMenuClick = key => {
     setOpenCalendarPage(false);
     setResourcePage(false);
@@ -133,7 +141,7 @@ const Header = _ref => {
       backgroundColor: 'transparent'
     }
   }, "Home"), /*#__PURE__*/React.createElement(Menu.Item, {
-    key: "Members",
+    key: "members",
     icon: /*#__PURE__*/React.createElement(FaUser, null),
     onClick: () => {
       setOpenCalendarPage(false);
@@ -146,7 +154,7 @@ const Header = _ref => {
       color: membersPage ? '#1677ff' : ''
     }
   }, "Members"), /*#__PURE__*/React.createElement(Menu.Item, {
-    key: "Calendar",
+    key: "calendar",
     icon: /*#__PURE__*/React.createElement(LuCalendar, null),
     onClick: () => {
       setOpenCalendarPage(true);
@@ -159,7 +167,7 @@ const Header = _ref => {
       color: openCalendarPage ? '#1677ff' : ''
     }
   }, "Calendar"), /*#__PURE__*/React.createElement(Menu.Item, {
-    key: "Todos",
+    key: "todos",
     icon: /*#__PURE__*/React.createElement(LuListTodo, null),
     onClick: () => {
       setOpenCalendarPage(false);
@@ -175,7 +183,7 @@ const Header = _ref => {
     count: commentBox.length,
     offset: [0, 0]
   }, /*#__PURE__*/React.createElement(Menu.Item, {
-    key: "Inbox",
+    key: "inbox",
     icon: /*#__PURE__*/React.createElement(InboxOutlined, null),
     onClick: () => setHandleInboxDrawer(true),
     style: {
