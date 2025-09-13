@@ -4,6 +4,9 @@ function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useEffect, useRef, useState } from 'react';
+import { Amplify } from 'aws-amplify';
+import { get } from 'aws-amplify/api';
+import awsExports from './aws-exports-dev.local';
 import './App.css';
 import NameCard from './NameCard';
 import Header from './Header';
@@ -143,34 +146,66 @@ function App() {
   }]);
   useEffect(() => {
     console.log("initial loading, fetching data from the Database");
-    // if(isInitialLoad.current){
     const fetchingData = async () => {
       try {
-        const Data = await fetch("https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev/users");
-        const fetchedData = await Data.json();
+        // Users fetch
+        const usersOp = get({
+          apiName: "UsersAPI",
+          path: "/users",
+          options: {
+            headers: {
+              entityId: "w_123"
+            }
+          },
+          authMode: "userPool"
+        });
+        const usersRes = await usersOp.response;
+        const usersData = await usersRes.body.json();
         console.log("fetching Data from database is complete");
-        console.log("Fetched Data:", fetchedData);
-        setData(fetchedData);
+        console.log("Fetched Data:", usersData);
+        setData(usersData);
       } catch (error) {
         console.log("fail in fetching Data");
         console.error("Error while fetching Data", error);
       }
       try {
-        const calendarData = await fetch("https://pliol7eyw7.execute-api.us-east-1.amazonaws.com/dev/calendar/user/lakshmi/month/March/year/2024");
-        const fetchedCalendarData = await calendarData.json();
+        // Calendar fetch
+        const calendarOp = get({
+          apiName: "CalendarAPI",
+          path: "/calendar/user/lakshmi/month/March/year/2024",
+          options: {
+            headers: {
+              entityId: "w_123"
+            }
+          },
+          authMode: "userPool"
+        });
+        const calendarRes = await calendarOp.response;
+        const calendarData = await calendarRes.body.json();
         console.log("fetching Calendar Data from database is complete");
-        console.log("Fetched Calendar Data:", fetchedCalendarData);
-        setSampleData(fetchedCalendarData);
+        console.log("Fetched Calendar Data:", calendarData);
+        setSampleData(calendarData);
       } catch (error) {
         console.log("fail in fetching Calendar Data");
         console.error("Error while fetching Calendar Data", error);
       }
       try {
-        const Data = await fetch("https://bws4su8xog.execute-api.us-east-1.amazonaws.com/dev/resources");
-        const fetchedData = await Data.json();
+        // Resources fetch
+        const resourcesOp = get({
+          apiName: "ResourceAPI",
+          path: "/resources",
+          options: {
+            headers: {
+              entityId: "w_123"
+            }
+          },
+          authMode: "userPool"
+        });
+        const resourcesRes = await resourcesOp.response;
+        const resourcesData = await resourcesRes.body.json();
         console.log("fetching Resource Data from database is complete");
-        console.log("Fetched Resource Data:", fetchedData);
-        setResourceData(fetchedData);
+        console.log("Fetched Resource Data:", resourcesData);
+        setResourceData(resourcesData);
       } catch (error) {
         console.log("fail in fetching resource Data");
         console.error("Error while fetching resource Data", error);
@@ -179,8 +214,6 @@ function App() {
       }
     };
     fetchingData();
-    // isInitialLoad.current = false;
-    // }
   }, []);
   const [duplicateData, setDuplicateData] = useState(data);
   const [commentBox, setCommentBox] = useState([]);
