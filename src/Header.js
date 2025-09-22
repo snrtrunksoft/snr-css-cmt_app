@@ -2,7 +2,7 @@ import { Badge, Button, Menu, Card, Drawer, Space, Switch, Modal, Row, Col } fro
 import { MenuOutlined, InboxOutlined, LogoutOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import React, { useState, useEffect } from "react";
 import "./Header.css";
-import { getCurrentUser, signOut } from 'aws-amplify/auth'; // ✅ Auth import
+import { fetchAuthSession, signOut } from 'aws-amplify/auth';
 import { useNavigate } from 'react-router-dom';
 import { FaUser } from "react-icons/fa";
 import { IoIosGlobe } from "react-icons/io";
@@ -35,9 +35,10 @@ const Header = ({
 
   const handleLogout = async () => {
     try {
+      setOpenConfirmationModal(false); // Close modal first
       await signOut();
       console.log("logout successful");
-      navigate('/');
+      navigate('/login');
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -46,18 +47,18 @@ const Header = ({
     useEffect(() => {
       const checkLogin = async () => {
         try {
-          const user = await getCurrentUser();
-          console.log("Logged in user:", user);
-    
-          // you can also inspect session if needed
-          // const session = await fetchAuthSession();
+          const session = await fetchAuthSession();
+          if (!session.tokens?.idToken || !session.tokens?.accessToken) {
+            throw new Error("No valid session tokens");
+          }
+          // Optionally log/inspect session
           // console.log("TenantId:", session.tokens.idToken.payload.tenantId);
-        } catch {
-          console.log("No current user, redirecting to login");
+        } catch (e) {
+          console.log("No valid session, redirecting to login");
           navigate("/login");
         }
       };
-    
+
       checkLogin();
       handleResize();
       window.addEventListener("resize", handleResize);

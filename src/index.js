@@ -3,7 +3,9 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import CmtApp from './CmtApp';
 import reportWebVitals from './reportWebVitals';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './ProtectedRoute';
+import LoginPage from './LoginPage';
 
 // ✅ Amplify Auth config
 import { configureAuth } from './authConfig';
@@ -18,8 +20,18 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <CmtApp />
-    </BrowserRouter>  
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <CmtApp />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   </React.StrictMode>
 );
 
