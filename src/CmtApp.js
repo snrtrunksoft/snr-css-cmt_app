@@ -3,6 +3,7 @@ import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table } from 'an
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
+import { Amplify } from 'aws-amplify';
 
 // Local component imports
 import Header from './Header';
@@ -58,7 +59,8 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
 
   useEffect(() => {
     if (membersPage) {
-      console.log("initial loading, fetching data from the Database");
+      console.log("Amplify config11:", Amplify.getConfig());
+      console.log("initial loading, fetching data from the Database22");
       const fetchingData = async () => {
         try {
           // Fetch members using Amplify get
