@@ -265,7 +265,7 @@ const CalendarPage = _ref => {
     Option
   } = Select;
   const handleCalendarEvent = () => {
-    const eventDetails = {
+    const eventDetails = _objectSpread(_objectSpread({
       memberId: selectedMemberId,
       resourceId: selectedResourceId,
       date: monthlyRecurring.toString(),
@@ -276,9 +276,12 @@ const CalendarPage = _ref => {
       to: toTimeSlot.toString(),
       notes: eventNotes,
       isRecurring: recurring,
-      frequency: frequencyOfEvent,
+      frequency: frequencyOfEvent
+    }, frequencyOfEvent === "monthly" && {
+      monthDays: [monthlyRecurring]
+    }), {}, {
       day: weeklyDayRecurring
-    };
+    });
     const updateEventSlot = async () => {
       try {
         await fetch(EVENTS_API + "".concat(filteredEvents[currentPage - 1].id), {
