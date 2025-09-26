@@ -295,6 +295,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       notes: eventNotes,
       isRecurring: recurring,
       frequency: frequencyOfEvent,
+      ...(frequencyOfEvent === "monthly" && { monthDays: [monthlyRecurring] }),
 
       day: weeklyDayRecurring
 
