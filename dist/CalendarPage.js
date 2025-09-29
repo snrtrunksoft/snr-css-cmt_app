@@ -7,8 +7,9 @@ import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CALENDAR_API, EVENTS_API, RECURRING_CALENDAR_API } from "./properties/EndPointProperties";
-import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid } from "antd";
+import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid, Spin } from "antd";
 import dayjs from "dayjs";
+import { LoadingOutlined } from "@ant-design/icons";
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const {
   useBreakpoint
@@ -22,6 +23,7 @@ const CalendarPage = _ref => {
     entityId,
     resourceData
   } = _ref;
+  const [openEventStatusModal, setOpenEventStatusModal] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [openWeekCalendar, setOpenWeekCalendar] = useState(true);
   const [openMonthCalendar, setOpenMonthCalendar] = useState(false);
@@ -32,6 +34,9 @@ const CalendarPage = _ref => {
   const [eventTitle, setEventTitle] = useState('');
   const [eventNotes, setEventNotes] = useState('');
   const [fromTimeSlot, setFromTimeSlot] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [eventStatus, setEventStatus] = useState("");
+  const [eventLoading, setEventLoading] = useState(false);
   const [toTimeSlot, setToTimeSlot] = useState(null);
   const [weekEventDate, setWeekEventDate] = useState(null);
   const [currentHour, setCurrentHour] = useState(dayjs().hour());
@@ -65,6 +70,8 @@ const CalendarPage = _ref => {
         setRecurringAllCalendar(recurringCalendarData);
       } catch (error) {
         console.log("unable to fetch the Recurring All Calendar:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchRecurringCalendar();
@@ -118,6 +125,7 @@ const CalendarPage = _ref => {
   }, [currentDate]);
   useEffect(() => {
     if (calendarUserId !== "Select Member" && calendarUserId !== "Select Resource") {
+      setIsLoading(true);
       const fetchMembersCalendar = async () => {
         try {
           const memberData = await fetch(CALENDAR_API + calendarUserId + "/month/" + currentDate.toLocaleString("default", {
@@ -152,6 +160,8 @@ const CalendarPage = _ref => {
           setRecurringResourceCalendar(recurringResourceData);
         } catch (error) {
           console.log("unable to fetch the Recurring Resource Calendar:", error);
+        } finally {
+          setIsLoading(false);
         }
       };
       fetchMembersCalendar();
@@ -264,11 +274,22 @@ const CalendarPage = _ref => {
   const {
     Option
   } = Select;
+  useEffect(() => {
+    if (eventStatus) {
+      showStatusModal();
+    }
+  }, [eventStatus]);
+  const showStatusModal = () => {
+    setTimeout(() => {
+      setOpenEventStatusModal(false);
+      setEventStatus("");
+    }, 2000);
+  };
   const handleCalendarEvent = () => {
     const eventDetails = _objectSpread(_objectSpread({
       memberId: selectedMemberId,
       resourceId: selectedResourceId,
-      date: monthlyRecurring.toString(),
+      date: monthlyRecurring,
       month: monthName,
       year: currentDate.getFullYear().toString(),
       title: eventTitle,
@@ -283,6 +304,10 @@ const CalendarPage = _ref => {
       day: weeklyDayRecurring
     });
     const updateEventSlot = async () => {
+      const eventHour = parseInt(dayjs(timeSlot, "h A").format("HH"), 10);
+      const hourKey = "hour_".concat(eventHour);
+      setEventLoading(true);
+      setOpenEventStatusModal(true);
       try {
         await fetch(EVENTS_API + "".concat(filteredEvents[currentPage - 1].id), {
           method: "PUT",
@@ -293,13 +318,21 @@ const CalendarPage = _ref => {
           body: JSON.stringify(eventDetails)
         }).then(responce => responce.json()).then(data => console.log("updated event data:", data));
         setSampleData(prev => prev.map(day => _objectSpread(_objectSpread({}, day), {}, {
-          events: day.events.map(event => event.id === filteredEvents[currentPage - 1].id ? _objectSpread(_objectSpread({}, event), eventDetails) : event)
+          allEvents: _objectSpread(_objectSpread({}, day.allEvents), {}, {
+            [hourKey]: [...day.allEvents[hourKey], eventDetails] // add event to array
+          })
         })));
+        setEventLoading(false);
+        setEventStatus("Event Updated Successfully...");
       } catch (error) {
         console.log("unable to update the record", error);
+        setEventLoading(false);
+        setEventStatus("Event unable to update...!");
       }
     };
     const addEventSlot = async () => {
+      setEventLoading(true);
+      setOpenEventStatusModal(true);
       try {
         const response = await fetch(EVENTS_API, {
           method: "POST",
@@ -357,8 +390,12 @@ const CalendarPage = _ref => {
             return [...prevData, newEventRecord];
           });
         }
+        setEventLoading(false);
+        setEventStatus("Event Added successfully...");
       } catch (error) {
         console.log("unable to create new event:", error);
+        setEventLoading(false);
+        setEventStatus("Event unable to add..!");
       }
     };
     if (!selectedMemberId || !selectedResourceId || !eventTitle) {
@@ -373,6 +410,8 @@ const CalendarPage = _ref => {
     }
   };
   const deleteEvent = () => {
+    setEventLoading(true);
+    setOpenEventStatusModal(true);
     const deleteExistingEvent = async () => {
       try {
         await fetch(EVENTS_API + "".concat(filteredEvents[currentPage - 1].id), {
@@ -382,11 +421,13 @@ const CalendarPage = _ref => {
             "Content-Type": "application/json"
           }
         }).then(responce => responce.json()).then(data => console.log("Deleted event Successfully", data));
-        setSampleData(prevData => prevData.map(prev => _objectSpread(_objectSpread({}, prev), {}, {
-          events: prev.events.filter(event => event.id !== filteredEvents[currentPage - 1].id)
-        })));
+        setSampleData(prevData => prevData.map(prev => _objectSpread({}, prev)));
+        setEventLoading(false);
+        setEventStatus("Event deleted Successfully...");
       } catch (error) {
         console.log("unable to delete Event", error);
+        setEventLoading(false);
+        setEventStatus("Event unable to delete..!");
       }
     };
     deleteExistingEvent();
@@ -464,15 +505,31 @@ const CalendarPage = _ref => {
       outline: 'none'
     }
   }, /*#__PURE__*/React.createElement("option", null, calendarUserId), resourceDropDown ? resourceData.map(prevData => /*#__PURE__*/React.createElement("option", null, prevData.resourceName)) : duplicateData.map(prevData => /*#__PURE__*/React.createElement("option", null, prevData.customerName)));
-  const handleDailyCalendarEvent = time => {
+  const handleDailyCalendarEvent = (time, bookedEventsList) => {
     time = time === 0 ? "12 AM" : time < 12 ? "".concat(time, " AM") : time === 12 ? "12 PM" : "".concat(time - 12, " PM");
     setWeekEventDate(null);
     setMonthlyRecurring(currentDate.getDate());
-    setOpenEventSlot(true);
+    if (calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" && bookedEventsList) {
+      setOpenEventSlot(true);
+      setOpenAppointment(true);
+    } else if (bookedEventsList < resourceData.length) {
+      setOpenAppointment(false);
+      setOpenEventSlot(true);
+    } else if (bookedEventsList === resourceData.length) {
+      console.log("Slot is Full....");
+    }
     setTimeSlot(time);
   };
-  const handleWeeklyCalendarEvent = (hour, date) => {
-    setOpenEventSlot(true);
+  const handleWeeklyCalendarEvent = (hour, date, bookedEventsList) => {
+    if (calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" && bookedEventsList) {
+      setOpenEventSlot(true);
+      setOpenAppointment(true);
+    } else if (bookedEventsList < resourceData.length) {
+      setOpenAppointment(false);
+      setOpenEventSlot(true);
+    } else if (bookedEventsList === resourceData.length) {
+      console.log("Slot is Full....");
+    }
     setTimeSlot(hour);
     const dayFormat = dayjs(date).format('dddd');
     setWeekEventDate(date.getDate());
@@ -700,7 +757,7 @@ const CalendarPage = _ref => {
         //   })
         // ) ? "1px solid gray" : "1px solid transparent",                      
       } : {},
-      onClick: () => eventsAtTimeSlot.length < resourceData.length ? handleDailyCalendarEvent(i) : console.log("Slot is Full")
+      onClick: () => handleDailyCalendarEvent(i, eventsAtTimeSlot.length)
     }, calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? resourceCalendar.map(prev => {
       if (prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === currentDate.getDate()) {
         return prev.events.map(item => {
@@ -722,7 +779,7 @@ const CalendarPage = _ref => {
     }));
   }))) : /*#__PURE__*/React.createElement("div", {
     className: "grid-container header1"
-  }, getWeekDays().map((day, index) => /*#__PURE__*/React.createElement("div", {
+  }, isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : getWeekDays().map((day, index) => /*#__PURE__*/React.createElement("div", {
     key: index
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid-header-item",
@@ -837,7 +894,7 @@ const CalendarPage = _ref => {
         }) || [...recurringResourceEvents].length > 0) ? "1px solid gray" : "1px solid transparent"
       } : {},
       onClick: () => {
-        eventsAtTimeSlot.length < resourceData.length ? handleWeeklyCalendarEvent(hour, day) : console.log("the Slot is full");
+        handleWeeklyCalendarEvent(hour, day, eventsAtTimeSlot.length);
       }
     }, calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? resourceCalendar.map(prev => {
       if (prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate()) {
@@ -1027,6 +1084,25 @@ const CalendarPage = _ref => {
       marginTop: "10px",
       textAlign: "center"
     }
-  })))));
+  })))), /*#__PURE__*/React.createElement(Modal, {
+    open: openEventStatusModal,
+    onCancel: () => setOpenEventStatusModal(false),
+    footer: null
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "1rem"
+    }
+  }, eventLoading ? /*#__PURE__*/React.createElement(Spin, {
+    indicator: /*#__PURE__*/React.createElement(LoadingOutlined, {
+      style: {
+        fontSize: 24
+      },
+      spin: true
+    })
+  }) : /*#__PURE__*/React.createElement("h3", null, eventStatus))));
 };
 export default CalendarPage;

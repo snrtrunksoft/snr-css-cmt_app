@@ -18,6 +18,9 @@
 .header1 {
     font-weight: bold;
     background-color: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .grid-header-item,
