@@ -67,7 +67,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
           const op = get({
             apiName: "UsersAPI",
             path: "/users",
-            options: { headers: { entityid: "w_123" } },
+            options: { headers: { entityid: entityId } },
             authMode: "userPool"
           });
           const { body } = await op.response;
@@ -84,7 +84,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
           const op = get({
             apiName: "ResourcesAPI",
             path: "/resources",
-            options: { headers: { entityid: "w_123" } },
+            options: { headers: { entityid: entityId } },
             authMode: "userPool"
           });
           const { body } = await op.response;
@@ -107,7 +107,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
           const op = get({
             apiName: "CalendarAPI",
             path: `/calendar/user/All/month/${dayjs().format("MMM")}/year/${dayjs().year()}`,
-            options: { headers: { entityid: "w_123" } },
+            options: { headers: { entityid: entityId } },
             authMode: "userPool"
           });
           const { body } = await op.response;
@@ -224,7 +224,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
         const op = post({
           apiName: "UsersAPI",
           path: "/users",
-          options: { headers: { entityid: "w_123" }, body: newRecord },
+          options: { headers: { entityid: entityId }, body: newRecord },
           authMode: "userPool"
         });
         const { body } = await op.response;

@@ -74,7 +74,7 @@ const CmtApp = _ref => {
             path: "/users",
             options: {
               headers: {
-                entityid: "w_123"
+                entityid: entityId
               }
             },
             authMode: "userPool"
@@ -97,7 +97,7 @@ const CmtApp = _ref => {
             path: "/resources",
             options: {
               headers: {
-                entityid: "w_123"
+                entityid: entityId
               }
             },
             authMode: "userPool"
@@ -126,7 +126,7 @@ const CmtApp = _ref => {
             path: "/calendar/user/All/month/".concat(dayjs().format("MMM"), "/year/").concat(dayjs().year()),
             options: {
               headers: {
-                entityid: "w_123"
+                entityid: entityId
               }
             },
             authMode: "userPool"
@@ -239,7 +239,7 @@ const CmtApp = _ref => {
           path: "/users",
           options: {
             headers: {
-              entityid: "w_123"
+              entityid: entityId
             },
             body: newRecord
           },
