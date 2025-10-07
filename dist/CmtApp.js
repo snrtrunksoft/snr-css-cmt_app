@@ -305,7 +305,15 @@ const CmtApp = _ref => {
     value: "Test City"
   }, "Test City"));
   const colSize = duplicateData.length <= 3 ? 24 / duplicateData.length : 6;
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      backgroundColor: "#f0f0f0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     className: "home_app"
   }, /*#__PURE__*/React.createElement(Header, {
     commentBox: commentBox,
@@ -565,8 +573,6 @@ const CmtApp = _ref => {
     resourceData: resourceData
   }) : /*#__PURE__*/React.createElement(TodosPage, {
     sampleData: sampleData
-  }), /*#__PURE__*/React.createElement(Divider, {
-    type: "horizontal"
-  }), /*#__PURE__*/React.createElement(Footer, null)));
+  })));
 };
 export default CmtApp;
