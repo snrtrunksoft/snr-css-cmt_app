@@ -286,7 +286,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
   : 6;
 
   return (
-    <div>
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',justifyContent:'space-between', backgroundColor:"#f0f0f0"}}>
       <div className='home_app'>
         <Header 
           commentBox={commentBox}
@@ -462,8 +462,8 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
           duplicateData={duplicateData} 
           resourceData={resourceData} 
           /> : <TodosPage sampleData={sampleData}/>)}
-        <Divider type='horizontal'/>
-        {<Footer/>}
+        {/* <Divider type='horizontal'/>
+        {<Footer/>} */}
       </div>
     </div>
   );
