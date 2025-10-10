@@ -13,6 +13,7 @@ import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage from "./PunchCardsPage";
+import dayjs from "dayjs";
 const NameCard = _ref => {
   var _address$;
   let {
@@ -141,14 +142,14 @@ const NameCard = _ref => {
   }
   const addressKeys = Object.keys((_address$ = address === null || address === void 0 ? void 0 : address[0]) !== null && _address$ !== void 0 ? _address$ : {});
   const handleSend = () => {
-    const addTimeForComment = new Date().toLocaleString();
+    const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
     // console.log(addTimeForComment);
     if (newComment) {
       const commentBody = [...comments, {
         "commentId": parseInt(comments[comments.length - 1].commentId) + 1 || 1,
         "author": customerName,
         "message": newComment,
-        "time": addTimeForComment
+        "date": addTimeForComment
       }];
       const updatedRecord = {
         "customerName": customerName,
@@ -186,7 +187,7 @@ const NameCard = _ref => {
             commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
             message: newComment,
             author: customerName,
-            time: addTimeForComment
+            date: addTimeForComment
           }]
         }) : prev));
       } else {
@@ -195,7 +196,7 @@ const NameCard = _ref => {
             commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
             message: newComment,
             author: customerName,
-            time: addTimeForComment
+            date: addTimeForComment
           }]
         }) : prev));
       }
@@ -206,7 +207,7 @@ const NameCard = _ref => {
             commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
             message: newComment,
             author: customerName,
-            time: addTimeForComment
+            date: addTimeForComment
           }]
         }) : prev));
       } else {
@@ -217,7 +218,7 @@ const NameCard = _ref => {
             commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
             message: newComment,
             author: customerName,
-            time: addTimeForComment
+            date: addTimeForComment
           }]
         }]);
       }
@@ -431,7 +432,7 @@ const NameCard = _ref => {
       fontSize: '11px',
       color: '#888'
     }
-  }, comment['time'])))))), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(TextArea, {
+  }, dayjs(comment['date']).format("YYYY-MM-DD HH:mm:ss"))))))), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(TextArea, {
     placeholder: "Enter your Comments",
     value: newComment,
     style: {

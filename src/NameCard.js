@@ -5,6 +5,7 @@ import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage  from "./PunchCardsPage";
+import dayjs from "dayjs";
 
 const NameCard = ({ 
     membersPage,
@@ -139,14 +140,14 @@ const NameCard = ({
     
     const addressKeys = Object.keys(address?.[0] ?? {});
     const handleSend = () => {
-        const addTimeForComment = new Date().toLocaleString();
+        const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
         // console.log(addTimeForComment);
         if(newComment){
             const commentBody = [...comments, {
                 "commentId" : parseInt(comments[comments.length - 1].commentId) + 1 || 1,
                 "author" : customerName,
                 "message" : newComment,
-                "time" : addTimeForComment
+                "date" : addTimeForComment
             }]
             const updatedRecord = {
                 "customerName" : customerName,
@@ -188,7 +189,7 @@ const NameCard = ({
                                 commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
                                 message: newComment,
                                 author: customerName,
-                                time: addTimeForComment
+                                date: addTimeForComment
                             }]
                         } : prev)
                 );
@@ -201,7 +202,7 @@ const NameCard = ({
                                 commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
                                 message: newComment,
                                 author: customerName,
-                                time: addTimeForComment
+                                date: addTimeForComment
                             }]
                         } : prev)
                 );
@@ -217,7 +218,7 @@ const NameCard = ({
                                 commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
                                 message: newComment,
                                 author: customerName,
-                                time: addTimeForComment
+                                date: addTimeForComment
                             }] }
                             : prev
                     )
@@ -229,7 +230,7 @@ const NameCard = ({
                         commentId:parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
                         message:newComment,
                         author:customerName,
-                        time: addTimeForComment
+                        date: addTimeForComment
                     }] }
                 ]);
             }
@@ -398,7 +399,7 @@ const NameCard = ({
                                                 fontSize: '11px',
                                                 color: '#888'
                                             }}>
-                                                {comment['time']}
+                                                {dayjs(comment['date']).format("YYYY-MM-DD HH:mm:ss")}
                                             </div>
                                             </Card>
                                     </Badge.Ribbon>
