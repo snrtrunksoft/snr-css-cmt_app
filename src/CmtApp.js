@@ -58,73 +58,98 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
   const [ sampleData, setSampleData ] = useState([]);
 
   useEffect(() => {
-    if (membersPage) {
-      console.log("Amplify config11:", Amplify.getConfig());
-      console.log("initial loading, fetching data from the Database22");
-      const fetchingData = async () => {
-        try {
-          // Fetch members using Amplify get
-          const op = get({
-            apiName: "UsersAPI",
-            path: "/users",
-            options: { headers: { entityid: entityId } },
-            authMode: "userPool"
-          });
+  const showErrorAlert = (message) => {
+    alert(message); // simple alert, you can replace with Modal/Toast
+  };
+
+  if (membersPage) {
+    console.log("Amplify config11:", Amplify.getConfig());
+    console.log("initial loading, fetching data from the Database22");
+
+    const fetchingData = async () => {
+      // Fetch Members
+      try {
+        const op = get({
+          apiName: "UsersAPI",
+          path: "/users",
+          options: { headers: { entityid: entityId } },
+          authMode: "userPool",
+        });
+
+        if (op.response.status === 404) {
+          showErrorAlert("Fetching members failed: 404 Not Found");
+        } else {
           const { body } = await op.response;
           const fetchedData = await body.json();
           console.log("fetching Data from database is complete");
           console.log("Fetched Data:", fetchedData);
           setData(fetchedData);
-        } catch (error) {
-          console.log("fail in fetching Data");
-          console.error("Error while fetching Data", error);
         }
-        try {
-          // Fetch resources using Amplify get
-          const op = get({
-            apiName: "ResourcesAPI",
-            path: "/resources",
-            options: { headers: { entityid: entityId } },
-            authMode: "userPool"
-          });
+      } catch (error) {
+        console.log("fail in fetching Data");
+        console.error("Error while fetching Data", error);
+        showErrorAlert("Fetching members failed due to network/error");
+      }
+
+      // Fetch Resources
+      try {
+        const op = get({
+          apiName: "ResourcesAPI",
+          path: "/resources",
+          options: { headers: { entityid: entityId } },
+          authMode: "userPool",
+        });
+
+        if (op.response.status === 404) {
+          showErrorAlert("Fetching resources failed: 404 Not Found");
+        } else {
           const { body } = await op.response;
           const fetchedData = await body.json();
           console.log("fetching Resource Data from database is complete");
           console.log("Fetched Resource Data:", fetchedData);
           setResourceData1(fetchedData);
-        } catch (error) {
-          console.log("fail in fetching resource Data");
-          console.error("Error while fetching resource Data", error);
-        } finally {
-          setIsLoading(false);
         }
-      };
-      fetchingData();
-    } else if (openCalendarPage) {
-      const fetchCalendar = async () => {
-        try {
-          // Fetch calendar using Amplify get
-          const op = get({
-            apiName: "CalendarAPI",
-            path: `/calendar/user/All/month/${dayjs().format("MMM")}/year/${dayjs().year()}`,
-            options: { headers: { entityid: entityId } },
-            authMode: "userPool"
-          });
+      } catch (error) {
+        console.log("fail in fetching resource Data");
+        console.error("Error while fetching resource Data", error);
+        showErrorAlert("Fetching resources failed due to network/error");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchingData();
+  } else if (openCalendarPage) {
+    const fetchCalendar = async () => {
+      try {
+        const op = get({
+          apiName: "CalendarAPI",
+          path: `/calendar/user/All/month/${dayjs().format("MMM")}/year/${dayjs().year()}`,
+          options: { headers: { entityid: entityId } },
+          authMode: "userPool",
+        });
+
+        if (op.response.status === 404) {
+          showErrorAlert("Fetching calendar data failed: 404 Not Found");
+        } else {
           const { body } = await op.response;
           const fetchedCalendarData = await body.json();
           console.log("fetching Calendar Data from database is complete");
           console.log("Fetched Calendar Data:", fetchedCalendarData);
           setSampleData(fetchedCalendarData);
-        } catch (error) {
-          console.log("fail in fetching Calendar Data");
-          console.error("Error while fetching Calendar Data", error);
-        } finally {
-          setIsLoading(false);
         }
-      };
-      fetchCalendar();
-    }
-  }, [membersPage, openCalendarPage]);
+      } catch (error) {
+        console.log("fail in fetching Calendar Data");
+        console.error("Error while fetching Calendar Data", error);
+        showErrorAlert("Fetching calendar data failed due to network/error");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCalendar();
+  }
+}, [membersPage, openCalendarPage]);
 
   useEffect(() => {
     setResourceData(resourceData1);
