@@ -63,12 +63,15 @@ const CmtApp = _ref => {
   const [data, setData] = useState([]);
   const [sampleData, setSampleData] = useState([]);
   useEffect(() => {
+    const showErrorAlert = message => {
+      alert(message); // simple alert, you can replace with Modal/Toast
+    };
     if (membersPage) {
       console.log("Amplify config11:", Amplify.getConfig());
       console.log("initial loading, fetching data from the Database22");
       const fetchingData = async () => {
+        // Fetch Members
         try {
-          // Fetch members using Amplify get
           const op = get({
             apiName: "UsersAPI",
             path: "/users",
@@ -79,19 +82,25 @@ const CmtApp = _ref => {
             },
             authMode: "userPool"
           });
-          const {
-            body
-          } = await op.response;
-          const fetchedData = await body.json();
-          console.log("fetching Data from database is complete");
-          console.log("Fetched Data:", fetchedData);
-          setData(fetchedData);
+          if (op.response.status === 404) {
+            showErrorAlert("Fetching members failed: 404 Not Found");
+          } else {
+            const {
+              body
+            } = await op.response;
+            const fetchedData = await body.json();
+            console.log("fetching Data from database is complete");
+            console.log("Fetched Data:", fetchedData);
+            setData(fetchedData);
+          }
         } catch (error) {
           console.log("fail in fetching Data");
           console.error("Error while fetching Data", error);
+          showErrorAlert("Fetching members failed due to network/error");
         }
+
+        // Fetch Resources
         try {
-          // Fetch resources using Amplify get
           const op = get({
             apiName: "ResourcesAPI",
             path: "/resources",
@@ -102,16 +111,21 @@ const CmtApp = _ref => {
             },
             authMode: "userPool"
           });
-          const {
-            body
-          } = await op.response;
-          const fetchedData = await body.json();
-          console.log("fetching Resource Data from database is complete");
-          console.log("Fetched Resource Data:", fetchedData);
-          setResourceData1(fetchedData);
+          if (op.response.status === 404) {
+            showErrorAlert("Fetching resources failed: 404 Not Found");
+          } else {
+            const {
+              body
+            } = await op.response;
+            const fetchedData = await body.json();
+            console.log("fetching Resource Data from database is complete");
+            console.log("Fetched Resource Data:", fetchedData);
+            setResourceData1(fetchedData);
+          }
         } catch (error) {
           console.log("fail in fetching resource Data");
           console.error("Error while fetching resource Data", error);
+          showErrorAlert("Fetching resources failed due to network/error");
         } finally {
           setIsLoading(false);
         }
@@ -120,7 +134,6 @@ const CmtApp = _ref => {
     } else if (openCalendarPage) {
       const fetchCalendar = async () => {
         try {
-          // Fetch calendar using Amplify get
           const op = get({
             apiName: "CalendarAPI",
             path: "/calendar/user/All/month/".concat(dayjs().format("MMM"), "/year/").concat(dayjs().year()),
@@ -131,16 +144,21 @@ const CmtApp = _ref => {
             },
             authMode: "userPool"
           });
-          const {
-            body
-          } = await op.response;
-          const fetchedCalendarData = await body.json();
-          console.log("fetching Calendar Data from database is complete");
-          console.log("Fetched Calendar Data:", fetchedCalendarData);
-          setSampleData(fetchedCalendarData);
+          if (op.response.status === 404) {
+            showErrorAlert("Fetching calendar data failed: 404 Not Found");
+          } else {
+            const {
+              body
+            } = await op.response;
+            const fetchedCalendarData = await body.json();
+            console.log("fetching Calendar Data from database is complete");
+            console.log("Fetched Calendar Data:", fetchedCalendarData);
+            setSampleData(fetchedCalendarData);
+          }
         } catch (error) {
           console.log("fail in fetching Calendar Data");
           console.error("Error while fetching Calendar Data", error);
+          showErrorAlert("Fetching calendar data failed due to network/error");
         } finally {
           setIsLoading(false);
         }
