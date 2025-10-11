@@ -77,7 +77,9 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
     useEffect(() => {
           setIsLoading(false);
     },[]);
+
     console.log("Resource:",resourceData);
+
     return(
     <div className="resource-app">
         {isLoading ? (<h3><LoadingOutlined/> Loading....</h3>) : 
@@ -85,7 +87,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
             {dataView === "table" ? 
                 <div className="table-wrapper">
                     {/* Header Row */}
-                    <Row className="table-row table-header" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
+                    <Row className="table-row table-header" >
                         <Col span={3} className="table-cell">ID</Col>
                         <Col span={5} className="table-cell">Name</Col>
                         <Col span={10} className="table-cell">Address</Col>
@@ -94,7 +96,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
 
                     {/* Data Rows */}
                     {resourceData.map((item, index) => (
-                        <Row key={index} className="table-row" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
+                        <Row key={index} className="table-row">
                             <Col span={3} className="table-cell">{item.resourceId}</Col>
                             <Col span={5} className="table-cell">{item.resourceName}</Col>
                             <Col span={10} className="table-cell">
@@ -118,7 +120,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
                         </Col>
                     </Row>
             </div> : 
-                <Row className="resource-grid" gutter={[16,16]}>
+                <Row className={`resource-grid ${screens.xs ? "mobile-grid-alignment" : "web-grid-alignment"}`} gutter={[16,16]}>
                     {resourceData.length !== 0 ? resourceData.map((item)=>(
                         <Col key={item.resourceId}
                             xs={20} 
