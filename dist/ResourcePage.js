@@ -89,10 +89,7 @@ const ResourcePage = _ref => {
   }, isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading....") : /*#__PURE__*/React.createElement(React.Fragment, null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
     className: "table-wrapper"
   }, /*#__PURE__*/React.createElement(Row, {
-    className: "table-row table-header",
-    style: {
-      width: screens.xl || screens.lg ? '60vw' : ""
-    }
+    className: "table-row table-header"
   }, /*#__PURE__*/React.createElement(Col, {
     span: 3,
     className: "table-cell"
@@ -109,10 +106,7 @@ const ResourcePage = _ref => {
     var _item$address, _item$address2, _item$address3, _item$address4, _item$address5, _item$address6;
     return /*#__PURE__*/React.createElement(Row, {
       key: index,
-      className: "table-row",
-      style: {
-        width: screens.xl || screens.lg ? '60vw' : ""
-      }
+      className: "table-row"
     }, /*#__PURE__*/React.createElement(Col, {
       span: 3,
       className: "table-cell"
@@ -139,7 +133,7 @@ const ResourcePage = _ref => {
     },
     onClick: () => setAddNewResourceModal(true)
   }, "+ Add New Record"))))) : /*#__PURE__*/React.createElement(Row, {
-    className: "resource-grid",
+    className: "resource-grid ".concat(screens.xs ? "mobile-grid-alignment" : "web-grid-alignment"),
     gutter: [16, 16]
   }, resourceData.length !== 0 ? resourceData.map(item => /*#__PURE__*/React.createElement(Col, {
     key: item.resourceId,
