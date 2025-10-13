@@ -21,7 +21,9 @@ root.render(/*#__PURE__*/React.createElement(React.StrictMode, null, /*#__PURE__
   element: /*#__PURE__*/React.createElement(LoginPage, null)
 }), /*#__PURE__*/React.createElement(Route, {
   path: "/*",
-  element: /*#__PURE__*/React.createElement(ProtectedRoute, null, /*#__PURE__*/React.createElement(CmtApp, null))
+  element: /*#__PURE__*/React.createElement(ProtectedRoute, null, /*#__PURE__*/React.createElement(CmtApp, {
+    entityId: "w_123"
+  }))
 })))));
 
 // If you want to start measuring performance in your app, pass a function

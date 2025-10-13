@@ -403,7 +403,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
           <>
             {dataView === "table" ? 
               <div className='table-wrapper'>
-                <Row className="table-row table-header" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
+                <Row className="table-row table-header">
                   <Col span={3} className="table-cell">ID</Col>
                   <Col span={5} className="table-cell">Name</Col>
                   <Col span={10} className="table-cell">Address</Col>

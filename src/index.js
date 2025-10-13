@@ -26,7 +26,7 @@ root.render(
           path="/*"
           element={
             <ProtectedRoute>
-              <CmtApp />
+              <CmtApp entityId={"w_123"}/>
             </ProtectedRoute>
           }
         />
