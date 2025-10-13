@@ -33,12 +33,20 @@ const NameCard = ({
     const screens = useBreakpoint();
 
     const [defaultValues] = useState({
-        customerId : customerId,
-        customerName: customerName,
-        phoneNumber: phoneNumber,
-        status: status,
-        address: { ...address[0] }
-    })
+        customerId: customerId || "",
+        customerName: customerName || "",
+        phoneNumber: phoneNumber || "",
+        status: status || "",
+        address: {
+            houseNo: address?.[0]?.houseNo || "",
+            street1: address?.[0]?.street1 || "",
+            street2: address?.[0]?.street2 || "",
+            city: address?.[0]?.city || "",
+            state: address?.[0]?.state || "",
+            country: address?.[0]?.country || "",
+            pincode: address?.[0]?.pincode || "",
+        },
+    });
 
     useEffect(() => {
         form.setFieldsValue(defaultValues);
@@ -277,16 +285,25 @@ const NameCard = ({
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
                     }}>Phone : { phoneNumber }</p>
-                {address.length > 0 && (
-                    <p style={{
-                        width: '100%',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                    }}>
-                        Address: {address.map(prev => prev.city).join(', ')}, {address.map(prev => prev.state).join(', ')}, {address.map(prev => prev.country).join(', ')}.
+                {Array.isArray(address) && address.length > 0 && (
+                    <p
+                        style={{
+                        width: "100%",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        margin: 0,
+                        }}
+                    >
+                        Address:&nbsp;
+                        {address
+                        .map(
+                            (a) =>
+                            [a.city, a.state, a.country].filter(Boolean).join(", ")
+                        )
+                        .join(" | ")}
                     </p>
-                )}
+                    )}
                 <p style={{
                         width: '100%',
                         overflow: 'hidden',
