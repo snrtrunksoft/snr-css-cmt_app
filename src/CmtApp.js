@@ -357,7 +357,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
       </Row>
       {isLoading ? (<h3><LoadingOutlined/> Loading...</h3>) :
         (membersPage) ? (
-          <div>
+          <>
             {dataView === "table" ? 
               <div className='table-wrapper'>
                 <Row className="table-row table-header" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
@@ -366,28 +366,37 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
                   <Col span={10} className="table-cell">Address</Col>
                   <Col span={6} className="table-cell">Phone Number</Col>
                 </Row>
+
                 {/* Data Rows */}
                 {duplicateData.map((item, index) => (
-                  <Row key={index} className="table-row" style={{width:screens.xl || screens.lg ? '60vw' : ""}}>
+                  <Row key={index} className="table-row">
                     <Col span={3} className="table-cell">{item.id}</Col>
                     <Col span={5} className="table-cell">{item.customerName}</Col>
                     <Col span={10} className="table-cell">
-                      {`${item.address[0].houseNo}, ${item.address[0].street1}, ${item.address[0].street2}, ${item.address[0].city}, ${item.address[0].state}, ${item.address[0].country}`}
+                      {[
+                        item.address?.[0]?.houseNo,
+                        item.address?.[0]?.street1,
+                        item.address?.[0]?.street2,
+                        item.address?.[0]?.city,
+                        item.address?.[0]?.state,
+                        item.address?.[0]?.country
+                      ].filter(Boolean).join(', ')}
                     </Col>
                     <Col span={6} className="table-cell">{item.phoneNumber}</Col>
                   </Row>
                 ))}
-                {/* Add New Record */}
+
+                {/* Add New Record Button */}
                 <Row className="table-row add-record-row">
                   <Col span={24} style={{margin:'10px'}}>
                     <center>
-                        <Button style={{fontSize:'18px'}} onClick={() => setIsAddNewNameCardModalOpen(true)}>+ Add New Record</Button>
+                      <Button style={{fontSize:'18px'}} onClick={() => setIsAddNewNameCardModalOpen(true)}>+ Add New Record</Button>
                     </center>
-                    </Col>
+                  </Col>
                 </Row>
               </div>
                : (
-              <Row gutter={[16, 16]} className="home-grid">
+              <Row gutter={[16, 16]} className={`home-grid ${screens.xs ? "mobile-grid-alignment" : "web-grid-alignment"}`}>
                 {duplicateData.length !== 0 ? duplicateData.map((item) => (
                   <Col key={item.id} 
                     xs={20} 
@@ -470,7 +479,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
                 membersPage={true}
                 />
             </Modal>
-          </div>
+          </>
         ) : (resourcePage ? 
         <ResourcePage 
           resourceData={resourceData}
