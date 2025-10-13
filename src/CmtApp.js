@@ -162,27 +162,60 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
     setDuplicateData(data);
   },[data]);
 
-  const statusCount = data.reduce((acc,item) => {
-    acc[item.address[0].city] = (acc[item.address[0].city] || 0) + 1;
+  const statusCount = data.reduce((acc, item) => {
+    const city = item.address?.[0]?.city; // optional chaining
+    if (city) {
+      acc[city] = (acc[city] || 0) + 1;
+    }
     return acc;
   }, {});
 
-  if(!("Hyd" in statusCount)){
-    statusCount["Hyd"] = 0;
-  };
-  if(!("HYD" in statusCount)){
-    statusCount["HYD"] = 0;
-  };
-  if(!("Test City" in statusCount)){
-    statusCount["Test City"] = 0;
-  };
+  // console.log(statusCout);
+  // Get unique cities dynamically from your data
+  const citySet = new Set();
+
+  data.forEach((item) => {
+    if (Array.isArray(item.address) && item.address.length > 0) {
+      item.address.forEach((addr) => {
+        if (addr.city) {
+          citySet.add(addr.city.trim());
+        }
+      });
+    }
+  });
+
+  // Convert to object form for legendLabels
+  const legendLabels = Array.from(citySet).reduce((acc, city) => {
+    acc[city] = city; // or customize label names if needed
+    return acc;
+  }, {});
+
+  const uniqueCities = Array.from(
+    new Set(
+      data
+        .flatMap(item => 
+          (item.address || []).map(addr => addr.city?.trim()).filter(Boolean)
+        )
+    )
+  );
+
+  // console.log(legendLabels);
+  // if(!("Hyd" in statusCount)){
+  //   statusCount["Hyd"] = 0;
+  // };
+  // if(!("HYD" in statusCount)){
+  //   statusCount["HYD"] = 0;
+  // };
+  // if(!("Test City" in statusCount)){
+  //   statusCount["Test City"] = 0;
+  // };
 
 
-  const legendLabels = {
-    "Hyd": "Hyd",
-    "HYD": "HYD",
-    "Test City": "Test City"
-  };
+  // const legendLabels = {
+  //   "Hyd": "Hyd",
+  //   "HYD": "HYD",
+  //   "Test City": "Test City"
+  // };
   
   const graphData = {
     labels: Object.keys(statusCount),
@@ -276,9 +309,13 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
         // setResourceData(resourceData1);
         setShowDashboard(false);
       } else {
-        const filteredRecords = data.filter(prev => prev.address.some(prev1 => prev1.city === value));
-        setDuplicateData(filteredRecords);
-      };
+      const filteredRecords = data.filter(
+        (item) =>
+          Array.isArray(item.address) &&
+          item.address.some((addr) => addr.city === value)
+      );
+      setDuplicateData(filteredRecords);
+    }
   };
 
   const handleSearchText = (value) => {
@@ -299,10 +336,16 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
       style={{borderRadius:'5px',padding:'5px',margin:'0px 10px',outline:'none',fontSize:'15px'}}
       onChange={(e) => handleStatusSelection(e.target.value)}
     >
-      <option value="All">Select City</option>
+      {/* <option value="All">Select City</option>
       <option value="Hyd">Hyd</option>
       <option value="HYD">HYD</option>
-      <option value="Test City">Test City</option>
+      <option value="Test City">Test City</option> */}
+      <option value="All">Select City</option>
+      {uniqueCities.map((city, index) => (
+        <option key={index} value={city}>
+          {city}
+        </option>
+      ))}
     </select>
   );
 
@@ -436,7 +479,21 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
               </Row>)}
             <Divider type='horizontal'/>
             {showDashboard && <div style={{width:"100%"}}>
-              <Row className='status-track-icons'>
+              <Row className="status-track-icons">
+                {Object.entries(statusCount).map(([city, count], index) => {
+                  // generate a soft color palette dynamically
+                  const colors = ['#FFB6C1', '#ADD8E6', '#90EE90', '#FFD580', '#D8BFD8', '#98FB98'];
+                  const bgColor = colors[index % colors.length];
+
+                  return (
+                    <Col key={city} className="status-icons">
+                      <span style={{ backgroundColor: bgColor }}>{count}</span>
+                      <h3>{city}</h3>
+                    </Col>
+                  );
+                })}
+              </Row>
+              {/* <Row className='status-track-icons'>
                   <Col className='status-icons'>
                     <span style={{backgroundColor:'pink'}}> {statusCount["HYD"]} </span>
                     <h3>HYD</h3>
@@ -449,7 +506,7 @@ const CmtApp = ({cartItems, setCartItems, setSelectedApp, entityId }) => {
                     <span style={{backgroundColor:'lightgreen'}}> {statusCount["Test City"]} </span>
                     <h3>Test City</h3>
                   </Col>
-              </Row>
+              </Row> */}
               <Col style={{paddingTop:'0px'}}>
                   <Divider type='horizontal' ></Divider>
               </Col>

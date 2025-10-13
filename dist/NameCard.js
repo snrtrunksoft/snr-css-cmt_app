@@ -15,7 +15,7 @@ import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import PunchCardsPage from "./PunchCardsPage";
 import dayjs from "dayjs";
 const NameCard = _ref => {
-  var _address$;
+  var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7, _address$8;
   let {
     membersPage,
     data,
@@ -43,11 +43,19 @@ const NameCard = _ref => {
   const [form] = Form.useForm();
   const screens = useBreakpoint();
   const [defaultValues] = useState({
-    customerId: customerId,
-    customerName: customerName,
-    phoneNumber: phoneNumber,
-    status: status,
-    address: _objectSpread({}, address[0])
+    customerId: customerId || "",
+    customerName: customerName || "",
+    phoneNumber: phoneNumber || "",
+    status: status || "",
+    address: {
+      houseNo: (address === null || address === void 0 || (_address$ = address[0]) === null || _address$ === void 0 ? void 0 : _address$.houseNo) || "",
+      street1: (address === null || address === void 0 || (_address$2 = address[0]) === null || _address$2 === void 0 ? void 0 : _address$2.street1) || "",
+      street2: (address === null || address === void 0 || (_address$3 = address[0]) === null || _address$3 === void 0 ? void 0 : _address$3.street2) || "",
+      city: (address === null || address === void 0 || (_address$4 = address[0]) === null || _address$4 === void 0 ? void 0 : _address$4.city) || "",
+      state: (address === null || address === void 0 || (_address$5 = address[0]) === null || _address$5 === void 0 ? void 0 : _address$5.state) || "",
+      country: (address === null || address === void 0 || (_address$6 = address[0]) === null || _address$6 === void 0 ? void 0 : _address$6.country) || "",
+      pincode: (address === null || address === void 0 || (_address$7 = address[0]) === null || _address$7 === void 0 ? void 0 : _address$7.pincode) || ""
+    }
   });
   useEffect(() => {
     form.setFieldsValue(defaultValues);
@@ -140,7 +148,7 @@ const NameCard = _ref => {
       });
     }
   }
-  const addressKeys = Object.keys((_address$ = address === null || address === void 0 ? void 0 : address[0]) !== null && _address$ !== void 0 ? _address$ : {});
+  const addressKeys = Object.keys((_address$8 = address === null || address === void 0 ? void 0 : address[0]) !== null && _address$8 !== void 0 ? _address$8 : {});
   const handleSend = () => {
     const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
     // console.log(addTimeForComment);
@@ -276,14 +284,15 @@ const NameCard = _ref => {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     }
-  }, "Phone : ", phoneNumber), address.length > 0 && /*#__PURE__*/React.createElement("p", {
+  }, "Phone : ", phoneNumber), Array.isArray(address) && address.length > 0 && /*#__PURE__*/React.createElement("p", {
     style: {
-      width: '100%',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap'
+      width: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      margin: 0
     }
-  }, "Address: ", address.map(prev => prev.city).join(', '), ", ", address.map(prev => prev.state).join(', '), ", ", address.map(prev => prev.country).join(', '), "."), /*#__PURE__*/React.createElement("p", {
+  }, "Address:\xA0", address.map(a => [a.city, a.state, a.country].filter(Boolean).join(", ")).join(" | ")), /*#__PURE__*/React.createElement("p", {
     style: {
       width: '100%',
       overflow: 'hidden',

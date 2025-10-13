@@ -175,26 +175,54 @@ const CmtApp = _ref => {
     setDuplicateData(data);
   }, [data]);
   const statusCount = data.reduce((acc, item) => {
-    acc[item.address[0].city] = (acc[item.address[0].city] || 0) + 1;
+    var _item$address;
+    const city = (_item$address = item.address) === null || _item$address === void 0 || (_item$address = _item$address[0]) === null || _item$address === void 0 ? void 0 : _item$address.city; // optional chaining
+    if (city) {
+      acc[city] = (acc[city] || 0) + 1;
+    }
     return acc;
   }, {});
-  if (!("Hyd" in statusCount)) {
-    statusCount["Hyd"] = 0;
-  }
-  ;
-  if (!("HYD" in statusCount)) {
-    statusCount["HYD"] = 0;
-  }
-  ;
-  if (!("Test City" in statusCount)) {
-    statusCount["Test City"] = 0;
-  }
-  ;
-  const legendLabels = {
-    "Hyd": "Hyd",
-    "HYD": "HYD",
-    "Test City": "Test City"
-  };
+
+  // console.log(statusCout);
+  // Get unique cities dynamically from your data
+  const citySet = new Set();
+  data.forEach(item => {
+    if (Array.isArray(item.address) && item.address.length > 0) {
+      item.address.forEach(addr => {
+        if (addr.city) {
+          citySet.add(addr.city.trim());
+        }
+      });
+    }
+  });
+
+  // Convert to object form for legendLabels
+  const legendLabels = Array.from(citySet).reduce((acc, city) => {
+    acc[city] = city; // or customize label names if needed
+    return acc;
+  }, {});
+  const uniqueCities = Array.from(new Set(data.flatMap(item => (item.address || []).map(addr => {
+    var _addr$city;
+    return (_addr$city = addr.city) === null || _addr$city === void 0 ? void 0 : _addr$city.trim();
+  }).filter(Boolean))));
+
+  // console.log(legendLabels);
+  // if(!("Hyd" in statusCount)){
+  //   statusCount["Hyd"] = 0;
+  // };
+  // if(!("HYD" in statusCount)){
+  //   statusCount["HYD"] = 0;
+  // };
+  // if(!("Test City" in statusCount)){
+  //   statusCount["Test City"] = 0;
+  // };
+
+  // const legendLabels = {
+  //   "Hyd": "Hyd",
+  //   "HYD": "HYD",
+  //   "Test City": "Test City"
+  // };
+
   const graphData = {
     labels: Object.keys(statusCount),
     datasets: [{
@@ -287,10 +315,9 @@ const CmtApp = _ref => {
       // setResourceData(resourceData1);
       setShowDashboard(false);
     } else {
-      const filteredRecords = data.filter(prev => prev.address.some(prev1 => prev1.city === value));
+      const filteredRecords = data.filter(item => Array.isArray(item.address) && item.address.some(addr => addr.city === value));
       setDuplicateData(filteredRecords);
     }
-    ;
   };
   const handleSearchText = value => {
     setSearchText(value);
@@ -315,13 +342,10 @@ const CmtApp = _ref => {
     onChange: e => handleStatusSelection(e.target.value)
   }, /*#__PURE__*/React.createElement("option", {
     value: "All"
-  }, "Select City"), /*#__PURE__*/React.createElement("option", {
-    value: "Hyd"
-  }, "Hyd"), /*#__PURE__*/React.createElement("option", {
-    value: "HYD"
-  }, "HYD"), /*#__PURE__*/React.createElement("option", {
-    value: "Test City"
-  }, "Test City"));
+  }, "Select City"), uniqueCities.map((city, index) => /*#__PURE__*/React.createElement("option", {
+    key: index,
+    value: city
+  }, city)));
   const colSize = duplicateData.length <= 3 ? 24 / duplicateData.length : 6;
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -445,7 +469,7 @@ const CmtApp = _ref => {
     span: 6,
     className: "table-cell"
   }, "Phone Number")), duplicateData.map((item, index) => {
-    var _item$address, _item$address2, _item$address3, _item$address4, _item$address5, _item$address6;
+    var _item$address2, _item$address3, _item$address4, _item$address5, _item$address6, _item$address7;
     return /*#__PURE__*/React.createElement(Row, {
       key: index,
       className: "table-row"
@@ -458,7 +482,7 @@ const CmtApp = _ref => {
     }, item.customerName), /*#__PURE__*/React.createElement(Col, {
       span: 10,
       className: "table-cell"
-    }, [(_item$address = item.address) === null || _item$address === void 0 || (_item$address = _item$address[0]) === null || _item$address === void 0 ? void 0 : _item$address.houseNo, (_item$address2 = item.address) === null || _item$address2 === void 0 || (_item$address2 = _item$address2[0]) === null || _item$address2 === void 0 ? void 0 : _item$address2.street1, (_item$address3 = item.address) === null || _item$address3 === void 0 || (_item$address3 = _item$address3[0]) === null || _item$address3 === void 0 ? void 0 : _item$address3.street2, (_item$address4 = item.address) === null || _item$address4 === void 0 || (_item$address4 = _item$address4[0]) === null || _item$address4 === void 0 ? void 0 : _item$address4.city, (_item$address5 = item.address) === null || _item$address5 === void 0 || (_item$address5 = _item$address5[0]) === null || _item$address5 === void 0 ? void 0 : _item$address5.state, (_item$address6 = item.address) === null || _item$address6 === void 0 || (_item$address6 = _item$address6[0]) === null || _item$address6 === void 0 ? void 0 : _item$address6.country].filter(Boolean).join(', ')), /*#__PURE__*/React.createElement(Col, {
+    }, [(_item$address2 = item.address) === null || _item$address2 === void 0 || (_item$address2 = _item$address2[0]) === null || _item$address2 === void 0 ? void 0 : _item$address2.houseNo, (_item$address3 = item.address) === null || _item$address3 === void 0 || (_item$address3 = _item$address3[0]) === null || _item$address3 === void 0 ? void 0 : _item$address3.street1, (_item$address4 = item.address) === null || _item$address4 === void 0 || (_item$address4 = _item$address4[0]) === null || _item$address4 === void 0 ? void 0 : _item$address4.street2, (_item$address5 = item.address) === null || _item$address5 === void 0 || (_item$address5 = _item$address5[0]) === null || _item$address5 === void 0 ? void 0 : _item$address5.city, (_item$address6 = item.address) === null || _item$address6 === void 0 || (_item$address6 = _item$address6[0]) === null || _item$address6 === void 0 ? void 0 : _item$address6.state, (_item$address7 = item.address) === null || _item$address7 === void 0 || (_item$address7 = _item$address7[0]) === null || _item$address7 === void 0 ? void 0 : _item$address7.country].filter(Boolean).join(', ')), /*#__PURE__*/React.createElement(Col, {
       span: 6,
       className: "table-cell"
     }, item.phoneNumber));
@@ -523,25 +547,20 @@ const CmtApp = _ref => {
     }
   }, /*#__PURE__*/React.createElement(Row, {
     className: "status-track-icons"
-  }, /*#__PURE__*/React.createElement(Col, {
-    className: "status-icons"
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      backgroundColor: 'pink'
-    }
-  }, " ", statusCount["HYD"], " "), /*#__PURE__*/React.createElement("h3", null, "HYD")), /*#__PURE__*/React.createElement(Col, {
-    className: "status-icons"
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      backgroundColor: 'lightBlue'
-    }
-  }, " ", statusCount["Hyd"], " "), /*#__PURE__*/React.createElement("h3", null, "Hyd")), /*#__PURE__*/React.createElement(Col, {
-    className: "status-icons"
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      backgroundColor: 'lightgreen'
-    }
-  }, " ", statusCount["Test City"], " "), /*#__PURE__*/React.createElement("h3", null, "Test City"))), /*#__PURE__*/React.createElement(Col, {
+  }, Object.entries(statusCount).map((_ref2, index) => {
+    let [city, count] = _ref2;
+    // generate a soft color palette dynamically
+    const colors = ['#FFB6C1', '#ADD8E6', '#90EE90', '#FFD580', '#D8BFD8', '#98FB98'];
+    const bgColor = colors[index % colors.length];
+    return /*#__PURE__*/React.createElement(Col, {
+      key: city,
+      className: "status-icons"
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        backgroundColor: bgColor
+      }
+    }, count), /*#__PURE__*/React.createElement("h3", null, city));
+  })), /*#__PURE__*/React.createElement(Col, {
     style: {
       paddingTop: '0px'
     }
