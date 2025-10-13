@@ -452,10 +452,7 @@ const CmtApp = _ref => {
   }, "Status:"), " ", dropDownList)), isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : membersPage ? /*#__PURE__*/React.createElement(React.Fragment, null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
     className: "table-wrapper"
   }, /*#__PURE__*/React.createElement(Row, {
-    className: "table-row table-header",
-    style: {
-      width: screens.xl || screens.lg ? '60vw' : ""
-    }
+    className: "table-row table-header"
   }, /*#__PURE__*/React.createElement(Col, {
     span: 3,
     className: "table-cell"
