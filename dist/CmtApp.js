@@ -9,6 +9,7 @@ import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
 import { Amplify } from 'aws-amplify';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 // Local component imports
 import Header from './Header';
@@ -16,12 +17,12 @@ import Footer from './Footer';
 import NameCard from './NameCard';
 import ResourcePage from './ResourcePage';
 import TodosPage from './TodosPage';
-import AddNewNameCard from './AddNewNameCard';
+import AddNewUser from './AddNewUser';
 import CalendarPage from './CalendarPage';
 import './CmtApp.css';
 
-// Amplify API imports
-import { get, post } from "aws-amplify/api";
+// APIUtil imports
+import { getMembers, getResources, getCalendar, createMember } from "./api/APIUtil";
 import dayjs from 'dayjs';
 const {
   useBreakpoint
@@ -31,23 +32,42 @@ const {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 const CmtApp = _ref => {
   let {
-    cartItems,
-    setCartItems,
-    setSelectedApp,
-    entityId
+    setSelectedApp
   } = _ref;
+  const [entityId, setEntityId] = useState(null);
+
+  // Resolve entityId (localStorage -> token claims)
+  useEffect(() => {
+    const resolveEntityId = async () => {
+      let id = null;
+      try {
+        id = localStorage.getItem('entityId') || null;
+      } catch (_) {}
+      if (!id) {
+        try {
+          var _session$tokens, _session$tokens2, _session$tokens3, _session$tokens4, _session$tokens5, _session$tokens6, _session$tokens7, _session$tokens8;
+          const session = await fetchAuthSession();
+          id =
+          // Prefer explicit tenantId if present
+          (session === null || session === void 0 || (_session$tokens = session.tokens) === null || _session$tokens === void 0 || (_session$tokens = _session$tokens.idToken) === null || _session$tokens === void 0 || (_session$tokens = _session$tokens.payload) === null || _session$tokens === void 0 ? void 0 : _session$tokens['tenantId']) || (session === null || session === void 0 || (_session$tokens2 = session.tokens) === null || _session$tokens2 === void 0 || (_session$tokens2 = _session$tokens2.accessToken) === null || _session$tokens2 === void 0 || (_session$tokens2 = _session$tokens2.payload) === null || _session$tokens2 === void 0 ? void 0 : _session$tokens2['tenantId']) || (// Then try custom attributes (both casings)
+          session === null || session === void 0 || (_session$tokens3 = session.tokens) === null || _session$tokens3 === void 0 || (_session$tokens3 = _session$tokens3.idToken) === null || _session$tokens3 === void 0 || (_session$tokens3 = _session$tokens3.payload) === null || _session$tokens3 === void 0 ? void 0 : _session$tokens3['custom:entityid']) || (session === null || session === void 0 || (_session$tokens4 = session.tokens) === null || _session$tokens4 === void 0 || (_session$tokens4 = _session$tokens4.accessToken) === null || _session$tokens4 === void 0 || (_session$tokens4 = _session$tokens4.payload) === null || _session$tokens4 === void 0 ? void 0 : _session$tokens4['custom:entityid']) || (session === null || session === void 0 || (_session$tokens5 = session.tokens) === null || _session$tokens5 === void 0 || (_session$tokens5 = _session$tokens5.idToken) === null || _session$tokens5 === void 0 || (_session$tokens5 = _session$tokens5.payload) === null || _session$tokens5 === void 0 ? void 0 : _session$tokens5['custom:entityId']) || (session === null || session === void 0 || (_session$tokens6 = session.tokens) === null || _session$tokens6 === void 0 || (_session$tokens6 = _session$tokens6.accessToken) === null || _session$tokens6 === void 0 || (_session$tokens6 = _session$tokens6.payload) === null || _session$tokens6 === void 0 ? void 0 : _session$tokens6['custom:entityId']) || (// Then a generic entityId if your IdP populates it
+          session === null || session === void 0 || (_session$tokens7 = session.tokens) === null || _session$tokens7 === void 0 || (_session$tokens7 = _session$tokens7.idToken) === null || _session$tokens7 === void 0 || (_session$tokens7 = _session$tokens7.payload) === null || _session$tokens7 === void 0 ? void 0 : _session$tokens7['entityId']) || (session === null || session === void 0 || (_session$tokens8 = session.tokens) === null || _session$tokens8 === void 0 || (_session$tokens8 = _session$tokens8.accessToken) === null || _session$tokens8 === void 0 || (_session$tokens8 = _session$tokens8.payload) === null || _session$tokens8 === void 0 ? void 0 : _session$tokens8['entityId']) || (// Last resort: userSub
+          session === null || session === void 0 ? void 0 : session.userSub) || null;
+        } catch (e) {
+          // Standalone mode without auth is allowed
+        }
+      }
+      if (id) {
+        setEntityId(id);
+        try {
+          localStorage.setItem('entityId', id);
+        } catch (_) {}
+      }
+    };
+    resolveEntityId();
+  }, []);
   const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = useState(false);
   const [dataView, setDataView] = useState("grid");
-  // const [ isInitialLoad, setIsInitialLoad ] = useRef(true);
-  const [newRecordName, setNewRecordName] = useState('');
-  const [newRecordPhone, setNewRecordPhone] = useState('');
-  const [newRecordAddress, setNewRecordAddress] = useState('');
-  const [newRecordLastName, setNewRecordLastName] = useState('');
-  const [newRecordStatus, setNewRecordStatus] = useState("ACTIVE");
-  const [newRecordCountry, setNewRecordCountry] = useState("");
-  const [newRecordState, setNewRecordState] = useState("");
-  const [newRecordPincode, setNewRecordPincode] = useState("");
-  const [newRecordCity, setNewRecordCity] = useState("");
   const [statusSelection, setStatusSelection] = useState("All");
   const [showDashboard, setShowDashboard] = useState(false);
   const [openCalendarPage, setOpenCalendarPage] = useState(false);
@@ -62,110 +82,74 @@ const CmtApp = _ref => {
   const screens = useBreakpoint();
   const [data, setData] = useState([]);
   const [sampleData, setSampleData] = useState([]);
-  useEffect(() => {
-    const showErrorAlert = message => {
-      alert(message); // simple alert, you can replace with Modal/Toast
-    };
-    if (membersPage) {
-      console.log("Amplify config11:", Amplify.getConfig());
-      console.log("initial loading, fetching data from the Database22");
-      const fetchingData = async () => {
-        // Fetch Members
-        try {
-          const op = get({
-            apiName: "UsersAPI",
-            path: "/users",
-            options: {
-              headers: {
-                entityid: entityId
-              }
-            },
-            authMode: "userPool"
-          });
-          if (op.response.status === 404) {
-            showErrorAlert("Fetching members failed: 404 Not Found");
-          } else {
-            const {
-              body
-            } = await op.response;
-            const fetchedData = await body.json();
-            console.log("fetching Data from database is complete");
-            console.log("Fetched Data:", fetchedData);
-            setData(fetchedData);
-          }
-        } catch (error) {
-          console.log("fail in fetching Data");
-          console.error("Error while fetching Data", error);
-          showErrorAlert("Fetching members failed due to network/error");
-        }
+  // Cache flags to avoid repeat backend calls when re-entering tabs
+  const [hasLoadedMembers, setHasLoadedMembers] = useState(false);
+  const [hasLoadedCalendar, setHasLoadedCalendar] = useState(false);
 
-        // Fetch Resources
+  // Reset caches when tenant changes
+  useEffect(() => {
+    if (!entityId) return;
+    setHasLoadedMembers(false);
+    setHasLoadedCalendar(false);
+  }, [entityId]);
+
+  // Data fetches (members/resources or calendar) with cache flags.
+  useEffect(() => {
+    if (!entityId) return;
+    // Members tab
+    if (membersPage) {
+      if (hasLoadedMembers) {
+        // Already loaded once for this entity; do not refetch
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      const fetchingData = async () => {
         try {
-          const op = get({
-            apiName: "ResourcesAPI",
-            path: "/resources",
-            options: {
-              headers: {
-                entityid: entityId
-              }
-            },
-            authMode: "userPool"
-          });
-          if (op.response.status === 404) {
-            showErrorAlert("Fetching resources failed: 404 Not Found");
-          } else {
-            const {
-              body
-            } = await op.response;
-            const fetchedData = await body.json();
-            console.log("fetching Resource Data from database is complete");
-            console.log("Fetched Resource Data:", fetchedData);
-            setResourceData1(fetchedData);
-          }
+          const fetchedData = await getMembers(entityId);
+          setData(fetchedData);
         } catch (error) {
-          console.log("fail in fetching resource Data");
-          console.error("Error while fetching resource Data", error);
-          showErrorAlert("Fetching resources failed due to network/error");
+          console.error("Error while fetching members", error);
+        }
+        try {
+          const fetchedResources = await getResources(entityId);
+          setResourceData1(fetchedResources);
+        } catch (error) {
+          console.error("Error while fetching resources", error);
         } finally {
+          setHasLoadedMembers(true);
           setIsLoading(false);
         }
       };
       fetchingData();
-    } else if (openCalendarPage) {
+    }
+    // Calendar tab
+    else if (openCalendarPage) {
+      if (hasLoadedCalendar) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
       const fetchCalendar = async () => {
         try {
-          const op = get({
-            apiName: "CalendarAPI",
-            path: "/calendar/user/All/month/".concat(dayjs().format("MMM"), "/year/").concat(dayjs().year()),
-            options: {
-              headers: {
-                entityid: entityId
-              }
-            },
-            authMode: "userPool"
-          });
-          if (op.response.status === 404) {
-            showErrorAlert("Fetching calendar data failed: 404 Not Found");
-          } else {
-            const {
-              body
-            } = await op.response;
-            const fetchedCalendarData = await body.json();
-            console.log("fetching Calendar Data from database is complete");
-            console.log("Fetched Calendar Data:", fetchedCalendarData);
-            setSampleData(fetchedCalendarData);
-          }
+          const fetchedCalendarData = await getCalendar(entityId, dayjs().format("MMM"), dayjs().year());
+          setSampleData(fetchedCalendarData);
         } catch (error) {
-          console.log("fail in fetching Calendar Data");
           console.error("Error while fetching Calendar Data", error);
-          showErrorAlert("Fetching calendar data failed due to network/error");
         } finally {
+          setHasLoadedCalendar(true);
           setIsLoading(false);
         }
       };
       fetchCalendar();
     }
-  }, [membersPage, openCalendarPage]);
+    // Other tabs (Resources/Todos) do not fetch here
+    else {
+      setIsLoading(false);
+    }
+  }, [membersPage, openCalendarPage, entityId, hasLoadedMembers, hasLoadedCalendar]);
+
+  // Mirror fetched resources into the view list
   useEffect(() => {
     setResourceData(resourceData1);
   }, [resourceData1]);
@@ -174,55 +158,28 @@ const CmtApp = _ref => {
   useEffect(() => {
     setDuplicateData(data);
   }, [data]);
+
+  // Build status/city counts safely
   const statusCount = data.reduce((acc, item) => {
     var _item$address;
-    const city = (_item$address = item.address) === null || _item$address === void 0 || (_item$address = _item$address[0]) === null || _item$address === void 0 ? void 0 : _item$address.city; // optional chaining
+    const city = (_item$address = item.address) === null || _item$address === void 0 || (_item$address = _item$address[0]) === null || _item$address === void 0 ? void 0 : _item$address.city;
     if (city) {
       acc[city] = (acc[city] || 0) + 1;
     }
     return acc;
   }, {});
 
-  // console.log(statusCout);
-  // Get unique cities dynamically from your data
-  const citySet = new Set();
-  data.forEach(item => {
-    if (Array.isArray(item.address) && item.address.length > 0) {
-      item.address.forEach(addr => {
-        if (addr.city) {
-          citySet.add(addr.city.trim());
-        }
-      });
-    }
-  });
-
-  // Convert to object form for legendLabels
-  const legendLabels = Array.from(citySet).reduce((acc, city) => {
-    acc[city] = city; // or customize label names if needed
-    return acc;
-  }, {});
+  // Unique city list for dropdown
   const uniqueCities = Array.from(new Set(data.flatMap(item => (item.address || []).map(addr => {
     var _addr$city;
-    return (_addr$city = addr.city) === null || _addr$city === void 0 ? void 0 : _addr$city.trim();
+    return addr === null || addr === void 0 || (_addr$city = addr.city) === null || _addr$city === void 0 ? void 0 : _addr$city.trim();
   }).filter(Boolean))));
 
-  // console.log(legendLabels);
-  // if(!("Hyd" in statusCount)){
-  //   statusCount["Hyd"] = 0;
-  // };
-  // if(!("HYD" in statusCount)){
-  //   statusCount["HYD"] = 0;
-  // };
-  // if(!("Test City" in statusCount)){
-  //   statusCount["Test City"] = 0;
-  // };
-
-  // const legendLabels = {
-  //   "Hyd": "Hyd",
-  //   "HYD": "HYD",
-  //   "Test City": "Test City"
-  // };
-
+  // Legend labels mirror labels by default; customize here if needed
+  const legendLabels = uniqueCities.reduce((acc, city) => {
+    acc[city] = city;
+    return acc;
+  }, {});
   const graphData = {
     labels: Object.keys(statusCount),
     datasets: [{
@@ -243,7 +200,6 @@ const CmtApp = _ref => {
         position: 'top',
         labels: {
           generateLabels: chart => {
-            // Customizing the legend labels based on the chart's data
             return chart.data.labels.map((label, index) => ({
               text: legendLabels[label] || label,
               fillStyle: chart.data.datasets[0].backgroundColor[index],
@@ -256,63 +212,55 @@ const CmtApp = _ref => {
       }
     }
   };
-  const handleAddNewNameCard = () => {
+  const handleAddNewNameCard = values => {
+    const {
+      firstName,
+      lastName,
+      phone,
+      address,
+      city,
+      state,
+      country,
+      pincode,
+      status = "ACTIVE"
+    } = values;
     const newRecord = {
-      customerName: newRecordName + newRecordLastName,
-      phoneNumber: newRecordPhone,
+      customerName: (firstName || "") + (lastName || ""),
+      phoneNumber: phone,
       address: [{
-        "country": newRecordCountry,
-        "city": newRecordCity,
-        "houseNo": "NA",
-        "street1": newRecordAddress || "NA",
-        "street2": "NA",
-        "pincode": newRecordPincode || "NA",
-        "state": newRecordState
+        country: country || "",
+        city: city || "",
+        houseNo: "NA",
+        street1: address || "NA",
+        street2: "NA",
+        pincode: pincode || "NA",
+        state: state || ""
       }],
-      comments: [{
-        "author": newRecordName,
-        "commentId": "test id 101",
-        "message": "test comment 101"
-      }],
-      status: newRecordStatus,
+      comments: [],
+      status: status,
       subscriptions: []
     };
     const addNewMember = async () => {
       try {
-        // Add new member using Amplify post
-        const op = post({
-          apiName: "UsersAPI",
-          path: "/users",
-          options: {
-            headers: {
-              entityid: entityId
-            },
-            body: newRecord
-          },
-          authMode: "userPool"
-        });
-        const {
-          body
-        } = await op.response;
-        const postData = await body.json();
-        console.log("postData:", postData);
+        const postData = await createMember(entityId, newRecord);
         const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
           id: postData.userId
         });
         setDuplicateData(prevData => [...prevData, updatedRecord]);
+        setHasLoadedMembers(true); // Keep cache valid; avoid refetch on tab switch
       } catch (error) {
         console.log("unable to add new member", error);
+      } finally {
+        setIsAddNewNameCardModalOpen(false);
       }
     };
     addNewMember();
-    setIsAddNewNameCardModalOpen(false);
   };
   const handleStatusSelection = value => {
     setStatusSelection(value);
     setShowDashboard(true);
     if (value === "All") {
       setDuplicateData(data);
-      // setResourceData(resourceData1);
       setShowDashboard(false);
     } else {
       const filteredRecords = data.filter(item => Array.isArray(item.address) && item.address.some(addr => addr.city === value));
@@ -322,10 +270,12 @@ const CmtApp = _ref => {
   const handleSearchText = value => {
     setSearchText(value);
     if (membersPage) {
-      const filterData = data.filter(prev => prev.customerName.toLowerCase().includes(value.toLowerCase()) || prev.phoneNumber.includes(value));
+      const q = value.toLowerCase();
+      const filterData = data.filter(prev => (prev.customerName || '').toLowerCase().includes(q) || (prev.phoneNumber || '').includes(value));
       setDuplicateData(filterData);
     } else {
-      const filteredResourceData = resourceData1.filter(prev => prev.resourceName.toLowerCase().includes(value.toLowerCase()) || prev.phoneNumber.includes(value));
+      const q = value.toLowerCase();
+      const filteredResourceData = resourceData1.filter(prev => (prev.resourceName || '').toLowerCase().includes(q) || (prev.phoneNumber || '').includes(value));
       setResourceData(filteredResourceData);
     }
   };
@@ -411,7 +361,6 @@ const CmtApp = _ref => {
   }))), /*#__PURE__*/React.createElement(Row, {
     style: {
       width: '100%',
-      backgroundColor: '',
       gap: '16px',
       display: 'flex',
       alignItems: 'center',
@@ -423,9 +372,7 @@ const CmtApp = _ref => {
     style: {
       fontSize: '20px'
     }
-  }, /*#__PURE__*/React.createElement("span", null, view + " View "), /*#__PURE__*/React.createElement(Switch
-  // style={{ margin: '0px 10px' }}
-  , {
+  }, /*#__PURE__*/React.createElement("span", null, view + " View "), /*#__PURE__*/React.createElement(Switch, {
     onClick: () => {
       setDataView(dataView === "grid" ? "table" : "grid");
       setView(view === "Grid" ? "List" : "Grid");
@@ -436,9 +383,7 @@ const CmtApp = _ref => {
       fontSize: '20px'
     }
   }, /*#__PURE__*/React.createElement("span", null, "Show Dashboard "), /*#__PURE__*/React.createElement(Switch, {
-    checked: showDashboard
-    // style={{ margin: '0px 10px' }}
-    ,
+    checked: showDashboard,
     onClick: () => setShowDashboard(prev => !prev)
   })), /*#__PURE__*/React.createElement(Col, {
     style: {
@@ -546,7 +491,6 @@ const CmtApp = _ref => {
     className: "status-track-icons"
   }, Object.entries(statusCount).map((_ref2, index) => {
     let [city, count] = _ref2;
-    // generate a soft color palette dynamically
     const colors = ['#FFB6C1', '#ADD8E6', '#90EE90', '#FFD580', '#D8BFD8', '#98FB98'];
     const bgColor = colors[index % colors.length];
     return /*#__PURE__*/React.createElement(Col, {
@@ -579,19 +523,9 @@ const CmtApp = _ref => {
     open: isAddNewNameCardModalOpen,
     onCancel: () => setIsAddNewNameCardModalOpen(false),
     footer: null
-  }, /*#__PURE__*/React.createElement(AddNewNameCard, {
-    setNewRecordName: setNewRecordName,
-    setNewRecordLastName: setNewRecordLastName,
-    setNewRecordPhone: setNewRecordPhone,
-    setNewRecordAddress: setNewRecordAddress,
-    setNewRecordCity: setNewRecordCity,
-    setNewRecordState: setNewRecordState,
-    setNewRecordPincode: setNewRecordPincode,
-    setNewRecordCountry: setNewRecordCountry,
-    setNewRecordStatus: setNewRecordStatus,
-    newRecordStatus: newRecordStatus,
-    handleAddNewNameCard: handleAddNewNameCard,
-    membersPage: true
+  }, /*#__PURE__*/React.createElement(AddNewUser, {
+    mode: "member",
+    onSubmit: handleAddNewNameCard
   }))) : resourcePage ? /*#__PURE__*/React.createElement(ResourcePage, {
     resourceData: resourceData,
     setResourceData: setResourceData,

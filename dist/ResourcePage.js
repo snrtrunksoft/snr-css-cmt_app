@@ -9,8 +9,8 @@ import "./ResourcePage.css";
 import "./NameCard.css";
 import { LoadingOutlined } from "@ant-design/icons";
 import { Button, Col, Grid, Modal, Row } from "antd";
-import AddNewNameCard from "./AddNewNameCard";
-import { RESOURCES_API } from "./properties/EndPointProperties";
+import AddNewUser from "./AddNewUser";
+import { createResource } from "./api/APIUtil";
 const {
   useBreakpoint
 } = Grid;
@@ -25,60 +25,49 @@ const ResourcePage = _ref => {
   } = _ref;
   const [isLoading, setIsLoading] = useState(true);
   const [addNewResourceModal, setAddNewResourceModal] = useState(false);
-  const [newRecordName, setNewRecordName] = useState('');
-  const [newRecordLastName, setNewRecordLastName] = useState('');
-  const [newRecordPhone, setNewRecordPhone] = useState('');
-  const [newRecordAddress, setNewRecordAddress] = useState('');
-  const [newRecordStatus, setNewRecordStatus] = useState("Active");
-  const [newRecordCountry, setNewRecordCountry] = useState("");
-  const [newRecordState, setNewRecordState] = useState("");
-  const [newRecordPincode, setNewRecordPincode] = useState("");
-  const [newRecordCity, setNewRecordCity] = useState("");
   const screens = useBreakpoint();
   const colSize = resourceData.length <= 3 ? 24 / resourceData.length : 6;
-  const handleAddNewResource = () => {
+  const handleAddNewResource = values => {
+    const {
+      firstName,
+      lastName,
+      phone,
+      address,
+      city,
+      state,
+      country,
+      pincode,
+      status = "ACTIVE"
+    } = values;
     const newRecord = {
-      resourceName: newRecordName + newRecordLastName,
-      phoneNumber: newRecordPhone,
+      resourceName: (firstName || "") + (lastName || ""),
+      phoneNumber: phone,
       address: [{
-        "country": newRecordCountry,
-        "city": newRecordCity,
-        "houseNo": "NA",
-        "street1": newRecordAddress || "NA",
-        "street2": "NA",
-        "pincode": newRecordPincode || "NA",
-        "state": newRecordState
+        country: country || "",
+        city: city || "",
+        houseNo: "NA",
+        street1: address || "NA",
+        street2: "NA",
+        pincode: pincode || "NA",
+        state: state || ""
       }],
-      comments: [{
-        "author": newRecordName,
-        "commentId": "test id 101",
-        "message": "test comment 101"
-      }],
-      status: newRecordStatus
+      status: status
     };
-    console.log("newRecord:", newRecord);
     const addNewResource = async () => {
       try {
-        const response = await fetch(RESOURCES_API, {
-          method: "POST",
-          headers: {
-            'entityid': 'w_123',
-            'Content-Type': "application/json"
-          },
-          body: JSON.stringify(newRecord)
-        });
-        const postData = await response.json();
+        const postData = await createResource(entityId, newRecord);
         console.log("post New Resource Data:", postData);
         const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
-          resourceId: newRecordName.slice(0, 3) + postData.resourceId
+          resourceId: (firstName || "").slice(0, 3) + (postData.resourceId || "")
         });
         setResourceData(prev => [...prev, updatedRecord]);
       } catch (error) {
-        console.log("unable to add new member", error);
+        console.log("unable to add new resource", error);
+      } finally {
+        setAddNewResourceModal(false);
       }
     };
     addNewResource();
-    setAddNewResourceModal(false);
   };
   useEffect(() => {
     setIsLoading(false);
@@ -176,19 +165,9 @@ const ResourcePage = _ref => {
     open: addNewResourceModal,
     onCancel: () => setAddNewResourceModal(false),
     footer: null
-  }, /*#__PURE__*/React.createElement(AddNewNameCard, {
-    setNewRecordName: setNewRecordName,
-    setNewRecordLastName: setNewRecordLastName,
-    setNewRecordPhone: setNewRecordPhone,
-    setNewRecordAddress: setNewRecordAddress,
-    setNewRecordCity: setNewRecordCity,
-    setNewRecordState: setNewRecordState,
-    setNewRecordPincode: setNewRecordPincode,
-    setNewRecordCountry: setNewRecordCountry,
-    setNewRecordStatus: setNewRecordStatus,
-    newRecordStatus: newRecordStatus,
-    handleAddNewResource: handleAddNewResource,
-    resourcePage: true
+  }, /*#__PURE__*/React.createElement(AddNewUser, {
+    mode: "resource",
+    onSubmit: handleAddNewResource
   })));
 };
 export default ResourcePage;

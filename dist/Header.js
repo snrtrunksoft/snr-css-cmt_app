@@ -33,11 +33,21 @@ const Header = _ref => {
   const handleLogout = async () => {
     try {
       setOpenConfirmationModal(false); // Close modal first
+      try {
+        localStorage.removeItem('entityId');
+      } catch (_) {
+        // ignore storage errors
+      }
       await signOut();
       console.log("logout successful");
-      navigate('/login');
     } catch (error) {
       console.error("Logout failed:", error);
+      // Even if signOut fails, ensure entityId is cleared
+      try {
+        localStorage.removeItem('entityId');
+      } catch (_) {}
+    } finally {
+      navigate('/login');
     }
   };
   useEffect(() => {
