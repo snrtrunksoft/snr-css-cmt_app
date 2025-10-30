@@ -59,92 +59,101 @@ const NameCard = ({
         if (screens.sm) return 300;
         return '100%';
     };
-    function onFinish(values) {
+    const onFinish = (values) => {
         setIsEditable(false);
         console.log("form values:", values);
-        const filterData =  membersPage ? data.find((prev) => prev.id === values.customerId) : resourceData.find((prev) => prev.resourceId === values.customerId);
-        const updated_member_name_record = {
-            ...filterData,
-            customerName : values.customerName,
-            phoneNumber : values.phoneNumber,
-            status : values.status,
-            address : [{
-                ...filterData.address?.[0],
-                city : values.address.city,
-                state : values.address.state,
-                country : values.address.country
-            }],
-        };
 
-        const updated_resource_name_record = {
-            ...filterData,
-            resourceName : values.customerName,
-            phoneNumber : values.phoneNumber,
-            status : values.status,
-            address : [{
-                ...filterData.address?.[0],
-                city : values.address.city,
-                state : values.address.state,
-                country : values.address.country
-            }],
-        }
-        const { id, entityId, ...cleanCustomer } = (membersPage ? updated_member_name_record : updated_resource_name_record);
-        console.log(cleanCustomer);
+        // ---------- STEP 1: Find the correct data source ----------
+        const filterData = membersPage
+            ? data.find((prev) => prev.id === values.customerId)
+            : resourceData.find((prev) => prev.resourceId === values.customerId);
 
-        const updatedNameCard = async() => {
-            try{
-                await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId, {
-                    method : "PUT",
-                    headers : {
-                        "entityid" : entityId,
-                        "Content-Type" : "application/json"
+        // ---------- STEP 2: Prepare updated record ----------
+        const buildUpdatedRecord = (isMember) => ({
+            ...filterData,
+            ...(isMember
+            ? { customerName: values.customerName }
+            : { resourceName: values.customerName }),
+            phoneNumber: values.phoneNumber,
+            status: values.status,
+            address: [
+            {
+                ...filterData.address?.[0],
+                city: values.address.city,
+                state: values.address.state,
+                country: values.address.country,
+            },
+            ],
+        });
+
+        const updatedRecord = buildUpdatedRecord(membersPage);
+
+        // Remove unneeded keys before API call
+        const { id, entityId, ...cleanCustomer } = updatedRecord;
+        console.log("Clean customer data:", cleanCustomer);
+
+        // ---------- STEP 3: API update ----------
+        const updateNameCard = async () => {
+            try {
+                const response = await fetch(
+                (membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId,
+                {
+                    method: "PUT",
+                    headers: {
+                    entityid: entityId,
+                    "Content-Type": "application/json",
                     },
-                    body : JSON.stringify(cleanCustomer)
-                })
-                .then(responce => responce.json())
-                .then(data => console.log("successfully updated the record", data))
-            } catch(error) {
-                console.log("error in updating the Name card", error);
-            }
-        };
-        updatedNameCard();
+                    body: JSON.stringify(cleanCustomer),
+                }
+                );
 
-        if(membersPage) {
-            setData((prev) => {
-                return prev.map((customer) => 
-                    customer.id === values.customerId ?
-                        {
-                            ...customer,
-                            customerName : values.customerName,
-                            phoneNumber : values.phoneNumber,
-                            status : values.status,
-                            address : [{
-                                ...customer.address?.[0],
-                                city : values.address.city,
-                                state : values.address.state,
-                                country : values.address.country
-                            }]
-                        }   : customer)
-                    })
+                const statusCode = response.status; // 🔹 capture status code
+                const data = await response.json();
+
+                if (!response.ok) {
+                console.error(`❌ Failed to update record. Status: ${statusCode}`, data);
+                } else {
+                console.log(`✅ Successfully updated record. Status: ${statusCode}`, data);
+                }
+
+            } catch (error) {
+                console.error("❌ Network or server error while updating record:", error);
+            }
+            };
+
+        updateNameCard();
+
+        // ---------- STEP 4: Local state update ----------
+        const updateLocalState = (prev) =>
+            prev.map((customer) => {
+            const matchKey = membersPage ? "id" : "resourceId";
+            if (customer[matchKey] === values.customerId) {
+                return {
+                ...customer,
+                ...(membersPage
+                    ? { customerName: values.customerName }
+                    : { resourceName: values.customerName }),
+                phoneNumber: values.phoneNumber,
+                status: values.status,
+                address: [
+                    {
+                    ...customer.address?.[0],
+                    city: values.address.city,
+                    state: values.address.state,
+                    country: values.address.country,
+                    },
+                ],
+                };
+            }
+            return customer;
+            });
+
+        if (membersPage) {
+            setData(updateLocalState);
         } else {
-            setResourceData((prev) => {
-                return prev.map((customer) => 
-                    customer.resourceId === values.customerId ?
-                        {
-                            ...customer,
-                            resourceName : values.customerName,
-                            phoneNumber : values.phoneNumber,
-                            status : values.status,
-                            address : [{
-                                ...customer.address?.[0],
-                                city : values.address.city,
-                                state : values.address.state,
-                                country : values.address.country
-                            }]
-                        }   : customer)
-            })
+            setResourceData(updateLocalState);
         }
-    }
+        };
     
     const addressKeys = Object.keys(address?.[0] ?? {});
     const handleSend = () => {
@@ -152,13 +161,15 @@ const NameCard = ({
         // console.log(addTimeForComment);
         if(newComment){
             const commentBody = [...comments, {
-                "commentId" : parseInt(comments[comments.length - 1].commentId) + 1 || 1,
+                "commentId" : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
                 "author" : customerName,
                 "message" : newComment,
                 "date" : addTimeForComment
             }]
             const updatedRecord = {
-                "customerName" : customerName,
+                ...(membersPage
+                ? { customerName: customerName }
+                : { resourceName: customerName }),
                 "status" : status,
                 "address" : address,
                 "subscriptions" : subscriptions,
@@ -169,23 +180,39 @@ const NameCard = ({
                 delete sub.entityId;
                 delete sub.id;
             });
-            console.log("updatedRecord:",updatedRecord);
+            console.log("updatedRecord:", updatedRecord);
+
             const uploadComment = async () => {
-                try {
-                    const response = await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + customerId, {
+            try {
+                // Create a clean copy before modifying
+                let recordToUpload = { ...updatedRecord };
+
+                // 🔹 Remove subscriptions if calling RESOURCES_API
+                if (!membersPage) {
+                const { subscriptions, ...rest } = recordToUpload;
+                recordToUpload = rest;
+                }
+                console.log("Record:", recordToUpload);
+
+                const response = await fetch(
+                (membersPage ? MEMBERS_API : RESOURCES_API) + customerId,
+                {
                     method: "PUT",
                     headers: {
-                        "entityid" : entityId,
-                        "Content-Type": "application/json"
+                    entityid: entityId,
+                    "Content-Type": "application/json",
                     },
-                    body: JSON.stringify(updatedRecord)
-                    });
-                    const data = await response.json();
-                    console.log("successfully added the comment:", data);
-                } catch(error) {
-                    console.log("unable to add Comment:",error);
+                    body: JSON.stringify(recordToUpload),
                 }
+                );
+
+                const data = await response.json();
+                console.log("✅ successfully added the comment:", data);
+            } catch (error) {
+                console.log("❌ unable to add Comment:", error);
             }
+            };
+
             uploadComment();
 
             if(membersPage) {
@@ -194,7 +221,7 @@ const NameCard = ({
                         prev.id === customerId ? {
                             ...prev,
                             comments: [...prev.comments, {
-                                commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                                commentId : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
                                 message: newComment,
                                 author: customerName,
                                 date: addTimeForComment
@@ -207,7 +234,7 @@ const NameCard = ({
                         prev.resourceId === customerId ? {
                             ...prev,
                             comments: [...prev.comments, {
-                                commentId : parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                                commentId : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
                                 message: newComment,
                                 author: customerName,
                                 date: addTimeForComment
@@ -223,7 +250,7 @@ const NameCard = ({
                     prevComments.map((prev, index) =>
                         index === existingData
                             ? { ...prev, comment: [...prev.comment, {
-                                commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                                commentId: parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
                                 message: newComment,
                                 author: customerName,
                                 date: addTimeForComment
@@ -235,7 +262,7 @@ const NameCard = ({
                 setCommentBox(prevComments => [
                     ...prevComments,
                     { customerName,color, comment: [{
-                        commentId:parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
+                        commentId: parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
                         message:newComment,
                         author:customerName,
                         date: addTimeForComment

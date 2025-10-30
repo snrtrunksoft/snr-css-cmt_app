@@ -45,6 +45,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
             state: state || ""
           }],
           status: status,
+          comments: []
         };
       
         const addNewResource = async () => {
