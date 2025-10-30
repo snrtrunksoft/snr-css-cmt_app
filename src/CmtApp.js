@@ -256,6 +256,7 @@ const CmtApp = ({ setSelectedApp }) => {
     const addNewMember = async () => {
       try {
         const postData = await createMember(entityId, newRecord);
+        console.log("post New Resource Data:", postData);
         const updatedRecord = { ...newRecord, id: postData.userId };
         setDuplicateData(prevData => [...prevData, updatedRecord]);
         setHasLoadedMembers(true); // Keep cache valid; avoid refetch on tab switch
