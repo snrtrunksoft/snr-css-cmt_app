@@ -4,7 +4,7 @@ function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useState, useEffect } from 'react';
-import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table } from 'antd';
+import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, Form } from 'antd';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
@@ -79,6 +79,8 @@ const CmtApp = _ref => {
   const [view, setView] = useState("Grid");
   const [resourceData, setResourceData] = useState([]);
   const [resourceData1, setResourceData1] = useState([]);
+  const [form] = Form.useForm(); // for new user/Resource details
+
   const screens = useBreakpoint();
   const [data, setData] = useState([]);
   const [sampleData, setSampleData] = useState([]);
@@ -217,6 +219,7 @@ const CmtApp = _ref => {
       firstName,
       lastName,
       phone,
+      email,
       address,
       city,
       state,
@@ -227,6 +230,7 @@ const CmtApp = _ref => {
     const newRecord = {
       customerName: (firstName || "") + (lastName || ""),
       phoneNumber: phone,
+      email: email,
       address: [{
         country: country || "",
         city: city || "",
@@ -243,6 +247,7 @@ const CmtApp = _ref => {
     const addNewMember = async () => {
       try {
         const postData = await createMember(entityId, newRecord);
+        console.log("post New Member Data:", postData);
         const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
           id: postData.userId
         });
@@ -456,6 +461,7 @@ const CmtApp = _ref => {
     setData: setData,
     customerId: item.id,
     customerName: item.customerName,
+    email: item.email,
     phoneNumber: item.phoneNumber,
     address: item.address,
     status: item.status,
@@ -521,10 +527,14 @@ const CmtApp = _ref => {
     options: options
   })))), /*#__PURE__*/React.createElement(Modal, {
     open: isAddNewNameCardModalOpen,
-    onCancel: () => setIsAddNewNameCardModalOpen(false),
+    onCancel: () => {
+      setIsAddNewNameCardModalOpen(false);
+      form.resetFields();
+    },
     footer: null
   }, /*#__PURE__*/React.createElement(AddNewUser, {
     mode: "member",
+    form: form,
     onSubmit: handleAddNewNameCard
   }))) : resourcePage ? /*#__PURE__*/React.createElement(ResourcePage, {
     resourceData: resourceData,

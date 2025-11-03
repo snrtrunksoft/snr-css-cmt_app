@@ -11,8 +11,7 @@ const { Title } = Typography;
  * - Calls onSubmit(values) with all form values
  * - `mode`: "member" | "resource" (default "member")
  */
-const AddNewUser = ({ mode = "member", onSubmit }) => {
-  const [form] = Form.useForm();
+const AddNewUser = ({ mode = "member", form, onSubmit }) => {
 
   const handleSubmit = (values) => {
     onSubmit?.(values);
@@ -43,6 +42,11 @@ const AddNewUser = ({ mode = "member", onSubmit }) => {
             </Form.Item>
           </Col>
         </Row>
+
+        {mode === "member" &&
+        <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+          <Input type="email"/>
+        </Form.Item>}
 
         <Row gutter={16}>
           <Col span={12}>

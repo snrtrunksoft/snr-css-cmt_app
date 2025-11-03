@@ -8,7 +8,7 @@ import NameCard from "./NameCard";
 import "./ResourcePage.css";
 import "./NameCard.css";
 import { LoadingOutlined } from "@ant-design/icons";
-import { Button, Col, Grid, Modal, Row } from "antd";
+import { Button, Col, Grid, Modal, Row, Form } from "antd";
 import AddNewUser from "./AddNewUser";
 import { createResource } from "./api/APIUtil";
 const {
@@ -25,6 +25,7 @@ const ResourcePage = _ref => {
   } = _ref;
   const [isLoading, setIsLoading] = useState(true);
   const [addNewResourceModal, setAddNewResourceModal] = useState(false);
+  const [form] = Form.useForm();
   const screens = useBreakpoint();
   const colSize = resourceData.length <= 3 ? 24 / resourceData.length : 6;
   const handleAddNewResource = values => {
@@ -51,7 +52,8 @@ const ResourcePage = _ref => {
         pincode: pincode || "NA",
         state: state || ""
       }],
-      status: status
+      status: status,
+      comments: []
     };
     const addNewResource = async () => {
       try {
@@ -163,10 +165,14 @@ const ResourcePage = _ref => {
     }
   }, "+")))), /*#__PURE__*/React.createElement(Modal, {
     open: addNewResourceModal,
-    onCancel: () => setAddNewResourceModal(false),
+    onCancel: () => {
+      setAddNewResourceModal(false);
+      form.resetFields();
+    },
     footer: null
   }, /*#__PURE__*/React.createElement(AddNewUser, {
     mode: "resource",
+    form: form,
     onSubmit: handleAddNewResource
   })));
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table } from 'antd';
+import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, Form } from 'antd';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
@@ -76,6 +76,7 @@ const CmtApp = ({ setSelectedApp }) => {
   const [view, setView] = useState("Grid");
   const [resourceData, setResourceData] = useState([]);
   const [resourceData1, setResourceData1] = useState([]);
+  const [form] = Form.useForm(); // for new user/Resource details
 
   const screens = useBreakpoint();
 
@@ -228,6 +229,7 @@ const CmtApp = ({ setSelectedApp }) => {
       firstName,
       lastName,
       phone,
+      email,
       address,
       city,
       state,
@@ -239,6 +241,7 @@ const CmtApp = ({ setSelectedApp }) => {
     const newRecord = {
       customerName: (firstName || "") + (lastName || ""),
       phoneNumber: phone,
+      email: email,
       address: [{
         country: country || "",
         city: city || "",
@@ -256,7 +259,7 @@ const CmtApp = ({ setSelectedApp }) => {
     const addNewMember = async () => {
       try {
         const postData = await createMember(entityId, newRecord);
-        console.log("post New Resource Data:", postData);
+        console.log("post New Member Data:", postData);
         const updatedRecord = { ...newRecord, id: postData.userId };
         setDuplicateData(prevData => [...prevData, updatedRecord]);
         setHasLoadedMembers(true); // Keep cache valid; avoid refetch on tab switch
@@ -433,6 +436,7 @@ const CmtApp = ({ setSelectedApp }) => {
                           setData={setData}
                           customerId={item.id}
                           customerName={item.customerName}
+                          email={item.email}
                           phoneNumber={item.phoneNumber}
                           address={item.address}
                           status={item.status}
@@ -483,11 +487,12 @@ const CmtApp = ({ setSelectedApp }) => {
               </div>}
               <Modal
                 open={isAddNewNameCardModalOpen}
-                onCancel={() => setIsAddNewNameCardModalOpen(false)}
+                onCancel={() => {setIsAddNewNameCardModalOpen(false); form.resetFields();}}
                 footer={null}
               >
                 <AddNewUser
                   mode="member"
+                  form={form}
                   onSubmit={handleAddNewNameCard}
                 />
               </Modal>
