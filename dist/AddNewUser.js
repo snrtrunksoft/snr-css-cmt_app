@@ -17,9 +17,9 @@ const {
 const AddNewUser = _ref => {
   let {
     mode = "member",
+    form,
     onSubmit
   } = _ref;
-  const [form] = Form.useForm();
   const handleSubmit = values => {
     onSubmit === null || onSubmit === void 0 || onSubmit(values);
     form.resetFields();
@@ -58,7 +58,16 @@ const AddNewUser = _ref => {
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "lastName",
     label: "Last Name"
-  }, /*#__PURE__*/React.createElement(Input, null)))), /*#__PURE__*/React.createElement(Row, {
+  }, /*#__PURE__*/React.createElement(Input, null)))), mode === "member" && /*#__PURE__*/React.createElement(Form.Item, {
+    name: "email",
+    label: "Email",
+    rules: [{
+      required: true,
+      type: 'email'
+    }]
+  }, /*#__PURE__*/React.createElement(Input, {
+    type: "email"
+  })), /*#__PURE__*/React.createElement(Row, {
     gutter: 16
   }, /*#__PURE__*/React.createElement(Col, {
     span: 12

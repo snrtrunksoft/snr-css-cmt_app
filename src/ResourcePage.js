@@ -3,7 +3,7 @@ import NameCard from "./NameCard";
 import "./ResourcePage.css";
 import "./NameCard.css";
 import { LoadingOutlined } from "@ant-design/icons";
-import { Button, Col, Grid, Modal, Row } from "antd";
+import { Button, Col, Grid, Modal, Row, Form } from "antd";
 import AddNewUser from "./AddNewUser";
 import { createResource } from "./api/APIUtil";
 
@@ -12,6 +12,7 @@ const { useBreakpoint } = Grid;
 const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, commentBox, setCommentBox }) =>{
     const [ isLoading, setIsLoading ] = useState(true);
     const [ addNewResourceModal, setAddNewResourceModal ] = useState(false);
+    const [form] = Form.useForm();
 
     const screens = useBreakpoint();
 
@@ -154,11 +155,12 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
         }
         <Modal
               open={addNewResourceModal}
-              onCancel={()=> setAddNewResourceModal(false)}
+              onCancel={()=> {setAddNewResourceModal(false); form.resetFields();}}
               footer={null}
               >
                 <AddNewUser
                   mode="resource"
+                  form={form}
                   onSubmit={handleAddNewResource}
                 />
             </Modal>

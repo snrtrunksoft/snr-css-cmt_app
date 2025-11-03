@@ -16,6 +16,7 @@ const NameCard = ({
     setResourceData,
     customerId, 
     customerName,
+    email,
     phoneNumber, 
     address, 
     status, 
@@ -36,6 +37,7 @@ const NameCard = ({
         customerId: customerId || "",
         customerName: customerName || "",
         phoneNumber: phoneNumber || "",
+        email: email || "",
         status: status || "",
         address: {
             houseNo: address?.[0]?.houseNo || "",
@@ -172,6 +174,7 @@ const NameCard = ({
                 : { resourceName: customerName }),
                 "status" : status,
                 "address" : address,
+                "email" : email,
                 "subscriptions" : subscriptions,
                 "phoneNumber" : phoneNumber,
                 "comments" : commentBody
@@ -387,6 +390,10 @@ const NameCard = ({
                         </Form.Item>
 
                         <Form.Item name="customerName" label="Customer Name">
+                            <Input />
+                        </Form.Item>
+
+                        <Form.Item name="email" label="Email">
                             <Input />
                         </Form.Item>
 

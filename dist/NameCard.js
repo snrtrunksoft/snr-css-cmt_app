@@ -26,6 +26,7 @@ const NameCard = _ref => {
     setResourceData,
     customerId,
     customerName,
+    email,
     phoneNumber,
     address,
     status,
@@ -47,6 +48,7 @@ const NameCard = _ref => {
     customerId: customerId || "",
     customerName: customerName || "",
     phoneNumber: phoneNumber || "",
+    email: email || "",
     status: status || "",
     address: {
       houseNo: (address === null || address === void 0 || (_address$ = address[0]) === null || _address$ === void 0 ? void 0 : _address$.houseNo) || "",
@@ -172,6 +174,7 @@ const NameCard = _ref => {
       }), {}, {
         "status": status,
         "address": address,
+        "email": email,
         "subscriptions": subscriptions,
         "phoneNumber": phoneNumber,
         "comments": commentBody
@@ -409,6 +412,9 @@ const NameCard = _ref => {
   })), /*#__PURE__*/React.createElement(Form.Item, {
     name: "customerName",
     label: "Customer Name"
+  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+    name: "email",
+    label: "Email"
   }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
     name: "phoneNumber",
     label: "Phone"
