@@ -364,7 +364,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
           const response = await fetch(EVENTS_API, {
             method: "POST",
             headers: {
-              'entityid' : 'w_123',
+              entityid : entityId,
               'Content-Type' : "application/json"
             },
             body:JSON.stringify(eventDetails)
@@ -453,7 +453,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         await fetch(EVENTS_API + `${filteredEvents[currentPage - 1].id}`,{
           method: "DELETE",
           headers: {
-            'entityid' : 'w_123',
+            entityid : entityId,
             "Content-Type" : "application/json"
           }
         })
@@ -587,6 +587,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       console.log("Slot is Full....");
     }
       setTimeSlot(time);
+      const dayFormat = dayjs(dayjs().date()).format('dddd');
+      setWeeklyDayRecurring(dayFormat);
   }
 
   const handleWeeklyCalendarEvent = (hour,date, bookedEventsList) => {
@@ -802,22 +804,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                           }))) || [...recurringResourceEvents].length > 0)
                         ? "1px solid gray"
                         : "1px solid transparent",
-
-                      // borderBottom: (calendarUserId !== "All" ? resourceCalendar : sampleData).some(prev =>
-                      //   prev.events.some(item => {
-                      //     if (item.recurring === "daily") {
-                      //       return i === item.to - 1;
-                      //     } else if (item.recurring === "weekly") {
-                      //       return item.day === weekdays[currentDate.getDay()] && i === item.to - 1;
-                      //     } else if (item.recurring === "monthly") {
-                      //       return item.date === currentDate.getDate().toString() && i === item.to - 1;
-                      //     }
-                      //     return prev.month === monthName &&
-                      //            parseInt(prev.year) === currentDate.getFullYear() &&
-                      //            parseInt(prev.date) === currentDate.getDate() &&
-                      //            i === item.to - 1;
-                      //   })
-                      // ) ? "1px solid gray" : "1px solid transparent",                      
                     } :{}}
                     onClick={() => handleDailyCalendarEvent(i, eventsAtTimeSlot.length)}
                     >

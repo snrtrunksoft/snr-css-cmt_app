@@ -51,7 +51,8 @@ const ResourcePage = _ref => {
         pincode: pincode || "NA",
         state: state || ""
       }],
-      status: status
+      status: status,
+      comments: []
     };
     const addNewResource = async () => {
       try {
