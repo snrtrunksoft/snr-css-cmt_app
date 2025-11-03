@@ -1,4 +1,5 @@
-const _excluded = ["id", "entityId"];
+const _excluded = ["id", "entityId"],
+  _excluded2 = ["subscriptions"];
 function _objectWithoutProperties(e, t) { if (null == e) return {}; var o, r, i = _objectWithoutPropertiesLoose(e, t); if (Object.getOwnPropertySymbols) { var n = Object.getOwnPropertySymbols(e); for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]); } return i; }
 function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t = {}; for (var n in r) if ({}.hasOwnProperty.call(r, n)) { if (-1 !== e.indexOf(n)) continue; t[n] = r[n]; } return t; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
@@ -67,106 +68,114 @@ const NameCard = _ref => {
     if (screens.sm) return 300;
     return '100%';
   };
-  function onFinish(values) {
-    var _filterData$address, _filterData$address2;
+  const onFinish = values => {
     setIsEditable(false);
     console.log("form values:", values);
+
+    // ---------- STEP 1: Find the correct data source ----------
     const filterData = membersPage ? data.find(prev => prev.id === values.customerId) : resourceData.find(prev => prev.resourceId === values.customerId);
-    const updated_member_name_record = _objectSpread(_objectSpread({}, filterData), {}, {
-      customerName: values.customerName,
-      phoneNumber: values.phoneNumber,
-      status: values.status,
-      address: [_objectSpread(_objectSpread({}, (_filterData$address = filterData.address) === null || _filterData$address === void 0 ? void 0 : _filterData$address[0]), {}, {
-        city: values.address.city,
-        state: values.address.state,
-        country: values.address.country
-      })]
-    });
-    const updated_resource_name_record = _objectSpread(_objectSpread({}, filterData), {}, {
-      resourceName: values.customerName,
-      phoneNumber: values.phoneNumber,
-      status: values.status,
-      address: [_objectSpread(_objectSpread({}, (_filterData$address2 = filterData.address) === null || _filterData$address2 === void 0 ? void 0 : _filterData$address2[0]), {}, {
-        city: values.address.city,
-        state: values.address.state,
-        country: values.address.country
-      })]
-    });
-    const _ref2 = membersPage ? updated_member_name_record : updated_resource_name_record,
-      {
+
+    // ---------- STEP 2: Prepare updated record ----------
+    const buildUpdatedRecord = isMember => {
+      var _filterData$address;
+      return _objectSpread(_objectSpread(_objectSpread({}, filterData), isMember ? {
+        customerName: values.customerName
+      } : {
+        resourceName: values.customerName
+      }), {}, {
+        phoneNumber: values.phoneNumber,
+        status: values.status,
+        address: [_objectSpread(_objectSpread({}, (_filterData$address = filterData.address) === null || _filterData$address === void 0 ? void 0 : _filterData$address[0]), {}, {
+          city: values.address.city,
+          state: values.address.state,
+          country: values.address.country
+        })]
+      });
+    };
+    const updatedRecord = buildUpdatedRecord(membersPage);
+
+    // Remove unneeded keys before API call
+    const {
         id,
         entityId
-      } = _ref2,
-      cleanCustomer = _objectWithoutProperties(_ref2, _excluded);
-    console.log(cleanCustomer);
-    const updatedNameCard = async () => {
+      } = updatedRecord,
+      cleanCustomer = _objectWithoutProperties(updatedRecord, _excluded);
+    console.log("Clean customer data:", cleanCustomer);
+
+    // ---------- STEP 3: API update ----------
+    const updateNameCard = async () => {
       try {
-        await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId, {
+        const response = await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId, {
           method: "PUT",
           headers: {
-            "entityid": entityId,
+            entityid: entityId,
             "Content-Type": "application/json"
           },
           body: JSON.stringify(cleanCustomer)
-        }).then(responce => responce.json()).then(data => console.log("successfully updated the record", data));
+        });
+        const statusCode = response.status; // 🔹 capture status code
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("\u274C Failed to update record. Status: ".concat(statusCode), data);
+        } else {
+          console.log("\u2705 Successfully updated record. Status: ".concat(statusCode), data);
+        }
       } catch (error) {
-        console.log("error in updating the Name card", error);
+        console.error("❌ Network or server error while updating record:", error);
       }
     };
-    updatedNameCard();
+    updateNameCard();
+
+    // ---------- STEP 4: Local state update ----------
+    const updateLocalState = prev => prev.map(customer => {
+      const matchKey = membersPage ? "id" : "resourceId";
+      if (customer[matchKey] === values.customerId) {
+        var _customer$address;
+        return _objectSpread(_objectSpread(_objectSpread({}, customer), membersPage ? {
+          customerName: values.customerName
+        } : {
+          resourceName: values.customerName
+        }), {}, {
+          phoneNumber: values.phoneNumber,
+          status: values.status,
+          address: [_objectSpread(_objectSpread({}, (_customer$address = customer.address) === null || _customer$address === void 0 ? void 0 : _customer$address[0]), {}, {
+            city: values.address.city,
+            state: values.address.state,
+            country: values.address.country
+          })]
+        });
+      }
+      return customer;
+    });
     if (membersPage) {
-      setData(prev => {
-        return prev.map(customer => {
-          var _customer$address;
-          return customer.id === values.customerId ? _objectSpread(_objectSpread({}, customer), {}, {
-            customerName: values.customerName,
-            phoneNumber: values.phoneNumber,
-            status: values.status,
-            address: [_objectSpread(_objectSpread({}, (_customer$address = customer.address) === null || _customer$address === void 0 ? void 0 : _customer$address[0]), {}, {
-              city: values.address.city,
-              state: values.address.state,
-              country: values.address.country
-            })]
-          }) : customer;
-        });
-      });
+      setData(updateLocalState);
     } else {
-      setResourceData(prev => {
-        return prev.map(customer => {
-          var _customer$address2;
-          return customer.resourceId === values.customerId ? _objectSpread(_objectSpread({}, customer), {}, {
-            resourceName: values.customerName,
-            phoneNumber: values.phoneNumber,
-            status: values.status,
-            address: [_objectSpread(_objectSpread({}, (_customer$address2 = customer.address) === null || _customer$address2 === void 0 ? void 0 : _customer$address2[0]), {}, {
-              city: values.address.city,
-              state: values.address.state,
-              country: values.address.country
-            })]
-          }) : customer;
-        });
-      });
+      setResourceData(updateLocalState);
     }
-  }
+  };
   const addressKeys = Object.keys((_address$8 = address === null || address === void 0 ? void 0 : address[0]) !== null && _address$8 !== void 0 ? _address$8 : {});
   const handleSend = () => {
     const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
     // console.log(addTimeForComment);
     if (newComment) {
+      var _comments;
       const commentBody = [...comments, {
-        "commentId": parseInt(comments[comments.length - 1].commentId) + 1 || 1,
+        "commentId": parseInt(((_comments = comments[comments.length - 1]) === null || _comments === void 0 ? void 0 : _comments.commentId) || 0) + 1,
         "author": customerName,
         "message": newComment,
         "date": addTimeForComment
       }];
-      const updatedRecord = {
-        "customerName": customerName,
+      const updatedRecord = _objectSpread(_objectSpread({}, membersPage ? {
+        customerName: customerName
+      } : {
+        resourceName: customerName
+      }), {}, {
         "status": status,
         "address": address,
         "subscriptions": subscriptions,
         "phoneNumber": phoneNumber,
         "comments": commentBody
-      };
+      });
       Object.values(updatedRecord.subscriptions).forEach(sub => {
         delete sub.entityId;
         delete sub.id;
@@ -174,61 +183,85 @@ const NameCard = _ref => {
       console.log("updatedRecord:", updatedRecord);
       const uploadComment = async () => {
         try {
+          // Create a clean copy before modifying
+          let recordToUpload = _objectSpread({}, updatedRecord);
+
+          // 🔹 Remove subscriptions if calling RESOURCES_API
+          if (!membersPage) {
+            const {
+                subscriptions
+              } = recordToUpload,
+              rest = _objectWithoutProperties(recordToUpload, _excluded2);
+            recordToUpload = rest;
+          }
+          console.log("Record:", recordToUpload);
           const response = await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + customerId, {
             method: "PUT",
             headers: {
-              "entityid": entityId,
+              entityid: entityId,
               "Content-Type": "application/json"
             },
-            body: JSON.stringify(updatedRecord)
+            body: JSON.stringify(recordToUpload)
           });
           const data = await response.json();
-          console.log("successfully added the comment:", data);
+          console.log("✅ successfully added the comment:", data);
         } catch (error) {
-          console.log("unable to add Comment:", error);
+          console.log("❌ unable to add Comment:", error);
         }
       };
       uploadComment();
       if (membersPage) {
-        setData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
-          comments: [...prev.comments, {
-            commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
-            message: newComment,
-            author: customerName,
-            date: addTimeForComment
-          }]
-        }) : prev));
+        setData(prevData => prevData.map(prev => {
+          var _comments2;
+          return prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+            comments: [...prev.comments, {
+              commentId: parseInt(((_comments2 = comments[comments.length - 1]) === null || _comments2 === void 0 ? void 0 : _comments2.commentId) || 0) + 1,
+              message: newComment,
+              author: customerName,
+              date: addTimeForComment
+            }]
+          }) : prev;
+        }));
       } else {
-        setResourceData(prevData => prevData.map(prev => prev.resourceId === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
-          comments: [...prev.comments, {
-            commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
-            message: newComment,
-            author: customerName,
-            date: addTimeForComment
-          }]
-        }) : prev));
+        setResourceData(prevData => prevData.map(prev => {
+          var _comments3;
+          return prev.resourceId === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+            comments: [...prev.comments, {
+              commentId: parseInt(((_comments3 = comments[comments.length - 1]) === null || _comments3 === void 0 ? void 0 : _comments3.commentId) || 0) + 1,
+              message: newComment,
+              author: customerName,
+              date: addTimeForComment
+            }]
+          }) : prev;
+        }));
       }
       const existingData = commentBox.findIndex(person => (membersPage ? person.customerName : person.resourceName) === customerName);
       if (existingData !== -1) {
-        setCommentBox(prevComments => prevComments.map((prev, index) => index === existingData ? _objectSpread(_objectSpread({}, prev), {}, {
-          comment: [...prev.comment, {
-            commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
-            message: newComment,
-            author: customerName,
-            date: addTimeForComment
-          }]
-        }) : prev));
+        setCommentBox(prevComments => prevComments.map((prev, index) => {
+          var _comments4;
+          return index === existingData ? _objectSpread(_objectSpread({}, prev), {}, {
+            comment: [...prev.comment, {
+              commentId: parseInt(((_comments4 = comments[comments.length - 1]) === null || _comments4 === void 0 ? void 0 : _comments4.commentId) || 0) + 1,
+              message: newComment,
+              author: customerName,
+              date: addTimeForComment
+            }]
+          }) : prev;
+        }));
       } else {
-        setCommentBox(prevComments => [...prevComments, {
-          customerName,
-          color,
-          comment: [{
-            commentId: parseInt(comments[comments.length - 1]["commentId"]) + 1 || 1,
-            message: newComment,
-            author: customerName,
-            date: addTimeForComment
-          }]
-        }]);
+        setCommentBox(prevComments => {
+          var _comments5;
+          return [...prevComments, {
+            customerName,
+            color,
+            comment: [{
+              commentId: parseInt(((_comments5 = comments[comments.length - 1]) === null || _comments5 === void 0 ? void 0 : _comments5.commentId) || 0) + 1,
+              message: newComment,
+              author: customerName,
+              date: addTimeForComment
+            }]
+          }];
+        });
       }
     }
     setNewComment("");

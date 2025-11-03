@@ -243,6 +243,7 @@ const CmtApp = _ref => {
     const addNewMember = async () => {
       try {
         const postData = await createMember(entityId, newRecord);
+        console.log("post New Resource Data:", postData);
         const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
           id: postData.userId
         });
