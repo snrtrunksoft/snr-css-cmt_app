@@ -9,7 +9,7 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, Row, Space } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
@@ -79,18 +79,20 @@ const NameCard = _ref => {
 
     // ---------- STEP 2: Prepare updated record ----------
     const buildUpdatedRecord = isMember => {
-      var _filterData$address;
+      var _filterData$address, _values$address, _filterData$address2, _values$address2, _filterData$address3, _values$address3, _filterData$address4, _values$address4, _filterData$address5;
       return _objectSpread(_objectSpread(_objectSpread({}, filterData), isMember ? {
-        customerName: values.customerName
+        customerName: values.customerName,
+        email: values.email
       } : {
         resourceName: values.customerName
       }), {}, {
         phoneNumber: values.phoneNumber,
         status: values.status,
         address: [_objectSpread(_objectSpread({}, (_filterData$address = filterData.address) === null || _filterData$address === void 0 ? void 0 : _filterData$address[0]), {}, {
-          city: values.address.city,
-          state: values.address.state,
-          country: values.address.country
+          city: ((_values$address = values.address) === null || _values$address === void 0 ? void 0 : _values$address.city) || ((_filterData$address2 = filterData.address) === null || _filterData$address2 === void 0 || (_filterData$address2 = _filterData$address2[0]) === null || _filterData$address2 === void 0 ? void 0 : _filterData$address2.city) || "",
+          state: ((_values$address2 = values.address) === null || _values$address2 === void 0 ? void 0 : _values$address2.state) || ((_filterData$address3 = filterData.address) === null || _filterData$address3 === void 0 || (_filterData$address3 = _filterData$address3[0]) === null || _filterData$address3 === void 0 ? void 0 : _filterData$address3.state) || "",
+          country: ((_values$address3 = values.address) === null || _values$address3 === void 0 ? void 0 : _values$address3.country) || ((_filterData$address4 = filterData.address) === null || _filterData$address4 === void 0 || (_filterData$address4 = _filterData$address4[0]) === null || _filterData$address4 === void 0 ? void 0 : _filterData$address4.country) || "",
+          street1: ((_values$address4 = values.address) === null || _values$address4 === void 0 ? void 0 : _values$address4.street1) || ((_filterData$address5 = filterData.address) === null || _filterData$address5 === void 0 || (_filterData$address5 = _filterData$address5[0]) === null || _filterData$address5 === void 0 ? void 0 : _filterData$address5.street1) || ""
         })]
       });
     };
@@ -119,8 +121,10 @@ const NameCard = _ref => {
         const data = await response.json();
         if (!response.ok) {
           console.error("\u274C Failed to update record. Status: ".concat(statusCode), data);
+          message.error("Failed to update record");
         } else {
           console.log("\u2705 Successfully updated record. Status: ".concat(statusCode), data);
+          message.success("Record updated successfully");
         }
       } catch (error) {
         console.error("❌ Network or server error while updating record:", error);
@@ -402,41 +406,74 @@ const NameCard = _ref => {
     form: form,
     onFinish: onFinish,
     style: {
-      padding: '20px'
+      padding: '16px 24px',
+      maxWidth: 600,
+      margin: '0 auto',
+      background: '#fff',
+      borderRadius: 8,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '12px 16px'
     }
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "customerId",
-    label: "Customer Id"
+    label: "Customer ID"
   }, /*#__PURE__*/React.createElement(Input, {
-    readOnly: true
+    readOnly: true,
+    size: "middle"
   })), /*#__PURE__*/React.createElement(Form.Item, {
     name: "customerName",
     label: "Customer Name"
-  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Input, {
+    size: "middle"
+  })), membersPage && /*#__PURE__*/React.createElement(Form.Item, {
     name: "email",
     label: "Email"
-  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Input, {
+    size: "middle"
+  })), /*#__PURE__*/React.createElement(Form.Item, {
     name: "phoneNumber",
     label: "Phone"
   }, /*#__PURE__*/React.createElement(Input, {
     inputMode: "numeric",
     pattern: "[0-9]*",
-    maxLength: 10
+    maxLength: 10,
+    size: "middle"
   })), /*#__PURE__*/React.createElement(Form.Item, {
     name: "status",
     label: "Status"
-  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Input, {
+    size: "middle"
+  })), /*#__PURE__*/React.createElement(Form.Item, {
     label: "City",
     name: ['address', 'city']
-  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Input, {
+    size: "middle"
+  })), /*#__PURE__*/React.createElement(Form.Item, {
     label: "State",
     name: ['address', 'state']
-  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Input, {
+    size: "middle"
+  })), /*#__PURE__*/React.createElement(Form.Item, {
     label: "Country",
     name: ['address', 'country']
-  }, /*#__PURE__*/React.createElement(Input, null)), /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Input, {
+    size: "middle"
+  })), /*#__PURE__*/React.createElement(Form.Item, {
+    label: "Street1",
+    name: ['address', 'street1'],
     style: {
-      marginTop: 24
+      gridColumn: '1 / -1'
+    }
+  }, /*#__PURE__*/React.createElement(Input, {
+    size: "middle"
+  }))), /*#__PURE__*/React.createElement(Form.Item, {
+    style: {
+      marginTop: 16
     }
   }, /*#__PURE__*/React.createElement(Button, {
     type: "primary",

@@ -44,6 +44,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   const [ monthlyRecurring, setMonthlyRecurring ] = useState(dayjs().date());
   const [ recurringAllCalendar, setRecurringAllCalendar ] = useState([]);
   const [ recurringResourceCalendar, setRecurringResourceCalendar ] = useState([]);
+  const [ overlapWarning, setOverlapWarning ] = useState("");
 
   useEffect(() => {
     const fetchRecurringCalendar = async() => {
@@ -436,12 +437,20 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     if (!selectedMemberId || !selectedResourceId || !eventTitle){
       validateFields();
     } else {
-      if (valueToSet !== "" && bookSameSlot){
-        updateEventSlot();
-      } else {
-          addEventSlot();
-      }
-    handleCloseEventSlot();
+      // Check for overlap before submitting
+      checkResourceOverlap(selectedResourceId, fromTimeSlot, toTimeSlot, weekEventDate).then(hasOverlap => {
+        if (hasOverlap) {
+          showErrorMessage("Cannot book: Resource has overlapping time slots. Please select a different time or resource.");
+          return;
+        }
+        
+        if (valueToSet !== "" && bookSameSlot){
+          updateEventSlot();
+        } else {
+            addEventSlot();
+        }
+        handleCloseEventSlot();
+      });
     }
   };
 
@@ -493,6 +502,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     setWeeklyDayRecurring("");
     setMonthlyRecurring("");
     setNewErrors({});
+    setOverlapWarning("");
   };
 
   const handleMembersDropDown = (value) => {
@@ -501,6 +511,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
   const handleResourceDropDown = (value) => {
     setSelectedResourceId(value);
+    // Validation will be triggered by useEffect
   };
 
   const handleMembersMenu = (e) => {
@@ -516,7 +527,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   </Menu>);
 
   const handleResourceMenu = (e) => {
-    setSelectedResourceId(e.domEvent.target.textContent);
+    const resourceId = e.domEvent.target.textContent;
+    setSelectedResourceId(resourceId);
+    // Validation will be triggered by useEffect
   }
 
   const filterResources = resourceData.filter((prev) => prev.resourceName.toLowerCase().includes(selectedResourceId.toLowerCase()));
@@ -574,6 +587,18 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   );
 
   const handleDailyCalendarEvent = (time, bookedEventsList) => {
+    // Check if the selected time is in the past
+    if (isPastDateTime(currentDate, time)) {
+      showErrorMessage("Cannot book slots in the past. Please select a present or future time.");
+      return;
+    }
+
+    // Check if slot is completely full
+    if (bookedEventsList >= resourceData.length) {
+      showErrorMessage("This time slot is not available. All resources are booked. Please select another time.");
+      return;
+    }
+
     time = (time === 0 ? "12 AM" : time < 12 ? `${time} AM` : time === 12 ? "12 PM" : `${time - 12} PM`);
       setWeekEventDate(null);
       setMonthlyRecurring(currentDate.getDate());
@@ -583,8 +608,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       } else if (bookedEventsList < resourceData.length) {
         setOpenAppointment(false);
         setOpenEventSlot(true);
-    } else if (bookedEventsList === resourceData.length) {
-      console.log("Slot is Full....");
     }
       setTimeSlot(time);
       const dayFormat = dayjs(dayjs().date()).format('dddd');
@@ -592,14 +615,27 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   }
 
   const handleWeeklyCalendarEvent = (hour,date, bookedEventsList) => {
+    // Extract hour from the hour string (e.g., "9 AM" -> 9)
+    const hourValue = parseInt(dayjs(hour, "h A").format("HH"), 10);
+    
+    // Check if the selected date/time is in the past
+    if (isPastDateTime(date, hourValue)) {
+      showErrorMessage("Cannot book slots in the past. Please select a present or future time.");
+      return;
+    }
+
+    // Check if slot is completely full
+    if (bookedEventsList >= resourceData.length) {
+      showErrorMessage("This time slot is not available. All resources are booked. Please select another time.");
+      return;
+    }
+
     if (calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" && bookedEventsList) {
         setOpenEventSlot(true);
         setOpenAppointment(true);
       } else if (bookedEventsList < resourceData.length) {
         setOpenAppointment(false);
         setOpenEventSlot(true);
-    } else if (bookedEventsList === resourceData.length) {
-      console.log("Slot is Full....");
     }
       setTimeSlot(hour);
       const dayFormat = dayjs(date).format('dddd');
@@ -608,6 +644,126 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       setMonthlyRecurring(date.getDate());
     }
   
+  const isPastDateTime = (date, hour) => {
+    const now = new Date();
+    const selectedDateTime = new Date(date);
+    selectedDateTime.setHours(hour, 0, 0, 0);
+    return selectedDateTime < now;
+  };
+
+  const showErrorMessage = (message) => {
+    setEventStatus(message);
+    setOpenEventStatusModal(true);
+    setTimeout(() => {
+      setOpenEventStatusModal(false);
+      setEventStatus("");
+    }, 2000);
+  };
+
+  const checkResourceOverlap = async (resourceId, fromTime, toTime, selectedDate) => {
+    if (!resourceId || fromTime === null || toTime === null) {
+      setOverlapWarning("");
+      return false;
+    }
+
+    // Convert to numbers if they're strings
+    const fromTimeNum = typeof fromTime === 'string' ? parseInt(fromTime, 10) : fromTime;
+    const toTimeNum = typeof toTime === 'string' ? parseInt(toTime, 10) : toTime;
+
+    if (fromTimeNum >= toTimeNum) {
+      setOverlapWarning("⚠️ End time must be after start time");
+      return true;
+    }
+
+    try {
+      // Fetch the specific resource's calendar for the current month
+      const response = await fetch(CALENDAR_API + resourceId 
+        + "/month/" + currentDate.toLocaleString("default", { month: "long" })
+        + "/year/" + currentDate.getFullYear(), {
+          method: "GET",
+          headers: {
+            "entityid": entityId,
+            "Content-Type": "application/json"
+          }
+        });
+      
+      const resourceCalendarData = await response.json();
+      console.log("Fetched resource calendar for overlap check:", { resourceId, resourceCalendarData });
+
+      // Check in fetched resourceCalendar for existing bookings
+      const overlappingEvents = resourceCalendarData.filter(calendar => {
+        const isMatchingDay =
+          calendar.month === monthName &&
+          parseInt(calendar.year) === currentDate.getFullYear() &&
+          parseInt(calendar.date) === (selectedDate !== null ? selectedDate : currentDate.getDate());
+
+        if (!isMatchingDay) return false;
+
+        return calendar.events?.some(event => {
+          // Check both resourceId and resourceName for compatibility
+          const isSameResource = event.resourceId === resourceId || event.resourceName === resourceId;
+          
+          // Parse event times as numbers
+          const eventFrom = typeof event.from === 'string' ? parseInt(event.from, 10) : event.from;
+          const eventTo = typeof event.to === 'string' ? parseInt(event.to, 10) : event.to;
+          
+          // Check if time ranges overlap
+          const hasOverlap = fromTimeNum < eventTo && eventFrom < toTimeNum;
+          
+          console.log("Event check:", { 
+            event: event.title, 
+            isSameResource, 
+            eventFrom, 
+            eventTo, 
+            hasOverlap
+          });
+          
+          return isSameResource && hasOverlap;
+        });
+      });
+
+      // Fetch recurring events for the specific resource
+      const recurringResponse = await fetch(RECURRING_CALENDAR_API + resourceId + "/recurring/", {
+        method: "GET",
+        headers: {
+          "entityid": entityId,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      const recurringData = await recurringResponse.json();
+      console.log("Fetched recurring calendar:", recurringData);
+
+      const weekday = dayjs(selectedDate ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDate) : currentDate).format("dddd").toUpperCase();
+      const recurringOverlap = recurringData[weekday] ? 
+        Object.values(recurringData[weekday]).some(hourEvents => 
+          Array.isArray(hourEvents) && hourEvents.some(event => {
+            const isSameResource = event.resourceId === resourceId || event.resourceName === resourceId;
+            if (isSameResource) {
+              const eventFrom = typeof event.from === 'string' ? parseInt(event.from, 10) : event.from;
+              const eventTo = typeof event.to === 'string' ? parseInt(event.to, 10) : event.to;
+              return fromTimeNum < eventTo && eventFrom < toTimeNum;
+            }
+            return false;
+          })
+        ) : false;
+
+      console.log("Overlap check result:", { overlappingEventsCount: overlappingEvents.length, recurringOverlap });
+
+      if (overlappingEvents.length > 0 || recurringOverlap) {
+        setOverlapWarning(`⚠️ Warning: This resource "${resourceId}" is already booked for overlapping time slots`);
+        return true;
+      }
+
+      setOverlapWarning("");
+      return false;
+    } catch (error) {
+      console.error("Error checking resource overlap:", error);
+      setOverlapWarning("");
+      return false;
+    }
+  };
+
   const handleDropDown = (value) => {
     setResourceDropDown(false);
     setMemberDropDown(false);
@@ -629,6 +785,20 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       setRecurring(false);
     }
   },[ frequencyOfEvent ])
+
+  // Auto-check for overlaps when time slots or resource changes
+  useEffect(() => {
+    const checkOverlap = async () => {
+      if (selectedResourceId && 
+          fromTimeSlot !== null && fromTimeSlot !== undefined && 
+          toTimeSlot !== null && toTimeSlot !== undefined) {
+        await checkResourceOverlap(selectedResourceId, fromTimeSlot, toTimeSlot, weekEventDate);
+      } else {
+        setOverlapWarning("");
+      }
+    };
+    checkOverlap();
+  }, [selectedResourceId, fromTimeSlot, toTimeSlot, weekEventDate])
 
   return (
     <div className="calendar-container">
@@ -1083,16 +1253,35 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                                 format="h A"
                                 style={{width:'100px'}}
                                 value={Number.isInteger(fromTimeSlot) ? dayjs().hour(fromTimeSlot) : fromTimeSlot}
-                                onChange={(e) => setFromTimeSlot(e.hour())}
+                                onChange={(e) => {
+                                  setFromTimeSlot(e.hour());
+                                  // Validation will be triggered by useEffect
+                                }}
                                 needConfirm={false}
                                 /> &nbsp;&nbsp;
                       To :<TimePicker
                                 format="h A"
                                 style={{width:'100px'}}
                                 value={Number.isInteger(toTimeSlot) ? dayjs().hour(toTimeSlot) : toTimeSlot}
-                                onChange={(e) => setToTimeSlot(e.hour())}
+                                onChange={(e) => {
+                                  setToTimeSlot(e.hour());
+                                  // Validation will be triggered by useEffect
+                                }}
                                 needConfirm={false}
                                 /></h3>
+                  {overlapWarning && (
+                    <div style={{
+                      color: '#ff4d4f',
+                      backgroundColor: '#fff2e8',
+                      border: '1px solid #ffbb96',
+                      borderRadius: '4px',
+                      padding: '8px 12px',
+                      marginTop: '10px',
+                      fontSize: '14px'
+                    }}>
+                      {overlapWarning}
+                    </div>
+                  )}
             </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
                 {paginateEvents.map(item => (
                   <center key={item.title}>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, Row, Space } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
@@ -74,16 +74,17 @@ const NameCard = ({
         const buildUpdatedRecord = (isMember) => ({
             ...filterData,
             ...(isMember
-            ? { customerName: values.customerName }
+            ? { customerName: values.customerName, email: values.email }
             : { resourceName: values.customerName }),
             phoneNumber: values.phoneNumber,
             status: values.status,
             address: [
             {
                 ...filterData.address?.[0],
-                city: values.address.city,
-                state: values.address.state,
-                country: values.address.country,
+                city: values.address?.city || filterData.address?.[0]?.city || "",
+                state: values.address?.state || filterData.address?.[0]?.state || "",
+                country: values.address?.country || filterData.address?.[0]?.country || "",
+                street1: values.address?.street1 || filterData.address?.[0]?.street1 || "",
             },
             ],
         });
@@ -114,8 +115,10 @@ const NameCard = ({
 
                 if (!response.ok) {
                 console.error(`❌ Failed to update record. Status: ${statusCode}`, data);
+                message.error("Failed to update record");
                 } else {
                 console.log(`✅ Successfully updated record. Status: ${statusCode}`, data);
+                message.success("Record updated successfully");
                 }
 
             } catch (error) {
@@ -384,44 +387,70 @@ const NameCard = ({
                             </h3>
                         </Col>
                     </Row>
-                    <Form hidden={!isEditable} layout="vertical" form={form} onFinish={onFinish} style={{padding:'20px'}}>
-                        <Form.Item name="customerId" label="Customer Id">
-                            <Input readOnly/>
-                        </Form.Item>
+                    <Form
+                        hidden={!isEditable}
+                        layout="vertical"
+                        form={form}
+                        onFinish={onFinish}
+                        style={{
+                            padding: '16px 24px',
+                            maxWidth: 600,
+                            margin: '0 auto',
+                            background: '#fff',
+                            borderRadius: 8,
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                        }}
+                        >
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
+                            <Form.Item name="customerId" label="Customer ID">
+                            <Input readOnly size="middle" />
+                            </Form.Item>
 
-                        <Form.Item name="customerName" label="Customer Name">
-                            <Input />
-                        </Form.Item>
+                            <Form.Item name="customerName" label="Customer Name">
+                            <Input size="middle" />
+                            </Form.Item>
 
-                        <Form.Item name="email" label="Email">
-                            <Input />
-                        </Form.Item>
+                            {membersPage && (
+                            <Form.Item name="email" label="Email">
+                                <Input size="middle" />
+                            </Form.Item>
+                            )}
 
-                        <Form.Item name="phoneNumber" label="Phone">
-                            <Input inputMode="numeric" pattern="[0-9]*" maxLength={10}/>
-                        </Form.Item>
+                            <Form.Item name="phoneNumber" label="Phone">
+                            <Input inputMode="numeric" pattern="[0-9]*" maxLength={10} size="middle" />
+                            </Form.Item>
 
-                        <Form.Item name="status" label="Status">
-                            <Input />
-                        </Form.Item>
+                            <Form.Item name="status" label="Status">
+                            <Input size="middle" />
+                            </Form.Item>
 
-                        <Form.Item label="City" name={['address', 'city']}>
-                            <Input />
-                        </Form.Item>
+                            <Form.Item label="City" name={['address', 'city']}>
+                            <Input size="middle" />
+                            </Form.Item>
 
-                        <Form.Item label="State" name={['address', 'state']}>
-                            <Input />
-                        </Form.Item>
+                            <Form.Item label="State" name={['address', 'state']}>
+                            <Input size="middle" />
+                            </Form.Item>
 
-                        <Form.Item label="Country" name={['address', 'country']}>
-                            <Input />
-                        </Form.Item>
-                        <Form.Item style={{ marginTop: 24 }}>
+                            <Form.Item label="Country" name={['address', 'country']}>
+                            <Input size="middle" />
+                            </Form.Item>
+
+                            <Form.Item
+                            label="Street1"
+                            name={['address', 'street1']}
+                            style={{ gridColumn: '1 / -1' }}
+                            >
+                            <Input size="middle" />
+                            </Form.Item>
+                        </div>
+
+                        <Form.Item style={{ marginTop: 16 }}>
                             <Button type="primary" htmlType="submit" block>
-                                Save Changes
+                            Save Changes
                             </Button>
                         </Form.Item>
-                    </Form>
+                        </Form>
                         <PunchCardsPage
                             data={data}
                             customerId={customerId}

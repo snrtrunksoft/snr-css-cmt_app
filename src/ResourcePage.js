@@ -52,6 +52,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
         const addNewResource = async () => {
           try {
             const postData = await createResource(entityId, newRecord);
+            console.log("new resource data:", newRecord);
             console.log("post New Resource Data:", postData);
             const updatedRecord = {
               ...newRecord,
