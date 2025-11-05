@@ -259,6 +259,7 @@ const CmtApp = ({ setSelectedApp }) => {
     const addNewMember = async () => {
       try {
         const postData = await createMember(entityId, newRecord);
+        console.log("new customer data:", newRecord);
         console.log("post New Member Data:", postData);
         const updatedRecord = { ...newRecord, id: postData.userId };
         setDuplicateData(prevData => [...prevData, updatedRecord]);

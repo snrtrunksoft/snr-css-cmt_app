@@ -58,6 +58,7 @@ const ResourcePage = _ref => {
     const addNewResource = async () => {
       try {
         const postData = await createResource(entityId, newRecord);
+        console.log("new resource data:", newRecord);
         console.log("post New Resource Data:", postData);
         const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
           resourceId: (firstName || "").slice(0, 3) + (postData.resourceId || "")
