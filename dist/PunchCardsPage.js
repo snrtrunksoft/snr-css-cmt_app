@@ -3,7 +3,7 @@ function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t =
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Checkbox, Col, Row } from "antd";
 import { SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
 import { LoadingOutlined, SwapOutlined } from "@ant-design/icons";
@@ -22,6 +22,20 @@ const PunchCardsPage = _ref => {
   const [checkedCount, setCheckedCount] = useState(0);
   const [punchCards, setPunchCards] = useState(subscriptions);
   const [isLoading, setIsLoading] = useState(false);
+  const [effectiveEntityId, setEffectiveEntityId] = useState(null);
+  useEffect(() => {
+    if (!effectiveEntityId && typeof window !== "undefined") {
+      try {
+        const storedId = localStorage.getItem("entityId");
+        if (storedId) {
+          setEffectiveEntityId(storedId);
+          console.log("PunchCardsPage using entityId from localStorage:", storedId);
+        }
+      } catch (e) {
+        console.log("Unable to read entityId from localStorage in PunchCardsPage", e);
+      }
+    }
+  }, [effectiveEntityId]);
   const handleCheckboxChange = (e, value) => {
     const count = e.target.checked ? checkedCount + 1 : checkedCount - 1;
     setCheckedCount(count);
@@ -47,7 +61,7 @@ const PunchCardsPage = _ref => {
         const responce = await fetch(SUBSCRIPTIONS_API, {
           method: 'POST',
           headers: {
-            'entityid': 'w_123',
+            "entityid": effectiveEntityId || "",
             "Content-Type": "application/json"
           },
           body: JSON.stringify(newSub)
@@ -82,7 +96,7 @@ const PunchCardsPage = _ref => {
         await fetch(SUBSCRIPTIONS_API + value.id, {
           method: "PUT",
           headers: {
-            'entityid': 'w_123',
+            "entityid": effectiveEntityId || "",
             "Content-Type": "application/json"
           },
           body: JSON.stringify(updatedSubscriptionDetails)

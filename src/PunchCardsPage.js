@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Checkbox, Col, Row } from "antd";
 import { SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
 import { LoadingOutlined, SwapOutlined } from "@ant-design/icons";
@@ -9,6 +9,22 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
     const [ checkedCount, setCheckedCount ] = useState(0);
     const [ punchCards, setPunchCards ] = useState(subscriptions);
     const [ isLoading, setIsLoading ] = useState(false);
+
+    const [effectiveEntityId, setEffectiveEntityId] = useState(null);
+
+    useEffect(() => {
+      if (!effectiveEntityId && typeof window !== "undefined") {
+        try {
+          const storedId = localStorage.getItem("entityId");
+          if (storedId) {
+            setEffectiveEntityId(storedId);
+            console.log("PunchCardsPage using entityId from localStorage:", storedId);
+          }
+        } catch (e) {
+          console.log("Unable to read entityId from localStorage in PunchCardsPage", e);
+        }
+      }
+    }, [effectiveEntityId]);
 
     const handleCheckboxChange = (e,value) => {
         const count = e.target.checked ? checkedCount + 1 : checkedCount - 1;
@@ -32,7 +48,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 const responce = await fetch(SUBSCRIPTIONS_API ,{
                     method:'POST',
                     headers: {
-                        'entityid' : 'w_123',
+                        "entityid" : effectiveEntityId || "",
                         "Content-Type" : "application/json",
                     },
                     body:JSON.stringify(newSub)
@@ -69,7 +85,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 await fetch(SUBSCRIPTIONS_API + value.id,{
                     method : "PUT",
                     headers : {
-                        'entityid' : 'w_123',
+                        "entityid" : effectiveEntityId || "",
                         "Content-Type" : "application/json"
                     },
                     body: JSON.stringify(updatedSubscriptionDetails)

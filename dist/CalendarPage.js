@@ -55,6 +55,20 @@ const CalendarPage = _ref => {
   const [monthlyRecurring, setMonthlyRecurring] = useState(dayjs().date());
   const [recurringAllCalendar, setRecurringAllCalendar] = useState([]);
   const [recurringResourceCalendar, setRecurringResourceCalendar] = useState([]);
+  const [effectiveEntityId, setEffectiveEntityId] = useState(entityId || null);
+  useEffect(() => {
+    if (!effectiveEntityId && typeof window !== "undefined") {
+      try {
+        const storedId = localStorage.getItem("entityId");
+        if (storedId) {
+          setEffectiveEntityId(storedId);
+          console.log("CalendarPage using entityId from localStorage:", storedId);
+        }
+      } catch (e) {
+        console.log("Unable to read entityId from localStorage in CalendarPage", e);
+      }
+    }
+  }, [effectiveEntityId, entityId]);
   const [overlapWarning, setOverlapWarning] = useState("");
   useEffect(() => {
     const fetchRecurringCalendar = async () => {
@@ -62,7 +76,7 @@ const CalendarPage = _ref => {
         const responce = await fetch(RECURRING_CALENDAR_API + "All/recurring/", {
           method: "GET",
           headers: {
-            "entityid": entityId,
+            "entityid": effectiveEntityId || "",
             "Content-Type": "application/json"
           }
         });
@@ -76,7 +90,7 @@ const CalendarPage = _ref => {
       }
     };
     fetchRecurringCalendar();
-  }, []);
+  }, [effectiveEntityId]);
   const screens = useBreakpoint();
   useEffect(() => {
     if (!screens.lg && !screens.xl) {
@@ -134,7 +148,7 @@ const CalendarPage = _ref => {
           }) + "/year/" + currentDate.getFullYear(), {
             method: "GET",
             headers: {
-              "entityid": entityId,
+              "entityid": effectiveEntityId || "",
               "Content-Type": "application/json"
             }
           });
@@ -152,7 +166,7 @@ const CalendarPage = _ref => {
           const responce = await fetch(RECURRING_CALENDAR_API + calendarUserId + "/recurring/", {
             method: "GET",
             headers: {
-              "entityid": entityId,
+              "entityid": effectiveEntityId || "",
               "Content-Type": "application/json"
             }
           });
@@ -167,7 +181,7 @@ const CalendarPage = _ref => {
       };
       fetchMembersCalendar();
     }
-  }, [calendarUserId, currentDate]);
+  }, [calendarUserId, currentDate, effectiveEntityId]);
   const generateCalendar = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -313,7 +327,7 @@ const CalendarPage = _ref => {
         await fetch(EVENTS_API + "".concat(filteredEvents[currentPage - 1].id), {
           method: "PUT",
           headers: {
-            "entityid": entityId,
+            "entityid": effectiveEntityId || "",
             "Content-Type": "application/json"
           },
           body: JSON.stringify(eventDetails)
@@ -338,7 +352,7 @@ const CalendarPage = _ref => {
         const response = await fetch(EVENTS_API, {
           method: "POST",
           headers: {
-            entityid: entityId,
+            "entityid": effectiveEntityId || "",
             'Content-Type': "application/json"
           },
           body: JSON.stringify(eventDetails)
@@ -425,7 +439,7 @@ const CalendarPage = _ref => {
         await fetch(EVENTS_API + "".concat(filteredEvents[currentPage - 1].id), {
           method: "DELETE",
           headers: {
-            entityid: entityId,
+            "entityid": effectiveEntityId || "",
             "Content-Type": "application/json"
           }
         }).then(responce => responce.json()).then(data => console.log("Deleted event Successfully", data));
@@ -605,7 +619,7 @@ const CalendarPage = _ref => {
       }) + "/year/" + currentDate.getFullYear(), {
         method: "GET",
         headers: {
-          "entityid": entityId,
+          "entityid": effectiveEntityId || "",
           "Content-Type": "application/json"
         }
       });
@@ -645,7 +659,7 @@ const CalendarPage = _ref => {
       const recurringResponse = await fetch(RECURRING_CALENDAR_API + resourceId + "/recurring/", {
         method: "GET",
         headers: {
-          "entityid": entityId,
+          "entityid": effectiveEntityId || "",
           "Content-Type": "application/json"
         }
       });
