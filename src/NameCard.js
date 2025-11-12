@@ -19,7 +19,8 @@ const NameCard = ({
     email,
     phoneNumber, 
     address, 
-    status, 
+    status,
+    group,
     comments,
     subscriptions,
     commentBox, 
@@ -39,6 +40,7 @@ const NameCard = ({
         phoneNumber: phoneNumber || "",
         email: email || "",
         status: status || "",
+        group: group || "",
         address: {
             houseNo: address?.[0]?.houseNo || "",
             street1: address?.[0]?.street1 || "",
@@ -78,6 +80,7 @@ const NameCard = ({
             : { resourceName: values.customerName }),
             phoneNumber: values.phoneNumber,
             status: values.status,
+            group: values.group,
             address: [
             {
                 ...filterData.address?.[0],
@@ -140,6 +143,7 @@ const NameCard = ({
                     : { resourceName: values.customerName }),
                 phoneNumber: values.phoneNumber,
                 status: values.status,
+                group: values.group,
                 address: [
                     {
                     ...customer.address?.[0],
@@ -424,6 +428,10 @@ const NameCard = ({
                             <Input size="middle" />
                             </Form.Item>
 
+                            <Form.Item name="group" label="Group">
+                            <Input size="middle" />
+                            </Form.Item>
+
                             <Form.Item label="City" name={['address', 'city']}>
                             <Input size="middle" />
                             </Form.Item>
@@ -451,15 +459,17 @@ const NameCard = ({
                             </Button>
                         </Form.Item>
                         </Form>
-                        <PunchCardsPage
-                            data={data}
-                            customerId={customerId}
-                            customerName={customerName}
-                            setNewComment={setNewComment}
-                            handleSend={handleSend}
-                            subscriptions={subscriptions}
-                            color={color} />
-                    <h3>Comments :</h3>
+                        {membersPage && (
+                            <PunchCardsPage
+                                data={data}
+                                customerId={customerId}
+                                customerName={customerName}
+                                setNewComment={setNewComment}
+                                handleSend={handleSend}
+                                subscriptions={subscriptions || []}
+                                color={color} />
+                        )}
+                    <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
                         {comments?.map((comment,index) =>(
                             <Space 

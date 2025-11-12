@@ -66,6 +66,7 @@ const CmtApp = ({ setSelectedApp }) => {
   const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = useState(false);
   const [dataView, setDataView] = useState("grid");
   const [statusSelection, setStatusSelection] = useState("All");
+  const [groupSelection, setGroupSelection] = useState("All");
   const [showDashboard, setShowDashboard] = useState(false);
   const [openCalendarPage, setOpenCalendarPage] = useState(false);
   const [resourcePage, setResourcePage] = useState(false);
@@ -107,7 +108,11 @@ const CmtApp = ({ setSelectedApp }) => {
       const fetchingData = async () => {
         try {
           const fetchedData = await getMembers(entityId);
-          setData(fetchedData);
+          const groupingData = fetchedData.map((prev) => ({
+            ...prev,
+            group: prev.group || "group_1",
+          }));
+          setData(groupingData);
         } catch (error) {
           console.error("Error while fetching members", error);
         }
@@ -182,6 +187,13 @@ const CmtApp = ({ setSelectedApp }) => {
           .map(addr => addr?.city?.trim())
           .filter(Boolean)
       )
+    )
+  );
+
+  // Unique group list for dropdown
+  const uniqueGroups = Array.from(
+    new Set(
+      data.map(item => item?.group?.trim()).filter(Boolean)
     )
   );
 
@@ -289,6 +301,18 @@ const CmtApp = ({ setSelectedApp }) => {
     }
   };
 
+  const handleGroupSelection = (value) => {
+    setGroupSelection(value);
+    if (value === "All") {
+      setDuplicateData(data);
+    } else {
+      const filteredRecords = data.filter(
+        (item) => item.group === value
+      );
+      setDuplicateData(filteredRecords);
+    }
+  };
+
   const handleSearchText = (value) => {
     setSearchText(value);
     if (membersPage) {
@@ -321,6 +345,22 @@ const CmtApp = ({ setSelectedApp }) => {
       {uniqueCities.map((city, index) => (
         <option key={index} value={city}>
           {city}
+        </option>
+      ))}
+    </select>
+  );
+
+  const groupDropDownList = (
+    <select
+      value={groupSelection}
+      hidden={openCalendarPage || todosPage || resourcePage || isLoading}
+      style={{ borderRadius: '5px', padding: '5px', margin: '0px 10px', outline: 'none', fontSize: '15px' }}
+      onChange={(e) => handleGroupSelection(e.target.value)}
+    >
+      <option value="All">Select Group</option>
+      {uniqueGroups.map((group, index) => (
+        <option key={index} value={group}>
+          {group}
         </option>
       ))}
     </select>
@@ -380,7 +420,10 @@ const CmtApp = ({ setSelectedApp }) => {
             />
           </Col>
           <Col style={{ fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'end' }}>
-            <span hidden={openCalendarPage || todosPage || resourcePage || isLoading}>Status:</span> {dropDownList}
+            <span hidden={openCalendarPage || todosPage || resourcePage || isLoading}>City:</span> {dropDownList}
+          </Col>
+          <Col style={{ fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'end' }}>
+            <span hidden={openCalendarPage || todosPage || resourcePage || isLoading}>Group:</span> {groupDropDownList}
           </Col>
         </Row>
         {isLoading ? (<h3><LoadingOutlined /> Loading...</h3>) :
@@ -441,6 +484,7 @@ const CmtApp = ({ setSelectedApp }) => {
                           phoneNumber={item.phoneNumber}
                           address={item.address}
                           status={item.status}
+                          group={item.group}
                           comments={item.comments}
                           subscriptions={item.subscriptions}
                           setDuplicateData={setDuplicateData}
