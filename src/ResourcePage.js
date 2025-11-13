@@ -31,6 +31,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
           country,
           pincode,
           status = "ACTIVE",
+          group = "group_1",
         } = values;
       
         const newRecord = {
@@ -46,6 +47,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
             state: state || ""
           }],
           status: status,
+          group: group,
           comments: []
         };
       
@@ -131,6 +133,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
                                     phoneNumber={item.phoneNumber}
                                     address={item.address}
                                     status={item.status}
+                                    group={item.group}
                                     comments={item.comments}
                                     subscriptions={""}
                                     commentBox = {commentBox}

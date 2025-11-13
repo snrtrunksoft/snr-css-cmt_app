@@ -30,6 +30,7 @@ const NameCard = _ref => {
     phoneNumber,
     address,
     status,
+    group,
     comments,
     subscriptions,
     commentBox,
@@ -50,6 +51,7 @@ const NameCard = _ref => {
     phoneNumber: phoneNumber || "",
     email: email || "",
     status: status || "",
+    group: group || "",
     address: {
       houseNo: (address === null || address === void 0 || (_address$ = address[0]) === null || _address$ === void 0 ? void 0 : _address$.houseNo) || "",
       street1: (address === null || address === void 0 || (_address$2 = address[0]) === null || _address$2 === void 0 ? void 0 : _address$2.street1) || "",
@@ -88,6 +90,7 @@ const NameCard = _ref => {
       }), {}, {
         phoneNumber: values.phoneNumber,
         status: values.status,
+        group: values.group,
         address: [_objectSpread(_objectSpread({}, (_filterData$address = filterData.address) === null || _filterData$address === void 0 ? void 0 : _filterData$address[0]), {}, {
           city: ((_values$address = values.address) === null || _values$address === void 0 ? void 0 : _values$address.city) || ((_filterData$address2 = filterData.address) === null || _filterData$address2 === void 0 || (_filterData$address2 = _filterData$address2[0]) === null || _filterData$address2 === void 0 ? void 0 : _filterData$address2.city) || "",
           state: ((_values$address2 = values.address) === null || _values$address2 === void 0 ? void 0 : _values$address2.state) || ((_filterData$address3 = filterData.address) === null || _filterData$address3 === void 0 || (_filterData$address3 = _filterData$address3[0]) === null || _filterData$address3 === void 0 ? void 0 : _filterData$address3.state) || "",
@@ -144,6 +147,7 @@ const NameCard = _ref => {
         }), {}, {
           phoneNumber: values.phoneNumber,
           status: values.status,
+          group: values.group,
           address: [_objectSpread(_objectSpread({}, (_customer$address = customer.address) === null || _customer$address === void 0 ? void 0 : _customer$address[0]), {}, {
             city: values.address.city,
             state: values.address.state,
@@ -449,6 +453,11 @@ const NameCard = _ref => {
   }, /*#__PURE__*/React.createElement(Input, {
     size: "middle"
   })), /*#__PURE__*/React.createElement(Form.Item, {
+    name: "group",
+    label: "Group"
+  }, /*#__PURE__*/React.createElement(Input, {
+    size: "middle"
+  })), /*#__PURE__*/React.createElement(Form.Item, {
     label: "City",
     name: ['address', 'city']
   }, /*#__PURE__*/React.createElement(Input, {
@@ -479,15 +488,20 @@ const NameCard = _ref => {
     type: "primary",
     htmlType: "submit",
     block: true
-  }, "Save Changes"))), /*#__PURE__*/React.createElement(PunchCardsPage, {
+  }, "Save Changes"))), membersPage && /*#__PURE__*/React.createElement(PunchCardsPage, {
     data: data,
     customerId: customerId,
     customerName: customerName,
     setNewComment: setNewComment,
     handleSend: handleSend,
-    subscriptions: subscriptions,
+    subscriptions: subscriptions || [],
     color: color
-  }), /*#__PURE__*/React.createElement("h3", null, "Comments :"), /*#__PURE__*/React.createElement(Row, {
+  }), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      marginTop: '30px',
+      marginBottom: '15px'
+    }
+  }, "Comments :"), /*#__PURE__*/React.createElement(Row, {
     style: {
       display: 'flex',
       flexDirection: 'column',

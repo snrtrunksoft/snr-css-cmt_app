@@ -38,7 +38,8 @@ const ResourcePage = _ref => {
       state,
       country,
       pincode,
-      status = "ACTIVE"
+      status = "ACTIVE",
+      group = "group_1"
     } = values;
     const newRecord = {
       resourceName: (firstName || "") + (lastName || ""),
@@ -53,6 +54,7 @@ const ResourcePage = _ref => {
         state: state || ""
       }],
       status: status,
+      group: group,
       comments: []
     };
     const addNewResource = async () => {
@@ -143,6 +145,7 @@ const ResourcePage = _ref => {
     phoneNumber: item.phoneNumber,
     address: item.address,
     status: item.status,
+    group: item.group,
     comments: item.comments,
     subscriptions: "",
     commentBox: commentBox,

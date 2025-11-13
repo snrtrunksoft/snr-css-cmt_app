@@ -69,6 +69,7 @@ const CmtApp = _ref => {
   const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = useState(false);
   const [dataView, setDataView] = useState("grid");
   const [statusSelection, setStatusSelection] = useState("All");
+  const [groupSelection, setGroupSelection] = useState("All");
   const [showDashboard, setShowDashboard] = useState(false);
   const [openCalendarPage, setOpenCalendarPage] = useState(false);
   const [resourcePage, setResourcePage] = useState(false);
@@ -109,7 +110,10 @@ const CmtApp = _ref => {
       const fetchingData = async () => {
         try {
           const fetchedData = await getMembers(entityId);
-          setData(fetchedData);
+          const groupingData = fetchedData.map(prev => _objectSpread(_objectSpread({}, prev), {}, {
+            group: prev.group || "group_1"
+          }));
+          setData(groupingData);
         } catch (error) {
           console.error("Error while fetching members", error);
         }
@@ -176,6 +180,12 @@ const CmtApp = _ref => {
     var _addr$city;
     return addr === null || addr === void 0 || (_addr$city = addr.city) === null || _addr$city === void 0 ? void 0 : _addr$city.trim();
   }).filter(Boolean))));
+
+  // Unique group list for dropdown
+  const uniqueGroups = Array.from(new Set(data.map(item => {
+    var _item$group;
+    return item === null || item === void 0 || (_item$group = item.group) === null || _item$group === void 0 ? void 0 : _item$group.trim();
+  }).filter(Boolean)));
 
   // Legend labels mirror labels by default; customize here if needed
   const legendLabels = uniqueCities.reduce((acc, city) => {
@@ -273,6 +283,15 @@ const CmtApp = _ref => {
       setDuplicateData(filteredRecords);
     }
   };
+  const handleGroupSelection = value => {
+    setGroupSelection(value);
+    if (value === "All") {
+      setDuplicateData(data);
+    } else {
+      const filteredRecords = data.filter(item => item.group === value);
+      setDuplicateData(filteredRecords);
+    }
+  };
   const handleSearchText = value => {
     setSearchText(value);
     if (membersPage) {
@@ -302,6 +321,23 @@ const CmtApp = _ref => {
     key: index,
     value: city
   }, city)));
+  const groupDropDownList = /*#__PURE__*/React.createElement("select", {
+    value: groupSelection,
+    hidden: openCalendarPage || todosPage || resourcePage || isLoading,
+    style: {
+      borderRadius: '5px',
+      padding: '5px',
+      margin: '0px 10px',
+      outline: 'none',
+      fontSize: '15px'
+    },
+    onChange: e => handleGroupSelection(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "All"
+  }, "Select Group"), uniqueGroups.map((group, index) => /*#__PURE__*/React.createElement("option", {
+    key: index,
+    value: group
+  }, group)));
   const colSize = duplicateData.length <= 3 ? 24 / duplicateData.length : 6;
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -400,7 +436,16 @@ const CmtApp = _ref => {
     }
   }, /*#__PURE__*/React.createElement("span", {
     hidden: openCalendarPage || todosPage || resourcePage || isLoading
-  }, "Status:"), " ", dropDownList)), isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : membersPage ? /*#__PURE__*/React.createElement(React.Fragment, null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
+  }, "City:"), " ", dropDownList), /*#__PURE__*/React.createElement(Col, {
+    style: {
+      fontSize: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'end'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    hidden: openCalendarPage || todosPage || resourcePage || isLoading
+  }, "Group:"), " ", groupDropDownList)), isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : membersPage ? /*#__PURE__*/React.createElement(React.Fragment, null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
     className: "table-wrapper"
   }, /*#__PURE__*/React.createElement(Row, {
     className: "table-row table-header"
@@ -466,6 +511,7 @@ const CmtApp = _ref => {
     phoneNumber: item.phoneNumber,
     address: item.address,
     status: item.status,
+    group: item.group,
     comments: item.comments,
     subscriptions: item.subscriptions,
     setDuplicateData: setDuplicateData,
