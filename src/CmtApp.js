@@ -13,6 +13,7 @@ import NameCard from './NameCard';
 import ResourcePage from './ResourcePage';
 import TodosPage from './TodosPage';
 import AddNewUser from './AddNewUser';
+import StatusModal from './StatusModal';
 import CalendarPage from './CalendarPage';
 import './CmtApp.css';
 
@@ -64,6 +65,7 @@ const CmtApp = ({ setSelectedApp }) => {
   }, []);
 
   const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = useState(false);
+  const [statusModal, setStatusModal] = useState({ visible: false, type: "", title: "", message: "", entityType: "" });
   const [dataView, setDataView] = useState("grid");
   const [statusSelection, setStatusSelection] = useState("All");
   const [groupSelection, setGroupSelection] = useState("All");
@@ -110,7 +112,7 @@ const CmtApp = ({ setSelectedApp }) => {
           const fetchedData = await getMembers(entityId);
           const groupingData = fetchedData.map((prev) => ({
             ...prev,
-            group: prev.group || "group_1",
+            groupId: prev.groupId || "group_1",
           }));
           setData(groupingData);
         } catch (error) {
@@ -118,7 +120,11 @@ const CmtApp = ({ setSelectedApp }) => {
         }
         try {
           const fetchedResources = await getResources(entityId);
-          setResourceData1(fetchedResources);
+          const groupingData = fetchedResources.map((prev) => ({
+            ...prev,
+            groupId: prev.groupId || "group_1",
+          }));
+          setResourceData1(groupingData);
         } catch (error) {
           console.error("Error while fetching resources", error);
         } finally {
@@ -190,10 +196,10 @@ const CmtApp = ({ setSelectedApp }) => {
     )
   );
 
-  // Unique group list for dropdown
+  // Unique groupId list for dropdown
   const uniqueGroups = Array.from(
     new Set(
-      data.map(item => item?.group?.trim()).filter(Boolean)
+      data.map(item => item?.groupId?.trim()).filter(Boolean)
     )
   );
 
@@ -248,6 +254,7 @@ const CmtApp = ({ setSelectedApp }) => {
       country,
       pincode,
       status = "ACTIVE",
+      groupId = "undefined",
     } = values;
 
     const newRecord = {
@@ -265,6 +272,7 @@ const CmtApp = ({ setSelectedApp }) => {
       }],
       comments: [],
       status: status,
+      groupId: groupId,
       subscriptions: [],
     };
 
@@ -274,12 +282,29 @@ const CmtApp = ({ setSelectedApp }) => {
         console.log("new customer data:", newRecord);
         console.log("post New Member Data:", postData);
         const updatedRecord = { ...newRecord, id: postData.userId };
+        // Update BOTH data and duplicateData to keep them in sync
+        setData(prevData => [...prevData, updatedRecord]);
         setDuplicateData(prevData => [...prevData, updatedRecord]);
         setHasLoadedMembers(true); // Keep cache valid; avoid refetch on tab switch
+        
+        // Show success modal
+        setStatusModal({
+          visible: true,
+          type: "success",
+          title: "User Added Successfully",
+          message: `New user "${newRecord.customerName}" has been added successfully!`,
+          entityType: "user"
+        });
       } catch (error) {
         console.log("unable to add new member", error);
-      } finally {
-        setIsAddNewNameCardModalOpen(false);
+        // Show error modal
+        setStatusModal({
+          visible: true,
+          type: "error",
+          title: "User Addition Failed",
+          message: "Failed to add new user. Please try again.",
+          entityType: "user"
+        });
       }
     };
     addNewMember();
@@ -307,7 +332,7 @@ const CmtApp = ({ setSelectedApp }) => {
       setDuplicateData(data);
     } else {
       const filteredRecords = data.filter(
-        (item) => item.group === value
+        (item) => item.groupId === value
       );
       setDuplicateData(filteredRecords);
     }
@@ -358,9 +383,9 @@ const CmtApp = ({ setSelectedApp }) => {
       onChange={(e) => handleGroupSelection(e.target.value)}
     >
       <option value="All">Select Group</option>
-      {uniqueGroups.map((group, index) => (
-        <option key={index} value={group}>
-          {group}
+      {uniqueGroups.map((groupId, index) => (
+        <option key={index} value={groupId}>
+          {groupId}
         </option>
       ))}
     </select>
@@ -423,7 +448,7 @@ const CmtApp = ({ setSelectedApp }) => {
             <span hidden={openCalendarPage || todosPage || resourcePage || isLoading}>City:</span> {dropDownList}
           </Col>
           <Col style={{ fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'end' }}>
-            <span hidden={openCalendarPage || todosPage || resourcePage || isLoading}>Group:</span> {groupDropDownList}
+            <span hidden={openCalendarPage || todosPage || resourcePage || isLoading}>groupId:</span> {groupDropDownList}
           </Col>
         </Row>
         {isLoading ? (<h3><LoadingOutlined /> Loading...</h3>) :
@@ -484,7 +509,7 @@ const CmtApp = ({ setSelectedApp }) => {
                           phoneNumber={item.phoneNumber}
                           address={item.address}
                           status={item.status}
-                          group={item.group}
+                          groupId={item.groupId}
                           comments={item.comments}
                           subscriptions={item.subscriptions}
                           setDuplicateData={setDuplicateData}
@@ -541,10 +566,26 @@ const CmtApp = ({ setSelectedApp }) => {
                   onSubmit={handleAddNewNameCard}
                 />
               </Modal>
+
+              {/* Status Modal for Add User/Resource */}
+              <StatusModal
+                visible={statusModal.visible}
+                type={statusModal.type}
+                title={statusModal.title}
+                message={statusModal.message}
+                onClose={() => {
+                  setStatusModal({ visible: false, type: "", title: "", message: "", entityType: "" });
+                  if (statusModal.type === "success") {
+                    setIsAddNewNameCardModalOpen(false);
+                    form.resetFields();
+                  }
+                }}
+              />
             </>
           ) : (resourcePage ?
             <ResourcePage
               resourceData={resourceData}
+              setResourceData1={setResourceData1}
               setResourceData={setResourceData}
               dataView={dataView}
               entityId={entityId}

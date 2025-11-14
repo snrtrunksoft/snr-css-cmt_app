@@ -9,7 +9,7 @@ import { createResource } from "./api/APIUtil";
 
 const { useBreakpoint } = Grid;
 
-const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, commentBox, setCommentBox }) =>{
+const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityId, dataView, commentBox, setCommentBox }) =>{
     const [ isLoading, setIsLoading ] = useState(true);
     const [ addNewResourceModal, setAddNewResourceModal ] = useState(false);
     const [form] = Form.useForm();
@@ -31,7 +31,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
           country,
           pincode,
           status = "ACTIVE",
-          group = "group_1",
+          groupId = "undefined",
         } = values;
       
         const newRecord = {
@@ -47,7 +47,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
             state: state || ""
           }],
           status: status,
-          group: group,
+          groupId: groupId,
           comments: []
         };
       
@@ -60,6 +60,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
               ...newRecord,
               resourceId: (firstName || "").slice(0,3) + (postData.resourceId || "")
             };
+            setResourceData1(prev => [...prev, updatedRecord]);
             setResourceData(prev => [...prev, updatedRecord]);
           } catch (error) {
             console.log("unable to add new resource", error);
@@ -133,7 +134,7 @@ const ResourcePage = ({ resourceData, setResourceData, entityId, dataView, comme
                                     phoneNumber={item.phoneNumber}
                                     address={item.address}
                                     status={item.status}
-                                    group={item.group}
+                                    groupId={item.groupId}
                                     comments={item.comments}
                                     subscriptions={""}
                                     commentBox = {commentBox}

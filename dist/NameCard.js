@@ -13,6 +13,7 @@ import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Spac
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
+import StatusModal from "./StatusModal";
 import PunchCardsPage from "./PunchCardsPage";
 import dayjs from "dayjs";
 const NameCard = _ref => {
@@ -30,7 +31,7 @@ const NameCard = _ref => {
     phoneNumber,
     address,
     status,
-    group,
+    groupId,
     comments,
     subscriptions,
     commentBox,
@@ -40,6 +41,12 @@ const NameCard = _ref => {
   const [newComment, setNewComment] = useState("");
   const [nameCardDrawer, setNameCardDrawer] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
+  const [statusModal, setStatusModal] = useState({
+    visible: false,
+    type: "",
+    title: "",
+    message: ""
+  });
   const {
     useBreakpoint
   } = Grid;
@@ -51,7 +58,7 @@ const NameCard = _ref => {
     phoneNumber: phoneNumber || "",
     email: email || "",
     status: status || "",
-    group: group || "",
+    groupId: groupId || "",
     address: {
       houseNo: (address === null || address === void 0 || (_address$ = address[0]) === null || _address$ === void 0 ? void 0 : _address$.houseNo) || "",
       street1: (address === null || address === void 0 || (_address$2 = address[0]) === null || _address$2 === void 0 ? void 0 : _address$2.street1) || "",
@@ -90,7 +97,7 @@ const NameCard = _ref => {
       }), {}, {
         phoneNumber: values.phoneNumber,
         status: values.status,
-        group: values.group,
+        groupId: values.groupId,
         address: [_objectSpread(_objectSpread({}, (_filterData$address = filterData.address) === null || _filterData$address === void 0 ? void 0 : _filterData$address[0]), {}, {
           city: ((_values$address = values.address) === null || _values$address === void 0 ? void 0 : _values$address.city) || ((_filterData$address2 = filterData.address) === null || _filterData$address2 === void 0 || (_filterData$address2 = _filterData$address2[0]) === null || _filterData$address2 === void 0 ? void 0 : _filterData$address2.city) || "",
           state: ((_values$address2 = values.address) === null || _values$address2 === void 0 ? void 0 : _values$address2.state) || ((_filterData$address3 = filterData.address) === null || _filterData$address3 === void 0 || (_filterData$address3 = _filterData$address3[0]) === null || _filterData$address3 === void 0 ? void 0 : _filterData$address3.state) || "",
@@ -104,13 +111,15 @@ const NameCard = _ref => {
     // Remove unneeded keys before API call
     const {
         id,
-        entityId
+        entityId: recordEntityId
       } = updatedRecord,
       cleanCustomer = _objectWithoutProperties(updatedRecord, _excluded);
     console.log("Clean customer data:", cleanCustomer);
+    console.log("entityId from props:", entityId);
 
     // ---------- STEP 3: API update ----------
     const updateNameCard = async () => {
+      console.log("Using entityId:", entityId);
       try {
         const response = await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId, {
           method: "PUT",
@@ -124,17 +133,36 @@ const NameCard = _ref => {
         const data = await response.json();
         if (!response.ok) {
           console.error("\u274C Failed to update record. Status: ".concat(statusCode), data);
-          message.error("Failed to update record");
+          setStatusModal({
+            visible: true,
+            type: "error",
+            title: "Update Failed",
+            message: "Failed to update record. Please try again."
+          });
         } else {
+          if (membersPage) {
+            setData(updateLocalState);
+          } else {
+            setResourceData(updateLocalState);
+          }
           console.log("\u2705 Successfully updated record. Status: ".concat(statusCode), data);
-          message.success("Record updated successfully");
+          setStatusModal({
+            visible: true,
+            type: "success",
+            title: "Updated Successfully",
+            message: "".concat(membersPage ? "User" : "Resource", " has been updated successfully!")
+          });
         }
       } catch (error) {
         console.error("❌ Network or server error while updating record:", error);
+        setStatusModal({
+          visible: true,
+          type: "error",
+          title: "Update Error",
+          message: "Network or server error occurred. Please try again."
+        });
       }
     };
-    updateNameCard();
-
     // ---------- STEP 4: Local state update ----------
     const updateLocalState = prev => prev.map(customer => {
       const matchKey = membersPage ? "id" : "resourceId";
@@ -147,7 +175,7 @@ const NameCard = _ref => {
         }), {}, {
           phoneNumber: values.phoneNumber,
           status: values.status,
-          group: values.group,
+          groupId: values.groupId,
           address: [_objectSpread(_objectSpread({}, (_customer$address = customer.address) === null || _customer$address === void 0 ? void 0 : _customer$address[0]), {}, {
             city: values.address.city,
             state: values.address.state,
@@ -157,13 +185,24 @@ const NameCard = _ref => {
       }
       return customer;
     });
-    if (membersPage) {
-      setData(updateLocalState);
-    } else {
-      setResourceData(updateLocalState);
-    }
+    updateNameCard();
   };
   const addressKeys = Object.keys((_address$8 = address === null || address === void 0 ? void 0 : address[0]) !== null && _address$8 !== void 0 ? _address$8 : {});
+
+  // Determine color based on status (moved before handleSend)
+  let color = "red";
+  if (status === "COMPLETED") {
+    color = "lightgreen";
+  }
+  if (status === "ACTIVE") {
+    color = "pink";
+  }
+  if (status === "IN_PROGRESS") {
+    color = "lightblue";
+  }
+  if (status === "CANCELLED") {
+    color = "red";
+  }
   const handleSend = () => {
     const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
     // console.log(addTimeForComment);
@@ -184,6 +223,7 @@ const NameCard = _ref => {
         "address": address,
         "email": email,
         "subscriptions": subscriptions,
+        "groupId": groupId,
         "phoneNumber": phoneNumber,
         "comments": commentBody
       });
@@ -216,83 +256,82 @@ const NameCard = _ref => {
           });
           const data = await response.json();
           console.log("✅ successfully added the comment:", data);
+          if (membersPage) {
+            setData(prevData => prevData.map(prev => {
+              var _comments2;
+              return prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+                comments: [...prev.comments, {
+                  commentId: parseInt(((_comments2 = comments[comments.length - 1]) === null || _comments2 === void 0 ? void 0 : _comments2.commentId) || 0) + 1,
+                  message: newComment,
+                  author: customerName,
+                  date: addTimeForComment
+                }]
+              }) : prev;
+            }));
+          } else {
+            setResourceData(prevData => prevData.map(prev => {
+              var _comments3;
+              return prev.resourceId === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+                comments: [...prev.comments, {
+                  commentId: parseInt(((_comments3 = comments[comments.length - 1]) === null || _comments3 === void 0 ? void 0 : _comments3.commentId) || 0) + 1,
+                  message: newComment,
+                  author: customerName,
+                  date: addTimeForComment
+                }]
+              }) : prev;
+            }));
+          }
+          const existingData = commentBox.findIndex(person => (membersPage ? person.customerName : person.resourceName) === customerName);
+          if (existingData !== -1) {
+            setCommentBox(prevComments => prevComments.map((prev, index) => {
+              var _comments4;
+              return index === existingData ? _objectSpread(_objectSpread({}, prev), {}, {
+                comment: [...prev.comment, {
+                  commentId: parseInt(((_comments4 = comments[comments.length - 1]) === null || _comments4 === void 0 ? void 0 : _comments4.commentId) || 0) + 1,
+                  message: newComment,
+                  author: customerName,
+                  date: addTimeForComment
+                }]
+              }) : prev;
+            }));
+          } else {
+            setCommentBox(prevComments => {
+              var _comments5;
+              return [...prevComments, {
+                customerName,
+                color,
+                comment: [{
+                  commentId: parseInt(((_comments5 = comments[comments.length - 1]) === null || _comments5 === void 0 ? void 0 : _comments5.commentId) || 0) + 1,
+                  message: newComment,
+                  author: customerName,
+                  date: addTimeForComment
+                }]
+              }];
+            });
+          }
+          setStatusModal({
+            visible: true,
+            type: "success",
+            title: "Comment Posted",
+            message: "Your comment has been posted successfully!"
+          });
         } catch (error) {
           console.log("❌ unable to add Comment:", error);
+          setStatusModal({
+            visible: true,
+            type: "error",
+            title: "Comment Error",
+            message: "Failed to post comment. Please try again."
+          });
         }
       };
       uploadComment();
-      if (membersPage) {
-        setData(prevData => prevData.map(prev => {
-          var _comments2;
-          return prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
-            comments: [...prev.comments, {
-              commentId: parseInt(((_comments2 = comments[comments.length - 1]) === null || _comments2 === void 0 ? void 0 : _comments2.commentId) || 0) + 1,
-              message: newComment,
-              author: customerName,
-              date: addTimeForComment
-            }]
-          }) : prev;
-        }));
-      } else {
-        setResourceData(prevData => prevData.map(prev => {
-          var _comments3;
-          return prev.resourceId === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
-            comments: [...prev.comments, {
-              commentId: parseInt(((_comments3 = comments[comments.length - 1]) === null || _comments3 === void 0 ? void 0 : _comments3.commentId) || 0) + 1,
-              message: newComment,
-              author: customerName,
-              date: addTimeForComment
-            }]
-          }) : prev;
-        }));
-      }
-      const existingData = commentBox.findIndex(person => (membersPage ? person.customerName : person.resourceName) === customerName);
-      if (existingData !== -1) {
-        setCommentBox(prevComments => prevComments.map((prev, index) => {
-          var _comments4;
-          return index === existingData ? _objectSpread(_objectSpread({}, prev), {}, {
-            comment: [...prev.comment, {
-              commentId: parseInt(((_comments4 = comments[comments.length - 1]) === null || _comments4 === void 0 ? void 0 : _comments4.commentId) || 0) + 1,
-              message: newComment,
-              author: customerName,
-              date: addTimeForComment
-            }]
-          }) : prev;
-        }));
-      } else {
-        setCommentBox(prevComments => {
-          var _comments5;
-          return [...prevComments, {
-            customerName,
-            color,
-            comment: [{
-              commentId: parseInt(((_comments5 = comments[comments.length - 1]) === null || _comments5 === void 0 ? void 0 : _comments5.commentId) || 0) + 1,
-              message: newComment,
-              author: customerName,
-              date: addTimeForComment
-            }]
-          }];
-        });
-      }
     }
     setNewComment("");
   };
   const handleClear = () => {
     setNewComment("");
   };
-  let color = "red";
-  if (status === "COMPLETED") {
-    color = "lightgreen";
-  }
-  if (status === "ACTIVE") {
-    color = "pink";
-  }
-  if (status === "IN_PROGRESS") {
-    color = "lightblue";
-  }
-  if (status === "CANCELLED") {
-    color = "red";
-  }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     onMouseEnter: () => setIsHovered(true),
     onMouseLeave: () => setIsHovered(false),
@@ -453,8 +492,8 @@ const NameCard = _ref => {
   }, /*#__PURE__*/React.createElement(Input, {
     size: "middle"
   })), /*#__PURE__*/React.createElement(Form.Item, {
-    name: "group",
-    label: "Group"
+    name: "groupId",
+    label: "groupId"
   }, /*#__PURE__*/React.createElement(Input, {
     size: "middle"
   })), /*#__PURE__*/React.createElement(Form.Item, {
@@ -551,6 +590,23 @@ const NameCard = _ref => {
   }, "Clear"), /*#__PURE__*/React.createElement(Button, {
     type: "primary",
     onClick: () => handleSend()
-  }, "send"))))));
+  }, "send"))))), /*#__PURE__*/React.createElement(StatusModal, {
+    visible: statusModal.visible,
+    type: statusModal.type,
+    title: statusModal.title,
+    message: statusModal.message,
+    onClose: () => {
+      setStatusModal({
+        visible: false,
+        type: "",
+        title: "",
+        message: ""
+      });
+      if (statusModal.type === "success" && isEditable) {
+        setIsEditable(false);
+        setNameCardDrawer(false);
+      }
+    }
+  }));
 };
 export default NameCard;
