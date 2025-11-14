@@ -18,6 +18,7 @@ import NameCard from './NameCard';
 import ResourcePage from './ResourcePage';
 import TodosPage from './TodosPage';
 import AddNewUser from './AddNewUser';
+import StatusModal from './StatusModal';
 import CalendarPage from './CalendarPage';
 import './CmtApp.css';
 
@@ -67,6 +68,13 @@ const CmtApp = _ref => {
     resolveEntityId();
   }, []);
   const [isAddNewNameCardModalOpen, setIsAddNewNameCardModalOpen] = useState(false);
+  const [statusModal, setStatusModal] = useState({
+    visible: false,
+    type: "",
+    title: "",
+    message: "",
+    entityType: ""
+  });
   const [dataView, setDataView] = useState("grid");
   const [statusSelection, setStatusSelection] = useState("All");
   const [groupSelection, setGroupSelection] = useState("All");
@@ -111,7 +119,7 @@ const CmtApp = _ref => {
         try {
           const fetchedData = await getMembers(entityId);
           const groupingData = fetchedData.map(prev => _objectSpread(_objectSpread({}, prev), {}, {
-            group: prev.group || "group_1"
+            groupId: prev.groupId || "group_1"
           }));
           setData(groupingData);
         } catch (error) {
@@ -119,7 +127,10 @@ const CmtApp = _ref => {
         }
         try {
           const fetchedResources = await getResources(entityId);
-          setResourceData1(fetchedResources);
+          const groupingData = fetchedResources.map(prev => _objectSpread(_objectSpread({}, prev), {}, {
+            groupId: prev.groupId || "group_1"
+          }));
+          setResourceData1(groupingData);
         } catch (error) {
           console.error("Error while fetching resources", error);
         } finally {
@@ -181,10 +192,10 @@ const CmtApp = _ref => {
     return addr === null || addr === void 0 || (_addr$city = addr.city) === null || _addr$city === void 0 ? void 0 : _addr$city.trim();
   }).filter(Boolean))));
 
-  // Unique group list for dropdown
+  // Unique groupId list for dropdown
   const uniqueGroups = Array.from(new Set(data.map(item => {
-    var _item$group;
-    return item === null || item === void 0 || (_item$group = item.group) === null || _item$group === void 0 ? void 0 : _item$group.trim();
+    var _item$groupId;
+    return item === null || item === void 0 || (_item$groupId = item.groupId) === null || _item$groupId === void 0 ? void 0 : _item$groupId.trim();
   }).filter(Boolean)));
 
   // Legend labels mirror labels by default; customize here if needed
@@ -235,7 +246,8 @@ const CmtApp = _ref => {
       state,
       country,
       pincode,
-      status = "ACTIVE"
+      status = "ACTIVE",
+      groupId = "undefined"
     } = values;
     const newRecord = {
       customerName: (firstName || "") + (lastName || ""),
@@ -252,6 +264,7 @@ const CmtApp = _ref => {
       }],
       comments: [],
       status: status,
+      groupId: groupId,
       subscriptions: []
     };
     const addNewMember = async () => {
@@ -262,12 +275,29 @@ const CmtApp = _ref => {
         const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
           id: postData.userId
         });
+        // Update BOTH data and duplicateData to keep them in sync
+        setData(prevData => [...prevData, updatedRecord]);
         setDuplicateData(prevData => [...prevData, updatedRecord]);
         setHasLoadedMembers(true); // Keep cache valid; avoid refetch on tab switch
+
+        // Show success modal
+        setStatusModal({
+          visible: true,
+          type: "success",
+          title: "User Added Successfully",
+          message: "New user \"".concat(newRecord.customerName, "\" has been added successfully!"),
+          entityType: "user"
+        });
       } catch (error) {
         console.log("unable to add new member", error);
-      } finally {
-        setIsAddNewNameCardModalOpen(false);
+        // Show error modal
+        setStatusModal({
+          visible: true,
+          type: "error",
+          title: "User Addition Failed",
+          message: "Failed to add new user. Please try again.",
+          entityType: "user"
+        });
       }
     };
     addNewMember();
@@ -288,7 +318,7 @@ const CmtApp = _ref => {
     if (value === "All") {
       setDuplicateData(data);
     } else {
-      const filteredRecords = data.filter(item => item.group === value);
+      const filteredRecords = data.filter(item => item.groupId === value);
       setDuplicateData(filteredRecords);
     }
   };
@@ -334,10 +364,10 @@ const CmtApp = _ref => {
     onChange: e => handleGroupSelection(e.target.value)
   }, /*#__PURE__*/React.createElement("option", {
     value: "All"
-  }, "Select Group"), uniqueGroups.map((group, index) => /*#__PURE__*/React.createElement("option", {
+  }, "Select Group"), uniqueGroups.map((groupId, index) => /*#__PURE__*/React.createElement("option", {
     key: index,
-    value: group
-  }, group)));
+    value: groupId
+  }, groupId)));
   const colSize = duplicateData.length <= 3 ? 24 / duplicateData.length : 6;
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -445,7 +475,7 @@ const CmtApp = _ref => {
     }
   }, /*#__PURE__*/React.createElement("span", {
     hidden: openCalendarPage || todosPage || resourcePage || isLoading
-  }, "Group:"), " ", groupDropDownList)), isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : membersPage ? /*#__PURE__*/React.createElement(React.Fragment, null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
+  }, "groupId:"), " ", groupDropDownList)), isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : membersPage ? /*#__PURE__*/React.createElement(React.Fragment, null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
     className: "table-wrapper"
   }, /*#__PURE__*/React.createElement(Row, {
     className: "table-row table-header"
@@ -511,7 +541,7 @@ const CmtApp = _ref => {
     phoneNumber: item.phoneNumber,
     address: item.address,
     status: item.status,
-    group: item.group,
+    groupId: item.groupId,
     comments: item.comments,
     subscriptions: item.subscriptions,
     setDuplicateData: setDuplicateData,
@@ -583,8 +613,27 @@ const CmtApp = _ref => {
     mode: "member",
     form: form,
     onSubmit: handleAddNewNameCard
-  }))) : resourcePage ? /*#__PURE__*/React.createElement(ResourcePage, {
+  })), /*#__PURE__*/React.createElement(StatusModal, {
+    visible: statusModal.visible,
+    type: statusModal.type,
+    title: statusModal.title,
+    message: statusModal.message,
+    onClose: () => {
+      setStatusModal({
+        visible: false,
+        type: "",
+        title: "",
+        message: "",
+        entityType: ""
+      });
+      if (statusModal.type === "success") {
+        setIsAddNewNameCardModalOpen(false);
+        form.resetFields();
+      }
+    }
+  })) : resourcePage ? /*#__PURE__*/React.createElement(ResourcePage, {
     resourceData: resourceData,
+    setResourceData1: setResourceData1,
     setResourceData: setResourceData,
     dataView: dataView,
     entityId: entityId,

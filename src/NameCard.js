@@ -4,6 +4,7 @@ import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Spac
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
+import StatusModal from "./StatusModal";
 import PunchCardsPage  from "./PunchCardsPage";
 import dayjs from "dayjs";
 
@@ -20,7 +21,7 @@ const NameCard = ({
     phoneNumber, 
     address, 
     status,
-    group,
+    groupId,
     comments,
     subscriptions,
     commentBox, 
@@ -30,6 +31,7 @@ const NameCard = ({
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
     const [ isEditable, setIsEditable] = useState(false);
+    const [ statusModal, setStatusModal ] = useState({ visible: false, type: "", title: "", message: "" });
     const { useBreakpoint } = Grid;
     const [ form ] = Form.useForm();
     const screens = useBreakpoint();
@@ -40,7 +42,7 @@ const NameCard = ({
         phoneNumber: phoneNumber || "",
         email: email || "",
         status: status || "",
-        group: group || "",
+        groupId: groupId || "",
         address: {
             houseNo: address?.[0]?.houseNo || "",
             street1: address?.[0]?.street1 || "",
@@ -80,7 +82,7 @@ const NameCard = ({
             : { resourceName: values.customerName }),
             phoneNumber: values.phoneNumber,
             status: values.status,
-            group: values.group,
+            groupId: values.groupId,
             address: [
             {
                 ...filterData.address?.[0],
@@ -95,11 +97,13 @@ const NameCard = ({
         const updatedRecord = buildUpdatedRecord(membersPage);
 
         // Remove unneeded keys before API call
-        const { id, entityId, ...cleanCustomer } = updatedRecord;
+        const { id, entityId: recordEntityId, ...cleanCustomer } = updatedRecord;
         console.log("Clean customer data:", cleanCustomer);
+        console.log("entityId from props:", entityId);
 
         // ---------- STEP 3: API update ----------
         const updateNameCard = async () => {
+            console.log("Using entityId:", entityId)
             try {
                 const response = await fetch(
                 (membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId,
@@ -118,19 +122,37 @@ const NameCard = ({
 
                 if (!response.ok) {
                 console.error(`❌ Failed to update record. Status: ${statusCode}`, data);
-                message.error("Failed to update record");
+                setStatusModal({
+                    visible: true,
+                    type: "error",
+                    title: "Update Failed",
+                    message: "Failed to update record. Please try again."
+                });
                 } else {
+                if (membersPage) {
+                    setData(updateLocalState);
+                } else {
+                    setResourceData(updateLocalState);
+                }
                 console.log(`✅ Successfully updated record. Status: ${statusCode}`, data);
-                message.success("Record updated successfully");
+                setStatusModal({
+                    visible: true,
+                    type: "success",
+                    title: "Updated Successfully",
+                    message: `${membersPage ? "User" : "Resource"} has been updated successfully!`
+                });
                 }
 
             } catch (error) {
                 console.error("❌ Network or server error while updating record:", error);
+                setStatusModal({
+                    visible: true,
+                    type: "error",
+                    title: "Update Error",
+                    message: "Network or server error occurred. Please try again."
+                });
             }
             };
-
-        updateNameCard();
-
         // ---------- STEP 4: Local state update ----------
         const updateLocalState = (prev) =>
             prev.map((customer) => {
@@ -143,7 +165,7 @@ const NameCard = ({
                     : { resourceName: values.customerName }),
                 phoneNumber: values.phoneNumber,
                 status: values.status,
-                group: values.group,
+                groupId: values.groupId,
                 address: [
                     {
                     ...customer.address?.[0],
@@ -155,16 +177,28 @@ const NameCard = ({
                 };
             }
             return customer;
-            });
+        });
 
-        if (membersPage) {
-            setData(updateLocalState);
-        } else {
-            setResourceData(updateLocalState);
-        }
+        updateNameCard();
         };
     
     const addressKeys = Object.keys(address?.[0] ?? {});
+    
+    // Determine color based on status (moved before handleSend)
+    let color = "red";
+    if(status === "COMPLETED"){
+        color = "lightgreen";
+    }
+    if(status === "ACTIVE"){
+        color = "pink";
+    }
+    if(status === "IN_PROGRESS"){
+        color = "lightblue";
+    }
+    if(status === "CANCELLED"){
+        color = "red";
+    }
+
     const handleSend = () => {
         const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
         // console.log(addTimeForComment);
@@ -183,6 +217,7 @@ const NameCard = ({
                 "address" : address,
                 "email" : email,
                 "subscriptions" : subscriptions,
+                "groupId" : groupId,
                 "phoneNumber" : phoneNumber,
                 "comments" : commentBody
             }
@@ -218,85 +253,83 @@ const NameCard = ({
 
                 const data = await response.json();
                 console.log("✅ successfully added the comment:", data);
+                if(membersPage) {
+                    setData(prevData =>
+                        prevData.map(prev =>
+                            prev.id === customerId ? {
+                                ...prev,
+                                comments: [...prev.comments, {
+                                    commentId : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
+                                    message: newComment,
+                                    author: customerName,
+                                    date: addTimeForComment
+                                }]
+                            } : prev)
+                    );
+                    } else {
+                        setResourceData(prevData =>
+                            prevData.map(prev =>
+                                prev.resourceId === customerId ? {
+                                    ...prev,
+                                    comments: [...prev.comments, {
+                                        commentId : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
+                                        message: newComment,
+                                        author: customerName,
+                                        date: addTimeForComment
+                                    }]
+                                } : prev)
+                        );
+                    }
+                const existingData = commentBox.findIndex((person) =>( membersPage ? person.customerName : person.resourceName) === customerName);
+
+                if(existingData !== -1){
+                    setCommentBox(prevComments => 
+                        prevComments.map((prev, index) =>
+                            index === existingData
+                                ? { ...prev, comment: [...prev.comment, {
+                                    commentId: parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
+                                    message: newComment,
+                                    author: customerName,
+                                    date: addTimeForComment
+                                }] }
+                                : prev
+                        )
+                    );
+                } else {
+                    setCommentBox(prevComments => [
+                        ...prevComments,
+                        { customerName,color, comment: [{
+                            commentId: parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
+                            message:newComment,
+                            author:customerName,
+                            date: addTimeForComment
+                        }] }
+                    ]);
+                }
+                setStatusModal({
+                    visible: true,
+                    type: "success",
+                    title: "Comment Posted",
+                    message: "Your comment has been posted successfully!"
+                });
             } catch (error) {
                 console.log("❌ unable to add Comment:", error);
+                setStatusModal({
+                    visible: true,
+                    type: "error",
+                    title: "Comment Error",
+                    message: "Failed to post comment. Please try again."
+                });
             }
             };
 
             uploadComment();
-
-            if(membersPage) {
-                setData(prevData =>
-                    prevData.map(prev =>
-                        prev.id === customerId ? {
-                            ...prev,
-                            comments: [...prev.comments, {
-                                commentId : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
-                                message: newComment,
-                                author: customerName,
-                                date: addTimeForComment
-                            }]
-                        } : prev)
-                );
-            } else {
-                setResourceData(prevData =>
-                    prevData.map(prev =>
-                        prev.resourceId === customerId ? {
-                            ...prev,
-                            comments: [...prev.comments, {
-                                commentId : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
-                                message: newComment,
-                                author: customerName,
-                                date: addTimeForComment
-                            }]
-                        } : prev)
-                );
-            }
             
-            const existingData = commentBox.findIndex((person) =>( membersPage ? person.customerName : person.resourceName) === customerName);
-
-            if(existingData !== -1){
-                setCommentBox(prevComments => 
-                    prevComments.map((prev, index) =>
-                        index === existingData
-                            ? { ...prev, comment: [...prev.comment, {
-                                commentId: parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
-                                message: newComment,
-                                author: customerName,
-                                date: addTimeForComment
-                            }] }
-                            : prev
-                    )
-                );
-            } else {
-                setCommentBox(prevComments => [
-                    ...prevComments,
-                    { customerName,color, comment: [{
-                        commentId: parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
-                        message:newComment,
-                        author:customerName,
-                        date: addTimeForComment
-                    }] }
-                ]);
-            }
         }
         setNewComment("");
     }
     const handleClear = () =>{
         setNewComment("");
-    }
-    let color = "red";
-    if(status === "COMPLETED"){
-        color = "lightgreen";
-    }
-    if(status === "ACTIVE"){
-        color = "pink";
-    }
-    if(status === "IN_PROGRESS"){
-        color = "lightblue";
-    }
-    if(status === "CANCELLED"){
-        color = "red";
     }
     return(
         <div>
@@ -428,7 +461,7 @@ const NameCard = ({
                             <Input size="middle" />
                             </Form.Item>
 
-                            <Form.Item name="group" label="Group">
+                            <Form.Item name="groupId" label="groupId">
                             <Input size="middle" />
                             </Form.Item>
 
@@ -510,6 +543,21 @@ const NameCard = ({
                     </Row>
                 </div>
             </Drawer>
+
+            {/* Status Modal */}
+            <StatusModal
+                visible={statusModal.visible}
+                type={statusModal.type}
+                title={statusModal.title}
+                message={statusModal.message}
+                onClose={() => {
+                    setStatusModal({ visible: false, type: "", title: "", message: "" });
+                    if (statusModal.type === "success" && isEditable) {
+                        setIsEditable(false);
+                        setNameCardDrawer(false);
+                    }
+                }}
+            />
         </div>
     );
 };

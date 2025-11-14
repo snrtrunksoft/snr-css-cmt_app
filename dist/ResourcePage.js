@@ -18,6 +18,7 @@ const ResourcePage = _ref => {
   let {
     resourceData,
     setResourceData,
+    setResourceData1,
     entityId,
     dataView,
     commentBox,
@@ -39,7 +40,7 @@ const ResourcePage = _ref => {
       country,
       pincode,
       status = "ACTIVE",
-      group = "group_1"
+      groupId = "undefined"
     } = values;
     const newRecord = {
       resourceName: (firstName || "") + (lastName || ""),
@@ -54,7 +55,7 @@ const ResourcePage = _ref => {
         state: state || ""
       }],
       status: status,
-      group: group,
+      groupId: groupId,
       comments: []
     };
     const addNewResource = async () => {
@@ -65,6 +66,7 @@ const ResourcePage = _ref => {
         const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
           resourceId: (firstName || "").slice(0, 3) + (postData.resourceId || "")
         });
+        setResourceData1(prev => [...prev, updatedRecord]);
         setResourceData(prev => [...prev, updatedRecord]);
       } catch (error) {
         console.log("unable to add new resource", error);
@@ -145,7 +147,7 @@ const ResourcePage = _ref => {
     phoneNumber: item.phoneNumber,
     address: item.address,
     status: item.status,
-    group: item.group,
+    groupId: item.groupId,
     comments: item.comments,
     subscriptions: "",
     commentBox: commentBox,
