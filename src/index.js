@@ -1,11 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import CmtApp from './CmtApp';
+// import CmtApp from './CmtApp';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import LoginPage from './LoginPage';
+import LocalApp from './LocalApp';
 
 // ✅ Amplify Auth config
 import { configureAuth } from './authConfig';
@@ -26,7 +27,7 @@ root.render(
           path="/*"
           element={
             <ProtectedRoute>
-              <CmtApp />
+              <LocalApp />
             </ProtectedRoute>
           }
         />

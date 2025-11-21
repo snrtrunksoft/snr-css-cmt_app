@@ -1,12 +1,45 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./AddNewUser.css";
-import { Row, Col, Input, Select, Button, Form, Typography } from 'antd';
+import { Row, Col, Input, Select, Button, Form, Typography, Spin } from 'antd';
 const {
   Option
 } = Select;
 const {
   Title
 } = Typography;
+
+// Mock subscription plans data - replace with API call later
+const MOCK_SUBSCRIPTION_PLANS = [{
+  "price": 490.0,
+  "noOfSubscriptions": 50.0,
+  "entityId": "w_123",
+  "id": "sub_21",
+  "isActive": true,
+  "type": "RECURRING"
+}, {
+  "price": 20.0,
+  "noOfSubscriptions": 30.0,
+  "entityId": "w_123",
+  "id": "sub_22",
+  "isActive": true,
+  "type": "RECURRING"
+}, {
+  "createdDate": "2025-11-12 09:00:00.0",
+  "price": 499.0,
+  "entityId": "w_123",
+  "noOfSubscriptions": 10.0,
+  "updatedDate": "2025-11-12 10:30:00.0",
+  "id": "sub_23",
+  "isActive": true,
+  "type": "ONETIME"
+}, {
+  "price": 390.0,
+  "noOfSubscriptions": 50.0,
+  "entityId": "w_123",
+  "id": "sub_24",
+  "isActive": true,
+  "type": "RECURRING"
+}];
 
 /**
  * Self-contained form:
@@ -18,8 +51,22 @@ const AddNewUser = _ref => {
   let {
     mode = "member",
     form,
-    onSubmit
+    onSubmit,
+    entityId
   } = _ref;
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  useEffect(() => {
+    if (mode === "member") {
+      setLoadingPlans(true);
+      // Simulate API call delay
+      setTimeout(() => {
+        setSubscriptionPlans(MOCK_SUBSCRIPTION_PLANS);
+        console.log("Subscription Plans loaded from mock data:", MOCK_SUBSCRIPTION_PLANS);
+        setLoadingPlans(false);
+      }, 300);
+    }
+  }, [mode]);
   const handleSubmit = values => {
     onSubmit === null || onSubmit === void 0 || onSubmit(values);
     form.resetFields();
@@ -130,7 +177,17 @@ const AddNewUser = _ref => {
     value: "COMPLETED"
   }, "COMPLETED"), /*#__PURE__*/React.createElement(Option, {
     value: "CANCELLED"
-  }, "CANCELLED"))), /*#__PURE__*/React.createElement(Form.Item, null, /*#__PURE__*/React.createElement(Button, {
+  }, "CANCELLED"))), mode === "member" && /*#__PURE__*/React.createElement(Form.Item, {
+    name: "subscriptionPlanId",
+    label: "Subscription Plan"
+  }, /*#__PURE__*/React.createElement(Spin, {
+    spinning: loadingPlans
+  }, /*#__PURE__*/React.createElement(Select, {
+    placeholder: "Select a subscription plan"
+  }, subscriptionPlans.map(plan => /*#__PURE__*/React.createElement(Option, {
+    key: plan.id,
+    value: plan.id
+  }, plan.id, " - $", plan.price, " (", plan.type, ")"))))), /*#__PURE__*/React.createElement(Form.Item, null, /*#__PURE__*/React.createElement(Button, {
     type: "primary",
     htmlType: "submit",
     block: true,

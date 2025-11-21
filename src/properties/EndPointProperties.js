@@ -9,3 +9,4 @@ export const ORDERS_API = "https://m8wxr06qij.execute-api.us-east-1.amazonaws.co
 export const EVENTS_API= "https://3jb2f8gsn0.execute-api.us-east-1.amazonaws.com/dev/event/";
 export const FEATURED_ITEMS_API = "https://1p6bhnsms5.execute-api.us-east-1.amazonaws.com/dev/items/featured/";
 export const SUBSCRIPTIONS_API = "https://pky0yuomvc.execute-api.us-east-1.amazonaws.com/dev/subscription/";
+export const SUBSCRIPTION_PLANS_API = "https://pky0yuomvc.execute-api.us-east-1.amazonaws.com/dev/subscription-plans/";

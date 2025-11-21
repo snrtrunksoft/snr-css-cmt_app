@@ -33,7 +33,10 @@ const {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 const CmtApp = _ref => {
   let {
-    setSelectedApp
+    setSelectedApp,
+    selectedGroup,
+    groupMessages,
+    setGroupMessages
   } = _ref;
   const [entityId, setEntityId] = useState(null);
 
@@ -546,7 +549,10 @@ const CmtApp = _ref => {
     subscriptions: item.subscriptions,
     setDuplicateData: setDuplicateData,
     commentBox: commentBox,
-    setCommentBox: setCommentBox
+    setCommentBox: setCommentBox,
+    selectedGroup: selectedGroup,
+    groupMessages: groupMessages,
+    setGroupMessages: setGroupMessages
   }))) : /*#__PURE__*/React.createElement("h2", null, "No NameCards Found..."), /*#__PURE__*/React.createElement(Col, {
     xs: 20,
     md: 12,
@@ -612,7 +618,8 @@ const CmtApp = _ref => {
   }, /*#__PURE__*/React.createElement(AddNewUser, {
     mode: "member",
     form: form,
-    onSubmit: handleAddNewNameCard
+    onSubmit: handleAddNewNameCard,
+    entityId: entityId
   })), /*#__PURE__*/React.createElement(StatusModal, {
     visible: statusModal.visible,
     type: statusModal.type,
