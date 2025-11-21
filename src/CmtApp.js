@@ -26,7 +26,7 @@ const { useBreakpoint } = Grid;
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-const CmtApp = ({ setSelectedApp }) => {
+const CmtApp = ({ setSelectedApp, selectedGroup, groupMessages, setGroupMessages }) => {
   const [entityId, setEntityId] = useState(null);
 
   // Resolve entityId (localStorage -> token claims)
@@ -82,6 +82,7 @@ const CmtApp = ({ setSelectedApp }) => {
   const [form] = Form.useForm(); // for new user/Resource details
 
   const screens = useBreakpoint();
+
 
   const [data, setData] = useState([]);
   const [sampleData, setSampleData] = useState([]);
@@ -515,6 +516,9 @@ const CmtApp = ({ setSelectedApp }) => {
                           setDuplicateData={setDuplicateData}
                           commentBox={commentBox}
                           setCommentBox={setCommentBox}
+                          selectedGroup={selectedGroup}
+                          groupMessages={groupMessages}
+                          setGroupMessages={setGroupMessages}
                         />
                       </Col>
                     )) : <h2>No NameCards Found...</h2>}
@@ -564,6 +568,7 @@ const CmtApp = ({ setSelectedApp }) => {
                   mode="member"
                   form={form}
                   onSubmit={handleAddNewNameCard}
+                  entityId={entityId}
                 />
               </Modal>
 

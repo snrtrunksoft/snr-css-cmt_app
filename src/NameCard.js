@@ -1,12 +1,50 @@
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import StatusModal from "./StatusModal";
 import PunchCardsPage  from "./PunchCardsPage";
 import dayjs from "dayjs";
+
+// Mock subscription plans data - replace with API call later
+const MOCK_SUBSCRIPTION_PLANS = [
+  {
+    "price": 490.0,
+    "noOfSubscriptions": 50.0,
+    "entityId": "w_123",
+    "id": "sub_21",
+    "isActive": true,
+    "type": "RECURRING"
+  },
+  {
+    "price": 20.0,
+    "noOfSubscriptions": 30.0,
+    "entityId": "w_123",
+    "id": "sub_22",
+    "isActive": true,
+    "type": "RECURRING"
+  },
+  {
+    "createdDate": "2025-11-12 09:00:00.0",
+    "price": 499.0,
+    "entityId": "w_123",
+    "noOfSubscriptions": 10.0,
+    "updatedDate": "2025-11-12 10:30:00.0",
+    "id": "sub_23",
+    "isActive": true,
+    "type": "ONETIME"
+  },
+  {
+    "price": 390.0,
+    "noOfSubscriptions": 50.0,
+    "entityId": "w_123",
+    "id": "sub_24",
+    "isActive": true,
+    "type": "RECURRING"
+  }
+];
 
 const NameCard = ({ 
     membersPage,
@@ -26,12 +64,17 @@ const NameCard = ({
     subscriptions,
     commentBox, 
     setCommentBox,
+    selectedGroup,
+    groupMessages,
+    setGroupMessages
     }) => {
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
     const [ isEditable, setIsEditable] = useState(false);
     const [ statusModal, setStatusModal ] = useState({ visible: false, type: "", title: "", message: "" });
+    const [ subscriptionPlans, setSubscriptionPlans ] = useState([]);
+    const [ loadingPlans, setLoadingPlans ] = useState(false);
     const { useBreakpoint } = Grid;
     const [ form ] = Form.useForm();
     const screens = useBreakpoint();
@@ -58,6 +101,18 @@ const NameCard = ({
         form.setFieldsValue(defaultValues);
     },[form, defaultValues]);
 
+    useEffect(() => {
+        if (nameCardDrawer && membersPage) {
+            setLoadingPlans(true);
+            // Simulate API call delay
+            setTimeout(() => {
+                setSubscriptionPlans(MOCK_SUBSCRIPTION_PLANS);
+                console.log("Subscription Plans loaded from mock data:", MOCK_SUBSCRIPTION_PLANS);
+                setLoadingPlans(false);
+            }, 300);
+        }
+    }, [nameCardDrawer, membersPage]);
+
     const getDrawerWidth = () => {
         if (screens.xl) return 600;
         if (screens.lg) return 550;
@@ -83,6 +138,7 @@ const NameCard = ({
             phoneNumber: values.phoneNumber,
             status: values.status,
             groupId: values.groupId,
+            ...(isMember && values.subscriptionPlanId && { subscriptionPlanId: values.subscriptionPlanId }),
             address: [
             {
                 ...filterData.address?.[0],
@@ -348,7 +404,20 @@ const NameCard = ({
                     textOverflow: 'ellipsis',
                     whiteSpace:'nowrap'
                     }}>Name : { customerName }</h3>
-                    <div style={{width:'30px',height:'15px',backgroundColor:`${color}`,}}></div>
+                    <Badge 
+                        count={
+                          (selectedGroup === groupId && groupMessages?.[groupId]?.hasUnread) 
+                            ? groupMessages[groupId].messages?.length 
+                            : 0
+                        }
+                        overflowCount={99}
+                        showZero={false}
+                        style={{ 
+                          backgroundColor: (selectedGroup === groupId && groupMessages?.[groupId]?.hasUnread) ? '#ff4d4f' : 'transparent'
+                        }}
+                        offset={[ -15, -5 ]}>
+                        <div style={{width:'30px', height:'15px', backgroundColor:`${color}`,}}></div>
+                    </Badge>
                 </div>
                 <p style={{
                     width: '100%',overflow: 'hidden',
@@ -387,7 +456,14 @@ const NameCard = ({
                 title={null}
                 // closable={false}
                 width= {getDrawerWidth()}
-                onClose={()=>{setNameCardDrawer(false);setNewComment("")}}
+                onClose={()=>{
+                        setNameCardDrawer(false);
+                        setNewComment("");
+                        setGroupMessages(prev => ({
+                            ...prev,
+                            [groupId]: { ...prev[groupId], hasUnread: false }
+                        }));
+                    }}
                 >
                 <div className="nameDrawer" style={{position:'relative'}}>
                     <Button
@@ -465,6 +541,20 @@ const NameCard = ({
                             <Input size="middle" />
                             </Form.Item>
 
+                            {membersPage && (
+                            <Form.Item name="subscriptionPlanId" label="Subscription Plan">
+                                <Spin spinning={loadingPlans}>
+                                <Select placeholder="Select a subscription plan" size="middle">
+                                    {subscriptionPlans.map((plan) => (
+                                    <Select.Option key={plan.id} value={plan.id}>
+                                        {plan.id} - ${plan.price} ({plan.type})
+                                    </Select.Option>
+                                    ))}
+                                </Select>
+                                </Spin>
+                            </Form.Item>
+                            )}
+
                             <Form.Item label="City" name={['address', 'city']}>
                             <Input size="middle" />
                             </Form.Item>
@@ -502,7 +592,28 @@ const NameCard = ({
                                 subscriptions={subscriptions || []}
                                 color={color} />
                         )}
-                    <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Comments :</h3>
+                    <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Group Messages ({groupId}) :</h3>
+                    <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
+                        {groupMessages?.[groupId]?.messages?.length > 0 ? (
+                            groupMessages[groupId].messages.map((message, index) => (
+                                <Space 
+                                    key={index}
+                                    direction="vertical"
+                                    size="middle"
+                                    style={{ width: '100%' }}>
+                                    <Card size="small" style={{ position: 'relative', paddingBottom: '24px', backgroundColor: '#f0f8ff' }}>
+                                        <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#0066cc' }}>
+                                            {groupId}
+                                        </div>
+                                        {message}
+                                    </Card>
+                                </Space>
+                            ))
+                        ) : (
+                            <p style={{ color: '#888', fontStyle: 'italic' }}>No group messages yet</p>
+                        )}
+                    </Row>
+                    <h3 style={{ marginTop: '30px', }}>Comments :</h3>
                     <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
                         {comments?.map((comment,index) =>(
                             <Space 

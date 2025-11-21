@@ -9,15 +9,48 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin } from "antd";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import StatusModal from "./StatusModal";
 import PunchCardsPage from "./PunchCardsPage";
 import dayjs from "dayjs";
+
+// Mock subscription plans data - replace with API call later
+const MOCK_SUBSCRIPTION_PLANS = [{
+  "price": 490.0,
+  "noOfSubscriptions": 50.0,
+  "entityId": "w_123",
+  "id": "sub_21",
+  "isActive": true,
+  "type": "RECURRING"
+}, {
+  "price": 20.0,
+  "noOfSubscriptions": 30.0,
+  "entityId": "w_123",
+  "id": "sub_22",
+  "isActive": true,
+  "type": "RECURRING"
+}, {
+  "createdDate": "2025-11-12 09:00:00.0",
+  "price": 499.0,
+  "entityId": "w_123",
+  "noOfSubscriptions": 10.0,
+  "updatedDate": "2025-11-12 10:30:00.0",
+  "id": "sub_23",
+  "isActive": true,
+  "type": "ONETIME"
+}, {
+  "price": 390.0,
+  "noOfSubscriptions": 50.0,
+  "entityId": "w_123",
+  "id": "sub_24",
+  "isActive": true,
+  "type": "RECURRING"
+}];
 const NameCard = _ref => {
-  var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7, _address$8;
+  var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7, _address$8, _groupMessages$groupI, _groupMessages$groupI2, _groupMessages$groupI3, _groupMessages$groupI4;
   let {
     membersPage,
     data,
@@ -35,7 +68,10 @@ const NameCard = _ref => {
     comments,
     subscriptions,
     commentBox,
-    setCommentBox
+    setCommentBox,
+    selectedGroup,
+    groupMessages,
+    setGroupMessages
   } = _ref;
   const [isHovered, setIsHovered] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -47,6 +83,8 @@ const NameCard = _ref => {
     title: "",
     message: ""
   });
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
   const {
     useBreakpoint
   } = Grid;
@@ -72,6 +110,17 @@ const NameCard = _ref => {
   useEffect(() => {
     form.setFieldsValue(defaultValues);
   }, [form, defaultValues]);
+  useEffect(() => {
+    if (nameCardDrawer && membersPage) {
+      setLoadingPlans(true);
+      // Simulate API call delay
+      setTimeout(() => {
+        setSubscriptionPlans(MOCK_SUBSCRIPTION_PLANS);
+        console.log("Subscription Plans loaded from mock data:", MOCK_SUBSCRIPTION_PLANS);
+        setLoadingPlans(false);
+      }, 300);
+    }
+  }, [nameCardDrawer, membersPage]);
   const getDrawerWidth = () => {
     if (screens.xl) return 600;
     if (screens.lg) return 550;
@@ -89,7 +138,7 @@ const NameCard = _ref => {
     // ---------- STEP 2: Prepare updated record ----------
     const buildUpdatedRecord = isMember => {
       var _filterData$address, _values$address, _filterData$address2, _values$address2, _filterData$address3, _values$address3, _filterData$address4, _values$address4, _filterData$address5;
-      return _objectSpread(_objectSpread(_objectSpread({}, filterData), isMember ? {
+      return _objectSpread(_objectSpread(_objectSpread(_objectSpread({}, filterData), isMember ? {
         customerName: values.customerName,
         email: values.email
       } : {
@@ -97,7 +146,10 @@ const NameCard = _ref => {
       }), {}, {
         phoneNumber: values.phoneNumber,
         status: values.status,
-        groupId: values.groupId,
+        groupId: values.groupId
+      }, isMember && values.subscriptionPlanId && {
+        subscriptionPlanId: values.subscriptionPlanId
+      }), {}, {
         address: [_objectSpread(_objectSpread({}, (_filterData$address = filterData.address) === null || _filterData$address === void 0 ? void 0 : _filterData$address[0]), {}, {
           city: ((_values$address = values.address) === null || _values$address === void 0 ? void 0 : _values$address.city) || ((_filterData$address2 = filterData.address) === null || _filterData$address2 === void 0 || (_filterData$address2 = _filterData$address2[0]) === null || _filterData$address2 === void 0 ? void 0 : _filterData$address2.city) || "",
           state: ((_values$address2 = values.address) === null || _values$address2 === void 0 ? void 0 : _values$address2.state) || ((_filterData$address3 = filterData.address) === null || _filterData$address3 === void 0 || (_filterData$address3 = _filterData$address3[0]) === null || _filterData$address3 === void 0 ? void 0 : _filterData$address3.state) || "",
@@ -354,13 +406,21 @@ const NameCard = _ref => {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     }
-  }, "Name : ", customerName), /*#__PURE__*/React.createElement("div", {
+  }, "Name : ", customerName), /*#__PURE__*/React.createElement(Badge, {
+    count: selectedGroup === groupId && groupMessages !== null && groupMessages !== void 0 && (_groupMessages$groupI = groupMessages[groupId]) !== null && _groupMessages$groupI !== void 0 && _groupMessages$groupI.hasUnread ? (_groupMessages$groupI2 = groupMessages[groupId].messages) === null || _groupMessages$groupI2 === void 0 ? void 0 : _groupMessages$groupI2.length : 0,
+    overflowCount: 99,
+    showZero: false,
+    style: {
+      backgroundColor: selectedGroup === groupId && groupMessages !== null && groupMessages !== void 0 && (_groupMessages$groupI3 = groupMessages[groupId]) !== null && _groupMessages$groupI3 !== void 0 && _groupMessages$groupI3.hasUnread ? '#ff4d4f' : 'transparent'
+    },
+    offset: [-15, -5]
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: '30px',
       height: '15px',
       backgroundColor: "".concat(color)
     }
-  })), /*#__PURE__*/React.createElement("p", {
+  }))), /*#__PURE__*/React.createElement("p", {
     style: {
       width: '100%',
       overflow: 'hidden',
@@ -394,6 +454,11 @@ const NameCard = _ref => {
     onClose: () => {
       setNameCardDrawer(false);
       setNewComment("");
+      setGroupMessages(prev => _objectSpread(_objectSpread({}, prev), {}, {
+        [groupId]: _objectSpread(_objectSpread({}, prev[groupId]), {}, {
+          hasUnread: false
+        })
+      }));
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "nameDrawer",
@@ -496,7 +561,18 @@ const NameCard = _ref => {
     label: "groupId"
   }, /*#__PURE__*/React.createElement(Input, {
     size: "middle"
-  })), /*#__PURE__*/React.createElement(Form.Item, {
+  })), membersPage && /*#__PURE__*/React.createElement(Form.Item, {
+    name: "subscriptionPlanId",
+    label: "Subscription Plan"
+  }, /*#__PURE__*/React.createElement(Spin, {
+    spinning: loadingPlans
+  }, /*#__PURE__*/React.createElement(Select, {
+    placeholder: "Select a subscription plan",
+    size: "middle"
+  }, subscriptionPlans.map(plan => /*#__PURE__*/React.createElement(Select.Option, {
+    key: plan.id,
+    value: plan.id
+  }, plan.id, " - $", plan.price, " (", plan.type, ")"))))), /*#__PURE__*/React.createElement(Form.Item, {
     label: "City",
     name: ['address', 'city']
   }, /*#__PURE__*/React.createElement(Input, {
@@ -539,6 +615,41 @@ const NameCard = _ref => {
     style: {
       marginTop: '30px',
       marginBottom: '15px'
+    }
+  }, "Group Messages (", groupId, ") :"), /*#__PURE__*/React.createElement(Row, {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      marginBottom: '20px'
+    }
+  }, (groupMessages === null || groupMessages === void 0 || (_groupMessages$groupI4 = groupMessages[groupId]) === null || _groupMessages$groupI4 === void 0 || (_groupMessages$groupI4 = _groupMessages$groupI4.messages) === null || _groupMessages$groupI4 === void 0 ? void 0 : _groupMessages$groupI4.length) > 0 ? groupMessages[groupId].messages.map((message, index) => /*#__PURE__*/React.createElement(Space, {
+    key: index,
+    direction: "vertical",
+    size: "middle",
+    style: {
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    size: "small",
+    style: {
+      position: 'relative',
+      paddingBottom: '24px',
+      backgroundColor: '#f0f8ff'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 'bold',
+      marginBottom: '8px',
+      color: '#0066cc'
+    }
+  }, groupId), message))) : /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: '#888',
+      fontStyle: 'italic'
+    }
+  }, "No group messages yet")), /*#__PURE__*/React.createElement("h3", {
+    style: {
+      marginTop: '30px'
     }
   }, "Comments :"), /*#__PURE__*/React.createElement(Row, {
     style: {
