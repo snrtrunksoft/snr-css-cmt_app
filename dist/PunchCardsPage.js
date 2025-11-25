@@ -88,12 +88,12 @@ const PunchCardsPage = _ref => {
           body: JSON.stringify(newSub)
         });
         const postData = await responce.json();
-        const updatePostId = _objectSpread(_objectSpread({}, postData), {}, {
+        const updatePostId = _objectSpread(_objectSpread({}, newSub), {}, {
           id: postData.subscriptionId
         });
         console.log("updated Subscription Data:", updatePostId);
         console.log("The new subscription:", newSub);
-        setPunchCards(prev => [...prev, newSub]);
+        setPunchCards(prev => [...prev, updatePostId]);
       } catch (error) {
         console.error("unable to update the record", error);
       } finally {
