@@ -1,5 +1,6 @@
 // src/api/APIUtil.js
 import { get, post } from "aws-amplify/api";
+import { MEMBERS_API, RESOURCES_API } from "../properties/EndPointProperties";
 
 /**
  * Members
@@ -71,4 +72,34 @@ export async function getCalendar(entityId, monthStr, yearNumber) {
   });
   const { body } = await op.response;
   return body.json();
+}
+
+/**
+ * Delete Member
+ */
+export async function deleteMember(entityId, memberId) {
+  const response = await fetch(
+    `${MEMBERS_API}${memberId}`,
+    {
+      method: "DELETE",
+      headers: { entityid: entityId },
+    }
+  );
+  if (!response.ok) throw new Error(`Failed to delete member: ${response.statusText}`);
+  return response.json();
+}
+
+/**
+ * Delete Resource
+ */
+export async function deleteResource(entityId, resourceId) {
+  const response = await fetch(
+    `${RESOURCES_API}${resourceId}`,
+    {
+      method: "DELETE",
+      headers: { entityid: entityId },
+    }
+  );
+  if (!response.ok) throw new Error(`Failed to delete resource: ${response.statusText}`);
+  return response.json();
 }

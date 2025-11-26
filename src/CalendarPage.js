@@ -44,6 +44,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   const [ monthlyRecurring, setMonthlyRecurring ] = useState(dayjs().date());
   const [ recurringAllCalendar, setRecurringAllCalendar ] = useState([]);
   const [ recurringResourceCalendar, setRecurringResourceCalendar ] = useState([]);
+  const [ openBookedEventModal, setOpenBookedEventModal ] = useState(false);
+  const [ selectedBookedEvent, setSelectedBookedEvent ] = useState(null);
+  const [ isEditingEvent, setIsEditingEvent ] = useState(false);
+  const [ availableResourcesForSlot, setAvailableResourcesForSlot ] = useState([]);
 
   const [effectiveEntityId, setEffectiveEntityId] = useState(entityId || null);
 
@@ -137,7 +141,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
   useEffect(() => {
     if(calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ){
-      setIsLoading(true);
+      // Don't set loading to true if we already have data - optimistic UI
       const fetchMembersCalendar = async () => {
         try {
           const memberData = await fetch(CALENDAR_API + calendarUserId 
@@ -320,6 +324,59 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     }, 2000);
   }
 
+  // Unified refresh function to reload calendar data from backend
+  const refreshCalendarUI = async (userId = calendarUserId, date = currentDate) => {
+    if (userId === "Select Member" || userId === "Select Resource") {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Fetch calendar data
+      const calendarResponse = await fetch(
+        CALENDAR_API + userId 
+        + "/month/" + date.toLocaleString("default", { month: "long" })
+        + "/year/" + date.getFullYear(),
+        {
+          method: "GET",
+          headers: {
+            "entityid": effectiveEntityId || "",
+            "Content-Type": "application/json"
+          }
+        }
+      );
+      const calendarData = await calendarResponse.json();
+      console.log("Refreshed Calendar Data:", calendarData);
+
+      if (userId === "All") {
+        setSampleData(calendarData);
+      } else {
+        setResourceCalendar(calendarData);
+      }
+
+      // Fetch recurring events data
+      const recurringResponse = await fetch(
+        RECURRING_CALENDAR_API + userId + "/recurring/",
+        {
+          method: "GET",
+          headers: {
+            "entityid": effectiveEntityId || "",
+            "Content-Type": "application/json"
+          }
+        }
+      );
+      const recurringData = await recurringResponse.json();
+      console.log("Refreshed Recurring Data:", recurringData);
+      setRecurringResourceCalendar(recurringData);
+
+      setIsLoading(false);
+    } catch (error) {
+      console.log("Error refreshing calendar UI:", error);
+      setIsLoading(false);
+    }
+  };
+
   const handleCalendarEvent = () => {
 
     const eventDetails = {
@@ -336,175 +393,117 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       frequency: frequencyOfEvent,
       ...(frequencyOfEvent === "monthly" && { monthDays: [monthlyRecurring] }),
 
-      day: weeklyDayRecurring
-
+      day: weeklyDayRecurring || dayjs().format("dddd")
     };
 
-    const updateEventSlot = async () =>{
-      const eventHour = parseInt(dayjs(timeSlot, "h A").format("HH"), 10);
-      const hourKey = `hour_${eventHour}`;
+    // Unified handler for both add and update operations
+    const handleEventOperation = async (isUpdate = false) => {
       setEventLoading(true);
       setOpenEventStatusModal(true);
-      try{
-        await fetch(EVENTS_API + `${filteredEvents[currentPage - 1].id}`,{
-          method: "PUT",
+
+      try {
+        console.log("eventDetails:", eventDetails);
+        const url = isUpdate 
+          ? EVENTS_API + `${filteredEvents[currentPage - 1].id}` 
+          : EVENTS_API;
+        const method = isUpdate ? "PUT" : "POST";
+
+        const response = await fetch(url, {
+          method: method,
           headers: {
-            "entityid" : effectiveEntityId || "",
-            "Content-Type" : "application/json"
+            "entityid": effectiveEntityId || "",
+            "Content-Type": "application/json"
           },
-          body:JSON.stringify(eventDetails)
-        })
-        .then(responce  => responce.json())
-        .then(data => console.log("updated event data:",data))
-        setSampleData(prev =>
-          prev.map(day => ({
-            ...day,
-            allEvents: {
-              ...day.allEvents,
-              [hourKey]: [...day.allEvents[hourKey], eventDetails] // add event to array
-            }
-          })
-        ))
+          body: JSON.stringify(eventDetails)
+        });
+
+        const data = await response.json();
+        console.log(isUpdate ? "Event updated:" : "Event created:", data);
+
+        // Show success message
         setEventLoading(false);
-        setEventStatus("Event Updated Successfully...");
-      }catch(error){
-        console.log("unable to update the record",error);
+        setEventStatus(isUpdate ? "Event updated successfully!" : "Event created successfully!");
+
+        // Close modals
+        setOpenBookedEventModal(false);
+        setOpenEventSlot(false);
+        handleCloseEventSlot();
+
+        // Refresh UI after brief delay to allow success message to display
+        setTimeout(() => {
+          refreshCalendarUI(calendarUserId, currentDate);
+        }, 800);
+
+      } catch (error) {
+        console.log(isUpdate ? "Unable to update event:" : "Unable to create event:", error);
         setEventLoading(false);
-        setEventStatus("Event unable to update...!");
+        setEventStatus(isUpdate ? "Error updating event. Please try again." : "Error creating event. Please try again.");
       }
     };
 
-    const addEventSlot = async () =>{
-      setEventLoading(true);
-      setOpenEventStatusModal(true);
-        try{
-          const response = await fetch(EVENTS_API, {
-            method: "POST",
-            headers: {
-              "entityid" : effectiveEntityId || "",
-              'Content-Type' : "application/json"
-            },
-            body:JSON.stringify(eventDetails)
-          })
-          const postData = await response.json();
-          console.log("postData:",postData);
-          const updatedRecord = {
-            ...eventDetails,
-            id: postData.eventId
-          }
-          console.log("new event record:",updatedRecord);
-
-          const selectedDate = (weekEventDate ?? currentDate.getDate()).toString();
-          const selectedMonth = currentDate.toLocaleDateString("default", { month: "long" });
-          const selectedYear = currentDate.getFullYear().toString();
-          const eventHour = parseInt(dayjs(timeSlot, "h A").format("HH"), 10);
-          const hourKey = `hour_${eventHour}`;
-
-          let existingRecord = sampleData.find(item =>
-            item.date === selectedDate &&
-            item.month === selectedMonth &&
-            item.year === selectedYear
-          );
-
-          if (existingRecord) {
-            if (!Array.isArray(existingRecord.allEvents[hourKey])) {
-              existingRecord.allEvents[hourKey] = [];
-            }
-
-            if (!existingRecord.allEvents[hourKey].includes(selectedResourceId)) {
-              existingRecord.allEvents[hourKey].push(selectedResourceId);
-            }
-          } else {
-            const allHours = Array.from({ length: 24 }, (_, i) => `hour_${i}`);
-            const allEvents = allHours.reduce((acc, key) => {
-              acc[key] = [];
-              return acc;
-            }, {});
-
-            allEvents[hourKey] = [selectedResourceId];
-          
-          const newEventRecord = {
-            month: currentDate.toLocaleDateString("default",{month:"long"}),
-            year: currentDate.getFullYear().toString(),
-            id: `All_${selectedMonth}_${selectedYear}_Day${selectedDate}`,
-            date: (weekEventDate !== null ? weekEventDate : currentDate.getDate()).toString(),
-            allEvents
-          };
-          setSampleData((prevData) => {
-            if (prevData.month === monthName && parseInt(prevData.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate())) {
-              return {
-                ...prevData,
-                  events: [...(prevData.events || []),updatedRecord].sort(
-                    (a, b) => a.from - b.from
-                  ),
-              };
-            }
-            return [...prevData, newEventRecord];
-          });
-        }
-        setEventLoading(false);
-        setEventStatus("Event Added successfully...");
-        } catch (error){
-          console.log("unable to create new event:",error);
-          setEventLoading(false);
-          setEventStatus("Event unable to add..!");
-        }
-      };
     if (!selectedMemberId || !selectedResourceId || !eventTitle){
       validateFields();
-    } else {
-      // Check for overlap before submitting
-      checkResourceOverlap(selectedResourceId, fromTimeSlot, toTimeSlot, weekEventDate).then(hasOverlap => {
-        if (hasOverlap) {
-          showErrorMessage("Cannot book: Resource has overlapping time slots. Please select a different time or resource.");
-          return;
-        }
-        
-        if (valueToSet !== "" && bookSameSlot){
-          updateEventSlot();
-        } else {
-            addEventSlot();
-        }
-        handleCloseEventSlot();
-      });
+      return;
     }
+
+    // Check for overlap before submitting
+    checkResourceOverlap(selectedResourceId, fromTimeSlot, toTimeSlot, weekEventDate).then(hasOverlap => {
+      if (hasOverlap && !isEditingEvent) {
+        showErrorMessage("Cannot book: Resource has overlapping time slots. Please select a different time or resource.");
+        return;
+      }
+
+      if (isEditingEvent && filteredEvents.length > 0) {
+        handleEventOperation(true);  // Update
+      } else {
+        handleEventOperation(false); // Add/Create
+      }
+    });
   };
 
-  const deleteEvent = () =>{
+  const handleDeleteEvent = async () => {
+    if (!filteredEvents || filteredEvents.length === 0) {
+      setEventStatus("No event selected to delete.");
+      return;
+    }
+
+    const eventToDelete = filteredEvents[currentPage - 1];
+    
     setEventLoading(true);
     setOpenEventStatusModal(true);
-    const deleteExistingEvent = async() => {
-      try{
-        await fetch(EVENTS_API + `${filteredEvents[currentPage - 1].id}`,{
-          method: "DELETE",
-          headers: {
-            "entityid" : effectiveEntityId || "",
-            "Content-Type" : "application/json"
-          }
-        })
-        .then(responce => responce.json())
-        .then(data => console.log("Deleted event Successfully",data))
-        setSampleData((prevData) => 
-        prevData.map(prev => ({
-          ...prev,
-          // allEvents: {
-          //   ...prev.allEvents,
-          //   [hourKey]: prev.allEvents[hourKey].filter(
-          //     event => event !== eventToDelete
-          //   )
-          // }
-          // events: prev.events.filter(event => event.id !== filteredEvents[currentPage - 1].id)
-        })));
-        setEventLoading(false);
-        setEventStatus("Event deleted Successfully...");
-      } catch (error){
-        console.log("unable to delete Event",error);
-        setEventLoading(false);
-        setEventStatus("Event unable to delete..!");
-      }
+
+    try {
+      const response = await fetch(EVENTS_API + eventToDelete.id, {
+        method: "DELETE",
+        headers: {
+          "entityid": effectiveEntityId || "",
+          "Content-Type": "application/json"
+        }
+      });
+
+      const data = await response.json();
+      console.log("Event deleted successfully:", data);
+
+      // Show success message
+      setEventLoading(false);
+      setEventStatus("Event deleted successfully!");
+
+      // Close modals
+      setOpenBookedEventModal(false);
+      setOpenEventSlot(false);
+      handleCloseEventSlot();
+
+      // Refresh UI after brief delay
+      setTimeout(() => {
+        refreshCalendarUI(calendarUserId, currentDate);
+      }, 800);
+
+    } catch (error) {
+      console.log("Unable to delete event:", error);
+      setEventLoading(false);
+      setEventStatus("Error deleting event. Please try again.");
     }
-    deleteExistingEvent();
-  }
+  };
 
   const handleCloseEventSlot = () => {
     setOpenEventSlot(false);
@@ -519,6 +518,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     setMonthlyRecurring("");
     setNewErrors({});
     setOverlapWarning("");
+    setIsEditingEvent(false);
+    setBookSameSlot(false);
+    setOpenAppointment(false);
   };
 
   const handleMembersDropDown = (value) => {
@@ -581,11 +583,28 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     setSelectedResourceId(event.resourceId);
     setEventTitle(event.title);
     setEventNotes(event.notes);
-    setFromTimeSlot(fromTimeSlot);
-    setFrequencyOfEvent(event.frequencyOfEvent);
-    setWeeklyDayRecurring(event.weeklyDayRecurring);
-    setMonthlyRecurring(event.monthlyRecurring);
-    setToTimeSlot(toTimeSlot);
+    setFromTimeSlot(event.from);
+    setToTimeSlot(event.to);
+    setFrequencyOfEvent(event.frequency || "noRecurring");
+    setWeeklyDayRecurring(event.day || "");
+    setMonthlyRecurring(event.date || dayjs().date());
+    setTimeSlot(event.from === 0 ? "12 AM" : event.from < 12 ? `${event.from} AM` : event.from === 12 ? "12 PM" : `${event.from - 12} PM`);
+    setBookSameSlot(true);
+    setIsEditingEvent(true);
+  };
+
+  const handleShowBookedEventDetails = (event) => {
+    setSelectedBookedEvent(event);
+    setOpenBookedEventModal(true);
+    
+    // Calculate available resources for this slot
+    const eventHour = event.from;
+    const hourKey = `hour_${eventHour}`;
+    const bookedInSlot = sampleData.flatMap(day => day.allEvents?.[hourKey] ?? []);
+    const available = resourceData.filter(res => 
+      !bookedInSlot.some(booked => booked === res.resourceName || booked === event.resourceId)
+    );
+    setAvailableResourcesForSlot(available);
   };
 
   const dropDownList = (
@@ -1200,31 +1219,29 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
          open={openEventSlot}
          title={timeSlot +" Slot"}
          onCancel={handleCloseEventSlot}
-         footer={openAppointment ? 
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <Button onClick={() => {valueToSet = "";setBookSameSlot(false);setOpenAppointment(false);}}>Book new Event</Button>
-                    <Button onClick={()=> {handleUpdateExistingEventDetails(filteredEvents[currentPage - 1]);setBookSameSlot(true)}}>update</Button>
-                    <Button danger onClick={()=> deleteEvent()}>Delete</Button>
-                  </div> : <div>
-                      <Button type="primary" onClick={handleCalendarEvent}>Ok</Button>
+         footer={!openAppointment && <div>
+                      <Button type="primary" onClick={handleCalendarEvent}>{isEditingEvent ? 'Update Event' : 'Create Event'}</Button>
+                      <Button onClick={handleCloseEventSlot} style={{marginLeft:'10px'}}>Cancel</Button>
                     </div>}
          >
           <div>
             {!openAppointment ? 
             <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
               <Row style={{position:'relative'}}>
-                <Dropdown overlay={membersMenu} trigger={["click"]}>
+                <Dropdown overlay={membersMenu} trigger={["click"]} disabled={isEditingEvent}>
                   <input
-                    style={{border: !selectedMemberId ? "2px solid red": ""}}
+                    disabled={isEditingEvent}
+                    style={{border: !selectedMemberId ? "2px solid red": "", backgroundColor: isEditingEvent ? '#f5f5f5' : 'white', cursor: isEditingEvent ? 'not-allowed' : 'pointer'}}
                     className="memberResourceInput"
                     placeholder="Search for members"
                     value={selectedMemberId}
                     onChange={(e)=> handleMembersDropDown(e.target.value)}></input>
                 </Dropdown>
                 {newErrors.selectedMemberId && <span className="inputError1">{newErrors.selectedMemberId}</span>}
-                <Dropdown overlay={resourceMenu} trigger={["click"]}>
+                <Dropdown overlay={resourceMenu} trigger={["click"]} disabled={isEditingEvent}>
                   <input
-                    style={{border:!selectedResourceId ? '2px solid red':""}}
+                    disabled={isEditingEvent}
+                    style={{border:!selectedResourceId ? '2px solid red':"", backgroundColor: isEditingEvent ? '#f5f5f5' : 'white', cursor: isEditingEvent ? 'not-allowed' : 'pointer'}}
                     className="memberResourceInput"
                     placeholder="Search for resource"
                     value={selectedResourceId}
@@ -1285,7 +1302,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                                 }}
                                 needConfirm={false}
                                 /></h3>
-                  {overlapWarning && (
+                  {overlapWarning && !isEditingEvent && (
                     <div style={{
                       color: '#ff4d4f',
                       backgroundColor: '#fff2e8',
@@ -1301,7 +1318,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
             </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
                 {paginateEvents.map(item => (
                   <center key={item.title}>
-                    <h2 onClick={() => {handleUpdateExistingEventDetails(filteredEvents[currentPage - 1]);setBookSameSlot(true)}}>{item.title}</h2>
+                    <h2 style={{cursor:'pointer', color:'#1890ff'}} onClick={() => {
+                      handleShowBookedEventDetails(filteredEvents[currentPage - 1]);
+                    }}>{item.title}</h2>
                   </center>
                 ))}
               <Pagination
@@ -1315,6 +1334,92 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
               </Pagination>
             </div>}
           </div>
+         </Modal>
+         <Modal
+            title="Booked Event Details"
+            open={openBookedEventModal}
+            onCancel={() => {
+              setOpenBookedEventModal(false);
+              setSelectedBookedEvent(null);
+            }}
+            footer={[
+              <Button key="back" onClick={() => {
+                setOpenBookedEventModal(false);
+                setSelectedBookedEvent(null);
+              }}>Close</Button>,
+              <Button key="book" type="primary" onClick={() => {
+                setOpenBookedEventModal(false);
+                setOpenAppointment(false);
+                setOpenEventSlot(true);
+              }}>Book New Event</Button>,
+              <Button key="edit" type="primary" onClick={() => {
+                handleUpdateExistingEventDetails(selectedBookedEvent);
+                setOpenBookedEventModal(false);
+                setOpenEventSlot(true);
+              }}>Edit</Button>,
+              <Button key="delete" danger onClick={() => {
+                handleDeleteEvent();
+              }}>Delete</Button>
+            ]}
+            width={500}
+         >
+            {selectedBookedEvent && (
+              <div style={{textAlign:'left', display:'flex', flexDirection:'column', gap:'15px'}}>
+                <div>
+                  <strong>Event Title:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.title}</p>
+                </div>
+                <div>
+                  <strong>Member:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.memberId}</p>
+                </div>
+                <div>
+                  <strong>Resource:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.resourceId}</p>
+                </div>
+                <div>
+                  <strong>Time Slot:</strong>
+                  <p style={{margin:'5px 0'}}>
+                    {selectedBookedEvent.from === 0 ? '12 AM' : selectedBookedEvent.from < 12 ? `${selectedBookedEvent.from} AM` : selectedBookedEvent.from === 12 ? '12 PM' : `${selectedBookedEvent.from - 12} PM`}
+                    {' to '}
+                    {selectedBookedEvent.to === 0 ? '12 AM' : selectedBookedEvent.to < 12 ? `${selectedBookedEvent.to} AM` : selectedBookedEvent.to === 12 ? '12 PM' : `${selectedBookedEvent.to - 12} PM`}
+                  </p>
+                </div>
+                <div>
+                  <strong>Notes:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.notes || 'N/A'}</p>
+                </div>
+                <div>
+                  <strong>Date:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.date}/{selectedBookedEvent.month}/{selectedBookedEvent.year}</p>
+                </div>
+                {availableResourcesForSlot.length > 0 && (
+                  <div style={{
+                    backgroundColor:'#e6f7ff',
+                    padding:'10px',
+                    borderRadius:'4px',
+                    border:'1px solid #91d5ff'
+                  }}>
+                    <strong>Other available resources for this slot:</strong>
+                    <div style={{margin:'5px 0'}}>
+                      {availableResourcesForSlot.map(res => (
+                        <span key={res.id} style={{
+                          display:'inline-block',
+                          backgroundColor:'#1890ff',
+                          color:'white',
+                          padding:'4px 8px',
+                          borderRadius:'3px',
+                          marginRight:'5px',
+                          marginTop:'5px'
+                        }}>
+                          {res.resourceName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
          </Modal>
          <Modal 
             open={openEventStatusModal}

@@ -1,5 +1,6 @@
 const _excluded = ["id", "entityId"],
-  _excluded2 = ["subscriptions"];
+  _excluded2 = ["subscriptions"],
+  _excluded3 = ["subscriptions"];
 function _objectWithoutProperties(e, t) { if (null == e) return {}; var o, r, i = _objectWithoutPropertiesLoose(e, t); if (Object.getOwnPropertySymbols) { var n = Object.getOwnPropertySymbols(e); for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]); } return i; }
 function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t = {}; for (var n in r) if ({}.hasOwnProperty.call(r, n)) { if (-1 !== e.indexOf(n)) continue; t[n] = r[n]; } return t; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
@@ -9,11 +10,13 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import StatusModal from "./StatusModal";
+import { getSubscriptionPlans, deleteMember, deleteResource } from "./api/APIUtil";
 import PunchCardsPage from "./PunchCardsPage";
 import dayjs from "dayjs";
 
@@ -384,6 +387,110 @@ const NameCard = _ref => {
   const handleClear = () => {
     setNewComment("");
   };
+  const handleDeleteMember = async () => {
+    try {
+      setStatusModal({
+        visible: true,
+        type: "loading",
+        title: "Deleting...",
+        message: "Please wait"
+      });
+      if (membersPage) {
+        await deleteMember(entityId, customerId);
+      } else {
+        await deleteResource(entityId, customerId);
+      }
+      setStatusModal({
+        visible: true,
+        type: "success",
+        title: "Success",
+        message: "".concat(membersPage ? "Member" : "Resource", " deleted successfully")
+      });
+
+      // Update parent data
+      if (membersPage) {
+        setData(prev => prev.filter(item => item.id !== customerId));
+      } else {
+        setResourceData(prev => prev.filter(item => item.resourceId !== customerId));
+      }
+      setTimeout(() => {
+        setNameCardDrawer(false);
+        setStatusModal({
+          visible: false,
+          type: "",
+          title: "",
+          message: ""
+        });
+      }, 1500);
+    } catch (error) {
+      console.error("Delete failed:", error);
+      setStatusModal({
+        visible: true,
+        type: "error",
+        title: "Error",
+        message: "Failed to delete ".concat(membersPage ? "member" : "resource")
+      });
+    }
+  };
+  const handleDeleteComment = commentId => {
+    const updatedComments = comments.filter((_, idx) => idx !== commentId);
+    const updatedRecord = _objectSpread(_objectSpread({}, membersPage ? {
+      customerName: customerName
+    } : {
+      resourceName: customerName
+    }), {}, {
+      "status": status,
+      "address": address,
+      "email": email,
+      "subscriptions": subscriptions,
+      "groupId": groupId,
+      "phoneNumber": phoneNumber,
+      "comments": updatedComments
+    });
+    Object.values(updatedRecord.subscriptions).forEach(sub => {
+      delete sub.entityId;
+      delete sub.id;
+    });
+    const deleteCommentAPI = async () => {
+      try {
+        let recordToUpload = _objectSpread({}, updatedRecord);
+        if (!membersPage) {
+          const {
+              subscriptions
+            } = recordToUpload,
+            rest = _objectWithoutProperties(recordToUpload, _excluded3);
+          recordToUpload = rest;
+        }
+        const response = await fetch((membersPage ? MEMBERS_API : RESOURCES_API) + customerId, {
+          method: "PUT",
+          headers: {
+            "entityid": entityId,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(recordToUpload)
+        });
+        if (response.ok) {
+          message.success("Comment deleted successfully");
+          // Update local state
+          if (membersPage) {
+            setData(prev => prev.map(item => item.id === customerId ? _objectSpread(_objectSpread({}, item), {}, {
+              comments: updatedComments
+            }) : item));
+          } else {
+            setResourceData(prev => prev.map(item => item.resourceId === customerId ? _objectSpread(_objectSpread({}, item), {}, {
+              comments: updatedComments
+            }) : item));
+          }
+        } else {
+          throw new Error("HTTP error! status: ".concat(response.status));
+        }
+      } catch (error) {
+        console.error("Failed to delete comment:", error);
+        message.error("Failed to delete comment");
+      }
+    };
+    deleteCommentAPI();
+  };
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     onMouseEnter: () => setIsHovered(true),
     onMouseLeave: () => setIsHovered(false),
@@ -465,16 +572,32 @@ const NameCard = _ref => {
     style: {
       position: 'relative'
     }
-  }, /*#__PURE__*/React.createElement(Button, {
+  }, /*#__PURE__*/React.createElement("div", {
     type: "primary",
     style: {
       position: 'absolute',
       top: '10px',
       right: '10px',
-      zIndex: 1
-    },
+      zIndex: 1,
+      display: 'flex',
+      gap: '8px'
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    type: "primary",
     onClick: () => setIsEditable(true)
-  }, "Edit"), /*#__PURE__*/React.createElement(Row, {
+  }, "Edit"), /*#__PURE__*/React.createElement(Popconfirm, {
+    title: "Delete",
+    description: "Are you sure you want to delete this ".concat(membersPage ? 'member' : 'resource', "?"),
+    onConfirm: handleDeleteMember,
+    okText: "Yes",
+    cancelText: "No",
+    okButtonProps: {
+      danger: true
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    danger: true,
+    icon: /*#__PURE__*/React.createElement(DeleteOutlined, null)
+  }, "Delete"))), /*#__PURE__*/React.createElement(Row, {
     className: "personalNameCard"
   }, /*#__PURE__*/React.createElement(Col, {
     style: {
@@ -610,6 +733,8 @@ const NameCard = _ref => {
     setNewComment: setNewComment,
     handleSend: handleSend,
     subscriptions: subscriptions || [],
+    setData: setData,
+    entityId: entityId,
     color: color
   }), /*#__PURE__*/React.createElement("h3", {
     style: {
@@ -673,15 +798,37 @@ const NameCard = _ref => {
       position: 'relative',
       paddingBottom: '24px'
     }
-  }, comment["message"], /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, comment["message"]), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       bottom: '4px',
       right: '8px',
       fontSize: '11px',
-      color: '#888'
+      color: '#888',
+      gap: '8px'
     }
-  }, dayjs(comment['date']).format("YYYY-MM-DD HH:mm:ss"))))))), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(TextArea, {
+  }, /*#__PURE__*/React.createElement(Popconfirm, {
+    title: "Delete Comment",
+    description: "Are you sure you want to delete this comment?",
+    onConfirm: () => handleDeleteComment(index),
+    okText: "Yes",
+    cancelText: "No",
+    okButtonProps: {
+      danger: true
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    type: "text",
+    danger: true,
+    size: "small",
+    icon: /*#__PURE__*/React.createElement(DeleteOutlined, null),
+    style: {
+      marginLeft: '8px'
+    }
+  })), dayjs(comment['date']).format("YYYY-MM-DD HH:mm:ss"))))))), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(TextArea, {
     placeholder: "Enter your Comments",
     value: newComment,
     style: {
