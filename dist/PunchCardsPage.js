@@ -3,9 +3,9 @@ function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t =
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button, Checkbox, Col, Row, message } from "antd";
-import { SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
+import { SUBSCRIPTIONS_API, MEMBERS_API } from "./properties/EndPointProperties";
 import { LoadingOutlined, SwapOutlined } from "@ant-design/icons";
 const PunchCardsPage = _ref => {
   let {
@@ -15,6 +15,8 @@ const PunchCardsPage = _ref => {
     setNewComment,
     handleSend,
     subscriptions,
+    setData,
+    entityId,
     color
   } = _ref;
   const [flippedCards, setFlippedCards] = useState({});
@@ -23,6 +25,43 @@ const PunchCardsPage = _ref => {
   const [checkedServices, setCheckedServices] = useState({});
   const [subscriptionStatus, setSubscriptionStatus] = useState("ACTIVE");
   const [effectiveEntityId, setEffectiveEntityId] = useState(null);
+  const prevSubscriptionIdsRef = useRef(new Set());
+
+  // Smart sync: Only update punchCards when we detect new or modified subscriptions from parent
+  useEffect(() => {
+    if (!subscriptions || subscriptions.length === 0) return;
+    const currentIds = new Set(subscriptions.map(sub => sub.id));
+    const prevIds = prevSubscriptionIdsRef.current;
+
+    // Check if there are new subscriptions or if existing ones have been modified
+    let hasChanges = false;
+
+    // Check for new subscriptions
+    for (let id of currentIds) {
+      if (!prevIds.has(id)) {
+        hasChanges = true;
+        break;
+      }
+    }
+
+    // Check for modified subscriptions (noOfServicesCompleted changed)
+    if (!hasChanges && currentIds.size === prevIds.size) {
+      for (let sub of subscriptions) {
+        const existingSub = punchCards.find(s => s.id === sub.id);
+        if (existingSub && existingSub.noOfServicesCompleted !== sub.noOfServicesCompleted) {
+          hasChanges = true;
+          break;
+        }
+      }
+    }
+
+    // Only update if we detected changes
+    if (hasChanges) {
+      console.log("📦 Detected changes in subscriptions, updating punchCards");
+      setPunchCards(subscriptions);
+      prevSubscriptionIdsRef.current = currentIds;
+    }
+  }, [subscriptions, punchCards]);
   useEffect(() => {
     if (!effectiveEntityId && typeof window !== "undefined") {
       try {
@@ -91,7 +130,7 @@ const PunchCardsPage = _ref => {
         const updatePostId = _objectSpread(_objectSpread({}, newSub), {}, {
           id: postData.subscriptionId
         });
-        console.log("updated Subscription Data:", updatePostId);
+        console.log("updated Subscription Data:", postData);
         console.log("The new subscription:", newSub);
         setPunchCards(prev => [...prev, updatePostId]);
       } catch (error) {
@@ -115,7 +154,6 @@ const PunchCardsPage = _ref => {
     // }
 
     const updateSubscriptionsCheckboxes = async () => {
-      console.log("helloooo");
       const updatedSubscriptionDetails = {
         "noOfServicesCompleted": (parseInt(value.noOfServicesCompleted) + currentCheckedCount).toString(),
         "noOfServicesLeft": Math.max(0, parseInt(value.noOfServicesLeft) - currentCheckedCount).toString(),
@@ -139,18 +177,47 @@ const PunchCardsPage = _ref => {
           const data = await response.json();
           console.log("✅ subscriptions details updated:", data);
           message.success("Successfully saved ".concat(currentCheckedCount, " service(s)"));
-          // Update punch cards
+
+          // Update local punch cards state
+          const updatedCard = _objectSpread(_objectSpread({}, value), {}, {
+            noOfServicesCompleted: parseInt(value.noOfServicesCompleted) + currentCheckedCount,
+            noOfServicesLeft: Math.max(0, parseInt(value.noOfServicesLeft) - currentCheckedCount),
+            status: Math.max(0, parseInt(value.noOfServicesLeft) - currentCheckedCount) === 0 ? 'COMPLETED' : value.status
+          });
+          console.log("📝 Updated Card:", updatedCard);
+
+          // Update local punchCards state immediately
           setPunchCards(prevCards => prevCards.map(prev => {
             if (prev.id === cardId) {
-              console.log("Updating card - Old completed:", prev.noOfServicesCompleted, "Adding:", currentCheckedCount);
-              return _objectSpread(_objectSpread({}, prev), {}, {
-                noOfServicesCompleted: parseInt(prev.noOfServicesCompleted) + currentCheckedCount,
-                noOfServicesLeft: Math.max(0, parseInt(prev.noOfServicesLeft) - currentCheckedCount),
-                status: Math.max(0, parseInt(prev.noOfServicesLeft) - currentCheckedCount) === 0 ? 'COMPLETED' : prev.status
-              });
+              console.log("✏️ Updating local card - Old completed:", prev.noOfServicesCompleted, "Adding:", currentCheckedCount);
+              return updatedCard;
             }
             return prev;
           }));
+
+          // Clear checked services immediately after card update
+          console.log("🧹 Clearing checked services for card:", cardId);
+          setCheckedServices(prev => {
+            const newState = _objectSpread({}, prev);
+            newState[cardId] = new Set();
+            return newState;
+          });
+
+          // Also update parent member data with new subscriptions
+          if (setData && customerId) {
+            console.log("👨 Updating parent member data");
+            setData(prevMembers => prevMembers.map(member => {
+              if (member.id === customerId) {
+                return _objectSpread(_objectSpread({}, member), {}, {
+                  subscriptions: (member.subscriptions || []).map(sub => sub.id === cardId ? updatedCard : sub)
+                });
+              }
+              return member;
+            }));
+          }
+
+          // Clear comment
+          setNewComment("");
         } else {
           throw new Error("HTTP error! status: ".concat(response.status));
         }
@@ -160,12 +227,10 @@ const PunchCardsPage = _ref => {
       }
     };
 
-    // Clear checked services FIRST before updating - with proper state
-    console.log("Clearing checked services for card:", cardId);
-    const newCheckedServices = _objectSpread({}, checkedServices);
-    newCheckedServices[cardId] = new Set();
-    setCheckedServices(newCheckedServices);
+    // Execute the API update
     updateSubscriptionsCheckboxes();
+
+    // Note: We don't need setTimeout anymore - state updates happen in proper order
     handleSend();
   };
   const handleClearSelection = cardId => {
