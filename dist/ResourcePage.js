@@ -22,7 +22,10 @@ const ResourcePage = _ref => {
     entityId,
     dataView,
     commentBox,
-    setCommentBox
+    setCommentBox,
+    groupMessages,
+    setGroupMessages,
+    selectedGroup
   } = _ref;
   const [isLoading, setIsLoading] = useState(true);
   const [addNewResourceModal, setAddNewResourceModal] = useState(false);
@@ -151,7 +154,10 @@ const ResourcePage = _ref => {
     comments: item.comments,
     subscriptions: "",
     commentBox: commentBox,
-    setCommentBox: setCommentBox
+    setCommentBox: setCommentBox,
+    groupMessages: groupMessages,
+    setGroupMessages: setGroupMessages,
+    selectedGroup: selectedGroup
   }))) : /*#__PURE__*/React.createElement("h2", null, "No NameCards Found..."), /*#__PURE__*/React.createElement(Col, {
     xs: 20,
     md: 12,

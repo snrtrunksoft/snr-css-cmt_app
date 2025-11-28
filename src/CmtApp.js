@@ -596,6 +596,9 @@ const CmtApp = ({ setSelectedApp, selectedGroup, groupMessages, setGroupMessages
               entityId={entityId}
               commentBox={commentBox}
               setCommentBox={setCommentBox}
+              groupMessages={groupMessages}
+              setGroupMessages={setGroupMessages}
+              selectedGroup={selectedGroup}
             /> : openCalendarPage ?
               <CalendarPage
                 sampleData={sampleData}

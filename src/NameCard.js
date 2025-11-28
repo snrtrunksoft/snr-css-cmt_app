@@ -710,7 +710,6 @@ const NameCard = ({
                                 customerName={customerName}
                                 setNewComment={setNewComment}
                                 handleSend={handleSend}
-                                subscriptions={subscriptions || []}
                                 setData={setData}
                                 entityId={entityId}
                                 color={color} />
