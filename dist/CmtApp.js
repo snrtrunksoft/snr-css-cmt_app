@@ -645,7 +645,10 @@ const CmtApp = _ref => {
     dataView: dataView,
     entityId: entityId,
     commentBox: commentBox,
-    setCommentBox: setCommentBox
+    setCommentBox: setCommentBox,
+    groupMessages: groupMessages,
+    setGroupMessages: setGroupMessages,
+    selectedGroup: selectedGroup
   }) : openCalendarPage ? /*#__PURE__*/React.createElement(CalendarPage, {
     sampleData: sampleData,
     setSampleData: setSampleData,
