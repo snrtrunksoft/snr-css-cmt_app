@@ -4,9 +4,8 @@ import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Spac
 import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
-import { MEMBERS_API, RESOURCES_API } from "./properties/EndPointProperties";
 import StatusModal from "./StatusModal";
-import { getSubscriptionPlans, deleteMember, deleteResource } from "./api/APIUtil";
+import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource } from "./api/APIUtil";
 import PunchCardsPage  from "./PunchCardsPage";
 import dayjs from "dayjs";
 
@@ -163,44 +162,27 @@ const NameCard = ({
         const updateNameCard = async () => {
             console.log("Using entityId:", entityId)
             try {
-                const response = await fetch(
-                (membersPage ? MEMBERS_API : RESOURCES_API) + values.customerId,
-                {
-                    method: "PUT",
-                    headers: {
-                    entityid: entityId,
-                    "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(cleanCustomer),
-                }
-                );
-
-                const statusCode = response.status; // 🔹 capture status code
-                const data = await response.json();
-
-                if (!response.ok) {
-                console.error(`❌ Failed to update record. Status: ${statusCode}`, data);
-                setStatusModal({
-                    visible: true,
-                    type: "error",
-                    title: "Update Failed",
-                    message: "Failed to update record. Please try again."
-                });
+                const membersPage_local = membersPage;
+                const customerId_local = values.customerId;
+                
+                if (membersPage_local) {
+                    await updateMember(entityId, customerId_local, cleanCustomer);
                 } else {
+                    await updateResource(entityId, customerId_local, cleanCustomer);
+                }
+
                 if (membersPage) {
                     setData(updateLocalState);
                 } else {
                     setResourceData(updateLocalState);
                 }
-                console.log(`✅ Successfully updated record. Status: ${statusCode}`, data);
+                console.log(`✅ Successfully updated record`);
                 setStatusModal({
                     visible: true,
                     type: "success",
                     title: "Updated Successfully",
                     message: `${membersPage ? "User" : "Resource"} has been updated successfully!`
                 });
-                }
-
             } catch (error) {
                 console.error("❌ Network or server error while updating record:", error);
                 setStatusModal({
@@ -297,20 +279,13 @@ const NameCard = ({
                 }
                 console.log("Record:", recordToUpload);
 
-                const response = await fetch(
-                (membersPage ? MEMBERS_API : RESOURCES_API) + customerId,
-                {
-                    method: "PUT",
-                    headers: {
-                    entityid: entityId,
-                    "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(recordToUpload),
+                if (membersPage) {
+                    await updateMember(entityId, customerId, recordToUpload);
+                } else {
+                    await updateResource(entityId, customerId, recordToUpload);
                 }
-                );
 
-                const data = await response.json();
-                console.log("✅ successfully added the comment:", data);
+                console.log("✅ successfully added the comment");
                 if(membersPage) {
                     setData(prevData =>
                         prevData.map(prev =>
@@ -447,37 +422,30 @@ const NameCard = ({
                     recordToUpload = rest;
                 }
 
-                const response = await fetch(
-                    (membersPage ? MEMBERS_API : RESOURCES_API) + customerId,
-                    {
-                        method: "PUT",
-                        headers: { "entityid": entityId, "Content-Type": "application/json" },
-                        body: JSON.stringify(recordToUpload),
-                    }
-                );
-
-                if (response.ok) {
-                    message.success("Comment deleted successfully");
-                    // Update local state
-                    if (membersPage) {
-                        setData(prev => 
-                            prev.map(item => 
-                                item.id === customerId 
-                                    ? { ...item, comments: updatedComments }
-                                    : item
-                            )
-                        );
-                    } else {
-                        setResourceData(prev => 
-                            prev.map(item => 
-                                item.resourceId === customerId 
-                                    ? { ...item, comments: updatedComments }
-                                    : item
-                            )
-                        );
-                    }
+                if (membersPage) {
+                    await updateMember(entityId, customerId, recordToUpload);
                 } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    await updateResource(entityId, customerId, recordToUpload);
+                }
+
+                message.success("Comment deleted successfully");
+                // Update local state
+                if (membersPage) {
+                    setData(prev => 
+                        prev.map(item => 
+                            item.id === customerId 
+                                ? { ...item, comments: updatedComments }
+                                : item
+                        )
+                    );
+                } else {
+                    setResourceData(prev => 
+                        prev.map(item => 
+                            item.resourceId === customerId 
+                                ? { ...item, comments: updatedComments }
+                                : item
+                        )
+                    );
                 }
             } catch (error) {
                 console.error("Failed to delete comment:", error);
