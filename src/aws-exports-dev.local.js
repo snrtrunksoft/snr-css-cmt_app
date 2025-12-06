@@ -14,8 +14,8 @@ const awsExports = {
     },
     API: {
       REST: {
-        InventoryAPI: {
-          endpoint: "https://m8wxr06qij.execute-api.us-east-1.amazonaws.com/dev",
+        UsersAPI: {
+          endpoint: "https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev",
           region: "us-east-1",
           authorizationType: "AMAZON_COGNITO_USER_POOLS"
         },
@@ -24,13 +24,38 @@ const awsExports = {
           region: "us-east-1",
           authorizationType: "AMAZON_COGNITO_USER_POOLS"
         },
-        UsersAPI: {
-          endpoint: "https://kh9zku31eb.execute-api.us-east-1.amazonaws.com/dev",
+        CalendarAPI: {
+          endpoint: "https://pliol7eyw7.execute-api.us-east-1.amazonaws.com/dev",
           region: "us-east-1",
           authorizationType: "AMAZON_COGNITO_USER_POOLS"
         },
-        CalendarAPI: {
-          endpoint: "https://pliol7eyw7.execute-api.us-east-1.amazonaws.com/dev",
+        DashboardAPI: {
+          endpoint: "https://n82x1bmdef.execute-api.us-east-1.amazonaws.com/dev",
+          region: "us-east-1",
+          authorizationType: "AMAZON_COGNITO_USER_POOLS"
+        },
+        CategoriesAPI: {
+          endpoint: "https://cx8712tt7e.execute-api.us-east-1.amazonaws.com/dev",
+          region: "us-east-1",
+          authorizationType: "AMAZON_COGNITO_USER_POOLS"
+        },
+        ItemsAPI: {
+          endpoint: "https://1p6bhnsms5.execute-api.us-east-1.amazonaws.com/dev",
+          region: "us-east-1",
+          authorizationType: "AMAZON_COGNITO_USER_POOLS"
+        },
+        OrdersAPI: {
+          endpoint: "https://m8wxr06qij.execute-api.us-east-1.amazonaws.com/dev",
+          region: "us-east-1",
+          authorizationType: "AMAZON_COGNITO_USER_POOLS"
+        },
+        EventsAPI: {
+          endpoint: "https://3jb2f8gsn0.execute-api.us-east-1.amazonaws.com/dev",
+          region: "us-east-1",
+          authorizationType: "AMAZON_COGNITO_USER_POOLS"
+        },
+        SubscriptionsAPI: {
+          endpoint: "https://pky0yuomvc.execute-api.us-east-1.amazonaws.com/dev",
           region: "us-east-1",
           authorizationType: "AMAZON_COGNITO_USER_POOLS"
         }

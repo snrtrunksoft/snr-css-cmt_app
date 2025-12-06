@@ -6,7 +6,7 @@ function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = 
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { CALENDAR_API, EVENTS_API, RECURRING_CALENDAR_API } from "./properties/EndPointProperties";
+import { getRecurringCalendar, getAllRecurringCalendar, getCalendar, createEvent, updateEvent, deleteEvent } from "./api/APIUtil";
 import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid, Spin } from "antd";
 import dayjs from "dayjs";
 import { LoadingOutlined } from "@ant-design/icons";
@@ -77,14 +77,7 @@ const CalendarPage = _ref => {
   useEffect(() => {
     const fetchRecurringCalendar = async () => {
       try {
-        const responce = await fetch(RECURRING_CALENDAR_API + "All/recurring/", {
-          method: "GET",
-          headers: {
-            "entityid": effectiveEntityId || "",
-            "Content-Type": "application/json"
-          }
-        });
-        const recurringCalendarData = await responce.json();
+        const recurringCalendarData = await getAllRecurringCalendar(effectiveEntityId);
         console.log("recurringCalendarData:", recurringCalendarData);
         setRecurringAllCalendar(recurringCalendarData);
       } catch (error) {
@@ -147,34 +140,22 @@ const CalendarPage = _ref => {
       // Don't set loading to true if we already have data - optimistic UI
       const fetchMembersCalendar = async () => {
         try {
-          const memberData = await fetch(CALENDAR_API + calendarUserId + "/month/" + currentDate.toLocaleString("default", {
+          const monthName = currentDate.toLocaleString("default", {
             month: "long"
-          }) + "/year/" + currentDate.getFullYear(), {
-            method: "GET",
-            headers: {
-              "entityid": effectiveEntityId || "",
-              "Content-Type": "application/json"
-            }
           });
-          const responce = await memberData.json();
-          console.log("Filtered Calendar:", responce);
+          const year = currentDate.getFullYear().toString();
+          const memberData = await getCalendar(effectiveEntityId, calendarUserId, monthName, year);
+          console.log("Filtered Calendar:", memberData);
           if (calendarUserId === "All") {
-            setSampleData(responce);
+            setSampleData(memberData);
           } else {
-            setResourceCalendar(responce);
+            setResourceCalendar(memberData);
           }
         } catch (error) {
           console.log("fetching the monthly calendar:", error);
         }
         try {
-          const responce = await fetch(RECURRING_CALENDAR_API + calendarUserId + "/recurring/", {
-            method: "GET",
-            headers: {
-              "entityid": effectiveEntityId || "",
-              "Content-Type": "application/json"
-            }
-          });
-          const recurringResourceData = await responce.json();
+          const recurringResourceData = await getRecurringCalendar(effectiveEntityId, calendarUserId);
           console.log("recurringResourceData:", recurringResourceData);
           setRecurringResourceCalendar(recurringResourceData);
         } catch (error) {
@@ -314,18 +295,13 @@ const CalendarPage = _ref => {
     }
     try {
       setIsLoading(true);
+      const monthName = date.toLocaleString("default", {
+        month: "long"
+      });
+      const yearNumber = date.getFullYear();
 
       // Fetch calendar data
-      const calendarResponse = await fetch(CALENDAR_API + userId + "/month/" + date.toLocaleString("default", {
-        month: "long"
-      }) + "/year/" + date.getFullYear(), {
-        method: "GET",
-        headers: {
-          "entityid": effectiveEntityId || "",
-          "Content-Type": "application/json"
-        }
-      });
-      const calendarData = await calendarResponse.json();
+      const calendarData = await getCalendar(effectiveEntityId, userId, monthName, yearNumber);
       console.log("Refreshed Calendar Data:", calendarData);
       if (userId === "All") {
         setSampleData(calendarData);
@@ -334,14 +310,7 @@ const CalendarPage = _ref => {
       }
 
       // Fetch recurring events data
-      const recurringResponse = await fetch(RECURRING_CALENDAR_API + userId + "/recurring/", {
-        method: "GET",
-        headers: {
-          "entityid": effectiveEntityId || "",
-          "Content-Type": "application/json"
-        }
-      });
-      const recurringData = await recurringResponse.json();
+      const recurringData = await getRecurringCalendar(effectiveEntityId, userId);
       console.log("Refreshed Recurring Data:", recurringData);
       setRecurringResourceCalendar(recurringData);
       setIsLoading(false);
@@ -376,18 +345,13 @@ const CalendarPage = _ref => {
       setOpenEventStatusModal(true);
       try {
         console.log("eventDetails:", eventDetails);
-        const url = isUpdate ? EVENTS_API + "".concat(filteredEvents[currentPage - 1].id) : EVENTS_API;
-        const method = isUpdate ? "PUT" : "POST";
-        const response = await fetch(url, {
-          method: method,
-          headers: {
-            "entityid": effectiveEntityId || "",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(eventDetails)
-        });
-        const data = await response.json();
-        console.log(isUpdate ? "Event updated:" : "Event created:", data);
+        if (isUpdate) {
+          const eventId = filteredEvents[currentPage - 1].id;
+          await updateEvent(effectiveEntityId, eventId, eventDetails);
+        } else {
+          await createEvent(effectiveEntityId, eventDetails);
+        }
+        console.log(isUpdate ? "Event updated:" : "Event created:", eventDetails);
 
         // Show success message
         setEventLoading(false);
@@ -435,15 +399,8 @@ const CalendarPage = _ref => {
     setEventLoading(true);
     setOpenEventStatusModal(true);
     try {
-      const response = await fetch(EVENTS_API + eventToDelete.id, {
-        method: "DELETE",
-        headers: {
-          "entityid": effectiveEntityId || "",
-          "Content-Type": "application/json"
-        }
-      });
-      const data = await response.json();
-      console.log("Event deleted successfully:", data);
+      await deleteEvent(effectiveEntityId, eventToDelete.id);
+      console.log("Event deleted successfully:", eventToDelete);
 
       // Show success message
       setEventLoading(false);
@@ -644,16 +601,11 @@ const CalendarPage = _ref => {
     }
     try {
       // Fetch the specific resource's calendar for the current month
-      const response = await fetch(CALENDAR_API + resourceId + "/month/" + currentDate.toLocaleString("default", {
+      const monthName = currentDate.toLocaleString("default", {
         month: "long"
-      }) + "/year/" + currentDate.getFullYear(), {
-        method: "GET",
-        headers: {
-          "entityid": effectiveEntityId || "",
-          "Content-Type": "application/json"
-        }
       });
-      const resourceCalendarData = await response.json();
+      const yearNumber = currentDate.getFullYear();
+      const resourceCalendarData = await getCalendar(effectiveEntityId, resourceId, monthName, yearNumber);
       console.log("Fetched resource calendar for overlap check:", {
         resourceId,
         resourceCalendarData
@@ -662,7 +614,7 @@ const CalendarPage = _ref => {
       // Check in fetched resourceCalendar for existing bookings
       const overlappingEvents = resourceCalendarData.filter(calendar => {
         var _calendar$events;
-        const isMatchingDay = calendar.month === monthName && parseInt(calendar.year) === currentDate.getFullYear() && parseInt(calendar.date) === (selectedDate !== null ? selectedDate : currentDate.getDate());
+        const isMatchingDay = calendar.month === monthName && parseInt(calendar.year) === yearNumber && parseInt(calendar.date) === (selectedDate !== null ? selectedDate : currentDate.getDate());
         if (!isMatchingDay) return false;
         return (_calendar$events = calendar.events) === null || _calendar$events === void 0 ? void 0 : _calendar$events.some(event => {
           // Check both resourceId and resourceName for compatibility
@@ -686,16 +638,9 @@ const CalendarPage = _ref => {
       });
 
       // Fetch recurring events for the specific resource
-      const recurringResponse = await fetch(RECURRING_CALENDAR_API + resourceId + "/recurring/", {
-        method: "GET",
-        headers: {
-          "entityid": effectiveEntityId || "",
-          "Content-Type": "application/json"
-        }
-      });
-      const recurringData = await recurringResponse.json();
+      const recurringData = await getRecurringCalendar(effectiveEntityId, resourceId);
       console.log("Fetched recurring calendar:", recurringData);
-      const weekday = dayjs(selectedDate ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDate) : currentDate).format("dddd").toUpperCase();
+      const weekday = dayjs(selectedDate ? new Date(yearNumber, currentDate.getMonth(), selectedDate) : currentDate).format("dddd").toUpperCase();
       const recurringOverlap = recurringData[weekday] ? Object.values(recurringData[weekday]).some(hourEvents => Array.isArray(hourEvents) && hourEvents.some(event => {
         const isSameResource = event.resourceId === resourceId || event.resourceName === resourceId;
         if (isSameResource) {

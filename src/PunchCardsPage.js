@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button, Checkbox, message } from "antd";
-import { SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
+import { createSubscription, updateSubscription } from "./api/APIUtil";
 import { SwapOutlined } from "@ant-design/icons";
 
 const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSend, setData, entityId, color}) => {
@@ -94,18 +94,8 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 memberId: customerId
             };
 
-            const response = await fetch(SUBSCRIPTIONS_API, {
-                method: 'POST',
-                headers: {
-                    "entityid": effectiveEntityId,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(newSub)
-            });
-
-            if (!response.ok) throw new Error("Failed to create subscription");
-
-            const postData = await response.json();
+            const postData = await createSubscription(effectiveEntityId, newSub);
+            
             const newSubscriptionWithId = {
                 ...newSub,
                 id: postData.subscriptionId
@@ -163,19 +153,9 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
 
             console.log("💾 Sending update:", updatedSubscriptionDetails);
 
-            const response = await fetch(`${SUBSCRIPTIONS_API}${cardId}`, {
-                method: "PUT",
-                headers: {
-                    "entityid": effectiveEntityId || "",
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(updatedSubscriptionDetails)
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-            const apiResponse = await response.json();
-            console.log("✅ Subscription updated from API:", apiResponse);
+            await updateSubscription(effectiveEntityId, cardId, updatedSubscriptionDetails);
+            
+            console.log("✅ Subscription updated from API");
 
             // Create updated card object
             const updatedCard = {

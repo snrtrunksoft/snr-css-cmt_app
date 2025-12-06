@@ -5,7 +5,7 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button, Checkbox, message } from "antd";
-import { SUBSCRIPTIONS_API } from "./properties/EndPointProperties";
+import { createSubscription, updateSubscription } from "./api/APIUtil";
 import { SwapOutlined } from "@ant-design/icons";
 const PunchCardsPage = _ref => {
   let {
@@ -103,16 +103,7 @@ const PunchCardsPage = _ref => {
         completedDate: "june-09-2026",
         memberId: customerId
       };
-      const response = await fetch(SUBSCRIPTIONS_API, {
-        method: 'POST',
-        headers: {
-          "entityid": effectiveEntityId,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(newSub)
-      });
-      if (!response.ok) throw new Error("Failed to create subscription");
-      const postData = await response.json();
+      const postData = await createSubscription(effectiveEntityId, newSub);
       const newSubscriptionWithId = _objectSpread(_objectSpread({}, newSub), {}, {
         id: postData.subscriptionId
       });
@@ -159,17 +150,8 @@ const PunchCardsPage = _ref => {
         memberId: card.memberId
       };
       console.log("💾 Sending update:", updatedSubscriptionDetails);
-      const response = await fetch("".concat(SUBSCRIPTIONS_API).concat(cardId), {
-        method: "PUT",
-        headers: {
-          "entityid": effectiveEntityId || "",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(updatedSubscriptionDetails)
-      });
-      if (!response.ok) throw new Error("HTTP error! status: ".concat(response.status));
-      const apiResponse = await response.json();
-      console.log("✅ Subscription updated from API:", apiResponse);
+      await updateSubscription(effectiveEntityId, cardId, updatedSubscriptionDetails);
+      console.log("✅ Subscription updated from API");
 
       // Create updated card object
       const updatedCard = _objectSpread(_objectSpread({}, card), {}, {
