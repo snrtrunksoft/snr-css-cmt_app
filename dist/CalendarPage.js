@@ -140,6 +140,11 @@ const CalendarPage = _ref => {
     generateCalendar();
   }, [currentDate]);
   useEffect(() => {
+    // Only fetch if calendarUserId is set (not empty string)
+    if (!calendarUserId) {
+      return;
+    }
+    setIsLoading(true);
     if (calendarUserId && calendarUserId !== "All") {
       // calendarUserId now contains the actual ID (member ID or resource ID)
       const fetchMembersCalendar = async () => {
@@ -148,18 +153,18 @@ const CalendarPage = _ref => {
             month: "long"
           });
           const year = currentDate.getFullYear().toString();
+
+          // Fetch regular calendar data
           const memberData = await getCalendar(effectiveEntityId, calendarUserId, monthName, year);
           console.log("Filtered Calendar:", memberData);
           setResourceCalendar(memberData);
-        } catch (error) {
-          console.log("fetching the monthly calendar:", error);
-        }
-        try {
+
+          // Fetch recurring calendar data
           const recurringResourceData = await getRecurringCalendar(effectiveEntityId, calendarUserId);
           console.log("recurringResourceData:", recurringResourceData);
           setRecurringResourceCalendar(recurringResourceData);
         } catch (error) {
-          console.log("unable to fetch the Recurring Resource Calendar:", error);
+          console.log("Error fetching calendar data:", error);
         } finally {
           setIsLoading(false);
         }
@@ -173,11 +178,18 @@ const CalendarPage = _ref => {
             month: "long"
           });
           const year = currentDate.getFullYear().toString();
+
+          // Fetch regular calendar data for all users
           const allData = await getCalendar(effectiveEntityId, "All", monthName, year);
           console.log("All Calendar Data:", allData);
           setSampleData(allData);
+
+          // Fetch recurring calendar data for all users
+          const recurringAllData = await getRecurringCalendar(effectiveEntityId, "All");
+          console.log("All Recurring Data:", recurringAllData);
+          setRecurringAllCalendar(recurringAllData);
         } catch (error) {
-          console.log("fetching the all calendar:", error);
+          console.log("Error fetching all calendar data:", error);
         } finally {
           setIsLoading(false);
         }
@@ -775,17 +787,17 @@ const CalendarPage = _ref => {
     setResourceDropDown(false);
     setMemberDropDown(false);
     setSelectedFilterId(""); // Clear filter selection
-    setCalendarUserId("");
+    setSelectedFilterType("");
     if (value === "members") {
       setMemberDropDown(true);
       setSelectedFilterType("member");
+      setCalendarUserId(""); // Stay with empty, wait for dropdown selection
     } else if (value === "resource") {
       setResourceDropDown(true);
       setSelectedFilterType("resource");
+      setCalendarUserId(""); // Stay with empty, wait for dropdown selection
     } else if (value === "All") {
       setCalendarUserId("All");
-      setSelectedFilterId("");
-      setSelectedFilterType("");
     }
   };
   useEffect(() => {
@@ -854,7 +866,7 @@ const CalendarPage = _ref => {
     }
   }, /*#__PURE__*/React.createElement(Col, null, /*#__PURE__*/React.createElement(Button, {
     onClick: () => setCurrentDate(new Date())
-  }, /*#__PURE__*/React.createElement("h3", null, "Today")), " \xA0"), /*#__PURE__*/React.createElement(Col, null, /*#__PURE__*/React.createElement(Button, {
+  }, /*#__PURE__*/React.createElement("h3", null, "Today")), " \xA0"), /*#__PURE__*/React.createElement(Col, null, isLoading && /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...")), /*#__PURE__*/React.createElement(Col, null, /*#__PURE__*/React.createElement(Button, {
     onClick: () => {
       setOpenDailyCalendar(true);
       setOpenWeekCalendar(false);
@@ -1012,6 +1024,9 @@ const CalendarPage = _ref => {
         });
       }
       return "";
+    }) : "", calendarUserId && calendarUserId !== "All" ? recurringResourceEvents.map(item => {
+      const midpoint = Math.floor((item.from + item.to) / 2);
+      return i === midpoint ? item.title : "";
     }) : "", currentHour === i && /*#__PURE__*/React.createElement("div", {
       className: "current-time-line",
       style: {
@@ -1025,7 +1040,7 @@ const CalendarPage = _ref => {
     }));
   }))) : /*#__PURE__*/React.createElement("div", {
     className: "grid-container header1"
-  }, isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading...") : getWeekDays().map((day, index) => /*#__PURE__*/React.createElement("div", {
+  }, getWeekDays().map((day, index) => /*#__PURE__*/React.createElement("div", {
     key: index
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid-header-item",
@@ -1167,7 +1182,13 @@ const CalendarPage = _ref => {
         });
       }
       return "";
-    }) : "", currentHour == parseInt(dayjs(hour, "h A").format("HH"), 10) && /*#__PURE__*/React.createElement("div", {
+    }) : "", calendarUserId && calendarUserId !== "All" ? recurringResourceEvents.map(item => {
+      const fromTime = parseInt(item.from, 10);
+      const toTime = parseInt(item.to, 10);
+      const midpoint = Math.floor((fromTime + toTime) / 2); // Midpoint calculation
+
+      return parseInt(dayjs(hour, "h A").format("HH"), 10) == midpoint ? item.title : ""; // Show only at midpoint
+    }) : "", "                          ", currentHour == parseInt(dayjs(hour, "h A").format("HH"), 10) && /*#__PURE__*/React.createElement("div", {
       className: "current-time-line",
       style: {
         position: "absolute",
