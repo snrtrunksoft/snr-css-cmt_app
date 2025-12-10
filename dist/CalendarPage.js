@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getRecurringCalendar, getAllRecurringCalendar, getCalendar, createEvent, updateEvent, deleteEvent } from "./api/APIUtil";
-import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid, Spin } from "antd";
+import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid, Spin, DatePicker } from "antd";
 import dayjs from "dayjs";
 import { LoadingOutlined } from "@ant-design/icons";
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -15,7 +15,7 @@ const {
   useBreakpoint
 } = Grid;
 const CalendarPage = _ref => {
-  var _recurringAllCalendar, _recurringAllCalendar2, _matchingDay$allEvent, _matchingDay$allEvent2;
+  var _recurringAllCalendar, _recurringAllCalendar2;
   let {
     sampleData,
     setSampleData,
@@ -43,6 +43,8 @@ const CalendarPage = _ref => {
   const [calendarUserId, setCalendarUserId] = useState("All");
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [selectedResourceId, setSelectedResourceId] = useState("");
+  const [selectedFilterId, setSelectedFilterId] = useState(""); // ID of selected member/resource for filtering
+  const [selectedFilterType, setSelectedFilterType] = useState(""); // "member" or "resource"
   const [openAppointment, setOpenAppointment] = useState(false);
   const [bookSameSlot, setBookSameSlot] = useState(false);
   const [resourceCalendar, setResourceCalendar] = useState([]);
@@ -59,6 +61,8 @@ const CalendarPage = _ref => {
   const [selectedBookedEvent, setSelectedBookedEvent] = useState(null);
   const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [availableResourcesForSlot, setAvailableResourcesForSlot] = useState([]);
+  const [recurringStartDate, setRecurringStartDate] = useState(null);
+  const [recurringEndDate, setRecurringEndDate] = useState(null);
   const [effectiveEntityId, setEffectiveEntityId] = useState(entityId || null);
   useEffect(() => {
     if (!effectiveEntityId && typeof window !== "undefined") {
@@ -136,8 +140,8 @@ const CalendarPage = _ref => {
     generateCalendar();
   }, [currentDate]);
   useEffect(() => {
-    if (calendarUserId !== "Select Member" && calendarUserId !== "Select Resource") {
-      // Don't set loading to true if we already have data - optimistic UI
+    if (calendarUserId && calendarUserId !== "All") {
+      // calendarUserId now contains the actual ID (member ID or resource ID)
       const fetchMembersCalendar = async () => {
         try {
           const monthName = currentDate.toLocaleString("default", {
@@ -146,11 +150,7 @@ const CalendarPage = _ref => {
           const year = currentDate.getFullYear().toString();
           const memberData = await getCalendar(effectiveEntityId, calendarUserId, monthName, year);
           console.log("Filtered Calendar:", memberData);
-          if (calendarUserId === "All") {
-            setSampleData(memberData);
-          } else {
-            setResourceCalendar(memberData);
-          }
+          setResourceCalendar(memberData);
         } catch (error) {
           console.log("fetching the monthly calendar:", error);
         }
@@ -165,6 +165,24 @@ const CalendarPage = _ref => {
         }
       };
       fetchMembersCalendar();
+    } else if (calendarUserId === "All") {
+      // Fetch data for all users
+      const fetchAllCalendar = async () => {
+        try {
+          const monthName = currentDate.toLocaleString("default", {
+            month: "long"
+          });
+          const year = currentDate.getFullYear().toString();
+          const allData = await getCalendar(effectiveEntityId, "All", monthName, year);
+          console.log("All Calendar Data:", allData);
+          setSampleData(allData);
+        } catch (error) {
+          console.log("fetching the all calendar:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchAllCalendar();
     }
   }, [calendarUserId, currentDate, effectiveEntityId]);
   const generateCalendar = () => {
@@ -320,7 +338,7 @@ const CalendarPage = _ref => {
     }
   };
   const handleCalendarEvent = () => {
-    const eventDetails = _objectSpread(_objectSpread({
+    const eventDetails = _objectSpread(_objectSpread(_objectSpread({
       memberId: selectedMemberId,
       resourceId: selectedResourceId,
       date: monthlyRecurring,
@@ -336,6 +354,10 @@ const CalendarPage = _ref => {
       monthDays: [monthlyRecurring]
     }), {}, {
       day: weeklyDayRecurring || dayjs().format("dddd")
+    }, recurring && recurringStartDate && {
+      startDate: recurringStartDate.format("YYYY-MM-DD")
+    }), recurring && recurringEndDate && {
+      endDate: recurringEndDate.format("YYYY-MM-DD")
     });
 
     // Unified handler for both add and update operations
@@ -432,52 +454,106 @@ const CalendarPage = _ref => {
     setFrequencyOfEvent("noRecurring");
     setWeeklyDayRecurring("");
     setMonthlyRecurring("");
+    setRecurringStartDate(null);
+    setRecurringEndDate(null);
     setNewErrors({});
     setOverlapWarning("");
     setIsEditingEvent(false);
     setBookSameSlot(false);
     setOpenAppointment(false);
   };
+
+  // Helper function to get member name from ID
+  const getMemberNameById = memberId => {
+    if (!memberId) return "";
+    const member = duplicateData.find(m => m.id === memberId);
+    return member ? member.customerName : "";
+  };
+
+  // Helper function to get resource name from ID
+  const getResourceNameById = resourceId => {
+    if (!resourceId) return "";
+    const resource = resourceData.find(r => r.resourceId === resourceId);
+    return resource ? resource.resourceName : "";
+  };
   const handleMembersDropDown = value => {
-    setSelectedMemberId(value);
+    // Clear selection on input change - user must select from dropdown menu
+    // This prevents ambiguity when there are duplicate names
+    if (value === "") {
+      setSelectedMemberId("");
+    }
+    // Note: Selection by ID happens via handleMembersMenu click handler
   };
   const handleResourceDropDown = value => {
-    setSelectedResourceId(value);
-    // Validation will be triggered by useEffect
+    // Clear selection on input change - user must select from dropdown menu
+    // This prevents ambiguity when there are duplicate names
+    if (value === "") {
+      setSelectedResourceId("");
+    }
+    // Note: Selection by ID happens via handleResourceMenu click handler
   };
   const handleMembersMenu = e => {
-    setSelectedMemberId(e.domEvent.target.textContent);
+    // Get member ID from the menu item's data attribute
+    const memberId = e.key;
+    setSelectedMemberId(memberId);
   };
-  const filterMembers = duplicateData.filter(prev => prev.customerName.toLowerCase().includes(selectedMemberId.toLowerCase()));
+
+  // Filter members based on search input (search by name, but store ID)
+  const memberSearchTerm = getMemberNameById(selectedMemberId).toLowerCase();
+  const filterMembers = duplicateData.filter(prev => prev.customerName.toLowerCase().includes(memberSearchTerm.toLowerCase()) || memberSearchTerm === "");
   console.log("filterMembers", filterMembers.map(prev => prev.customerName));
   const membersMenu = /*#__PURE__*/React.createElement(Menu, {
     onClick: handleMembersMenu
-  }, filterMembers.map((prev, index) => /*#__PURE__*/React.createElement(Menu.Item, {
-    key: index
-  }, prev.customerName)));
+  }, filterMembers.map(prev => /*#__PURE__*/React.createElement(Menu.Item, {
+    key: prev.id,
+    title: "ID: ".concat(prev.id)
+  }, prev.customerName, " ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '12px',
+      color: '#999'
+    }
+  }, "(", prev.id, ")"))));
   const handleResourceMenu = e => {
-    const resourceId = e.domEvent.target.textContent;
+    // Get resource ID from the menu item's key
+    const resourceId = e.key;
     setSelectedResourceId(resourceId);
-    // Validation will be triggered by useEffect
   };
-  const filterResources = resourceData.filter(prev => prev.resourceName.toLowerCase().includes(selectedResourceId.toLowerCase()));
+
+  // Filter resources based on search input (search by name, but store ID)
+  const resourceSearchTerm = getResourceNameById(selectedResourceId).toLowerCase();
+  const filterResources = resourceData.filter(prev => prev.resourceName.toLowerCase().includes(resourceSearchTerm.toLowerCase()) || resourceSearchTerm === "");
   const hour = parseInt(dayjs(timeSlot, "h A").format("HH"), 10);
   const hourKey = "hour_".concat(hour);
   const matchingDay = sampleData.find(item => (openWeekCalendar ? parseInt(item.date) === weekEventDate : parseInt(item.date) === currentDate.getDate()) && item.month === monthName && parseInt(item.year) === currentDate.getFullYear());
 
-  // Step 2: Get booked names in that hour
+  // Step 2: Get booked resource IDs in that hour from filtered calendar
   const recurringDayOfWeek = openWeekCalendar ? dayjs(weekEventDate).format("dddd") : dayjs(currentDate.getDate()).format('dddd');
   const recurringEvents = (_recurringAllCalendar = recurringAllCalendar === null || recurringAllCalendar === void 0 || (_recurringAllCalendar2 = recurringAllCalendar.AllEvents) === null || _recurringAllCalendar2 === void 0 || (_recurringAllCalendar2 = _recurringAllCalendar2[recurringDayOfWeek]) === null || _recurringAllCalendar2 === void 0 ? void 0 : _recurringAllCalendar2[hourKey]) !== null && _recurringAllCalendar !== void 0 ? _recurringAllCalendar : [];
-  const bookedNames = (_matchingDay$allEvent = matchingDay === null || matchingDay === void 0 || (_matchingDay$allEvent2 = matchingDay.allEvents) === null || _matchingDay$allEvent2 === void 0 ? void 0 : _matchingDay$allEvent2[hourKey]) !== null && _matchingDay$allEvent !== void 0 ? _matchingDay$allEvent : [];
 
-  // Step 3: Filter out booked members
-  const filterOutAvailableResource = filterResources.map(m => m.resourceName).filter(name => ![...bookedNames, ...recurringEvents].includes(name));
+  // Get booked resource IDs from the filtered resourceCalendar data
+  const bookedResourceIds = resourceCalendar.filter(day => day.month === monthName && parseInt(day.year) === currentDate.getFullYear() && (openWeekCalendar ? parseInt(day.date) === weekEventDate : parseInt(day.date) === currentDate.getDate())).flatMap(day => {
+    var _day$events;
+    return ((_day$events = day.events) === null || _day$events === void 0 ? void 0 : _day$events.filter(event => event.from <= hour && hour < event.to).map(event => event.resourceId)) || [];
+  });
+
+  // Get booked resource IDs from recurring events - use resourceId consistently
+  const recurringBookedResourceIds = recurringEvents.filter(event => event.resourceId) // Ensure resourceId exists
+  .map(event => event.resourceId);
+
+  // Step 3: Filter out booked resources - exclude if resourceId is in bookedResourceIds or recurringBookedResourceIds
+  const filterOutAvailableResource = filterResources.filter(resource => !bookedResourceIds.includes(resource.resourceId) && !recurringBookedResourceIds.includes(resource.resourceId));
   console.log("filterOutAvailableResource:", filterOutAvailableResource);
   const resourceMenu = /*#__PURE__*/React.createElement(Menu, {
     onClick: handleResourceMenu
-  }, filterOutAvailableResource.map((prev, index) => /*#__PURE__*/React.createElement(Menu.Item, {
-    key: index
-  }, prev)));
+  }, filterOutAvailableResource.map(resource => /*#__PURE__*/React.createElement(Menu.Item, {
+    key: resource.resourceId,
+    title: "ID: ".concat(resource.resourceId)
+  }, resource.resourceName, " ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '12px',
+      color: '#999'
+    }
+  }, "(", resource.resourceId, ")"))));
   const handleUpdateExistingEventDetails = event => {
     setOpenAppointment(false);
     setSelectedMemberId(event.memberId);
@@ -490,6 +566,8 @@ const CalendarPage = _ref => {
     setWeeklyDayRecurring(event.day || "");
     setMonthlyRecurring(event.date || dayjs().date());
     setTimeSlot(event.from === 0 ? "12 AM" : event.from < 12 ? "".concat(event.from, " AM") : event.from === 12 ? "12 PM" : "".concat(event.from - 12, " PM"));
+    setRecurringStartDate(event.startDate ? dayjs(event.startDate) : null);
+    setRecurringEndDate(event.endDate ? dayjs(event.endDate) : null);
     setBookSameSlot(true);
     setIsEditingEvent(true);
   };
@@ -508,16 +586,34 @@ const CalendarPage = _ref => {
     setAvailableResourcesForSlot(available);
   };
   const dropDownList = /*#__PURE__*/React.createElement("select", {
-    value: calendarUserId,
+    value: selectedFilterId,
     disabled: calendarUserId === "All",
-    onChange: e => setCalendarUserId(e.target.value),
+    onChange: e => {
+      const selectedValue = e.target.value;
+      setSelectedFilterId(selectedValue);
+      if (resourceDropDown && selectedValue) {
+        // Resource selected - set the resource ID for filtering
+        setCalendarUserId(selectedValue);
+      } else if (memberDropDown && selectedValue) {
+        // Member selected - set the member ID for filtering
+        setCalendarUserId(selectedValue);
+      }
+    },
     style: {
       borderRadius: '5px',
       padding: '5px',
       fontSize: '15px',
       outline: 'none'
     }
-  }, /*#__PURE__*/React.createElement("option", null, calendarUserId), resourceDropDown ? resourceData.map(prevData => /*#__PURE__*/React.createElement("option", null, prevData.resourceName)) : duplicateData.map(prevData => /*#__PURE__*/React.createElement("option", null, prevData.customerName)));
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Select ", resourceDropDown ? 'Resource' : 'Member'), resourceDropDown ? resourceData.map(prevData => /*#__PURE__*/React.createElement("option", {
+    key: prevData.resourceId,
+    value: prevData.resourceId
+  }, prevData.resourceName)) : duplicateData.map(prevData => /*#__PURE__*/React.createElement("option", {
+    key: prevData.id,
+    value: prevData.id
+  }, prevData.customerName)));
   const handleDailyCalendarEvent = (time, bookedEventsList) => {
     // Check if the selected time is in the past
     if (isPastDateTime(currentDate, time)) {
@@ -533,7 +629,7 @@ const CalendarPage = _ref => {
     time = time === 0 ? "12 AM" : time < 12 ? "".concat(time, " AM") : time === 12 ? "12 PM" : "".concat(time - 12, " PM");
     setWeekEventDate(null);
     setMonthlyRecurring(currentDate.getDate());
-    if (calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" && bookedEventsList) {
+    if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
       setOpenEventSlot(true);
       setOpenAppointment(true);
     } else if (bookedEventsList < resourceData.length) {
@@ -559,7 +655,7 @@ const CalendarPage = _ref => {
       showErrorMessage("This time slot is not available. All resources are booked. Please select another time.");
       return;
     }
-    if (calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" && bookedEventsList) {
+    if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
       setOpenEventSlot(true);
       setOpenAppointment(true);
     } else if (bookedEventsList < resourceData.length) {
@@ -605,9 +701,9 @@ const CalendarPage = _ref => {
         month: "long"
       });
       const yearNumber = currentDate.getFullYear();
-      const resourceCalendarData = await getCalendar(effectiveEntityId, resourceId, monthName, yearNumber);
+      const resourceCalendarData = await getCalendar(effectiveEntityId, calendarUserId, monthName, yearNumber);
       console.log("Fetched resource calendar for overlap check:", {
-        resourceId,
+        calendarUserId,
         resourceCalendarData
       });
 
@@ -617,8 +713,8 @@ const CalendarPage = _ref => {
         const isMatchingDay = calendar.month === monthName && parseInt(calendar.year) === yearNumber && parseInt(calendar.date) === (selectedDate !== null ? selectedDate : currentDate.getDate());
         if (!isMatchingDay) return false;
         return (_calendar$events = calendar.events) === null || _calendar$events === void 0 ? void 0 : _calendar$events.some(event => {
-          // Check both resourceId and resourceName for compatibility
-          const isSameResource = event.resourceId === resourceId || event.resourceName === resourceId;
+          // Use resourceId for checking (primary identifier)
+          const isSameResource = event.resourceId === resourceId;
 
           // Parse event times as numbers
           const eventFrom = typeof event.from === 'string' ? parseInt(event.from, 10) : event.from;
@@ -641,9 +737,18 @@ const CalendarPage = _ref => {
       const recurringData = await getRecurringCalendar(effectiveEntityId, resourceId);
       console.log("Fetched recurring calendar:", recurringData);
       const weekday = dayjs(selectedDate ? new Date(yearNumber, currentDate.getMonth(), selectedDate) : currentDate).format("dddd").toUpperCase();
+      const selectedDateObj = dayjs(selectedDate ? new Date(yearNumber, currentDate.getMonth(), selectedDate) : currentDate);
       const recurringOverlap = recurringData[weekday] ? Object.values(recurringData[weekday]).some(hourEvents => Array.isArray(hourEvents) && hourEvents.some(event => {
-        const isSameResource = event.resourceId === resourceId || event.resourceName === resourceId;
+        const isSameResource = event.resourceId === resourceId;
         if (isSameResource) {
+          // Check if selected date is within the recurring event date range
+          if (event.startDate && event.endDate) {
+            const startDate = dayjs(event.startDate);
+            const endDate = dayjs(event.endDate);
+            const isAfterStart = selectedDateObj.isAfter(startDate) || selectedDateObj.isSame(startDate, 'day');
+            const isBeforeEnd = selectedDateObj.isBefore(endDate) || selectedDateObj.isSame(endDate, 'day');
+            if (!(isAfterStart && isBeforeEnd)) return false;
+          }
           const eventFrom = typeof event.from === 'string' ? parseInt(event.from, 10) : event.from;
           const eventTo = typeof event.to === 'string' ? parseInt(event.to, 10) : event.to;
           return fromTimeNum < eventTo && eventFrom < toTimeNum;
@@ -669,15 +774,18 @@ const CalendarPage = _ref => {
   const handleDropDown = value => {
     setResourceDropDown(false);
     setMemberDropDown(false);
+    setSelectedFilterId(""); // Clear filter selection
     setCalendarUserId("");
     if (value === "members") {
       setMemberDropDown(true);
-      setCalendarUserId("Select Member");
+      setSelectedFilterType("member");
     } else if (value === "resource") {
       setResourceDropDown(true);
-      setCalendarUserId("Select Resource");
+      setSelectedFilterType("resource");
     } else if (value === "All") {
       setCalendarUserId("All");
+      setSelectedFilterId("");
+      setSelectedFilterType("");
     }
   };
   useEffect(() => {
@@ -846,6 +954,18 @@ const CalendarPage = _ref => {
     const matchingEventsSlot = ((_recurringResourceCal2 = recurringResourceCalendar[dayOfWeekCaps]) === null || _recurringResourceCal2 === void 0 ? void 0 : _recurringResourceCal2[hourKey]) || [];
     const recurringResourceEvents = matchingEventsSlot.filter(item => {
       if (item.isRecurring) {
+        // Check if current date is within the recurring event date range
+        // Only apply date range check if both startDate and endDate are present
+        if (item.startDate && item.endDate) {
+          const currentDateObj = dayjs(currentDate);
+          const startDate = dayjs(item.startDate);
+          const endDate = dayjs(item.endDate);
+
+          // Check if current date is between start and end dates (inclusive)
+          const isAfterStart = currentDateObj.isAfter(startDate) || currentDateObj.isSame(startDate, 'day');
+          const isBeforeEnd = currentDateObj.isBefore(endDate) || currentDateObj.isSame(endDate, 'day');
+          if (!(isAfterStart && isBeforeEnd)) return false;
+        }
         if (item.frequency === "daily") {
           return item.from <= i && i < item.to;
         } else if (item.frequency === "weekly") {
@@ -858,7 +978,7 @@ const CalendarPage = _ref => {
       }
       return false;
     });
-    const eventsAtTimeSlot = calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? [...resourceCalendarEvents, ...recurringResourceEvents, ...resourceMonthlyRecurringEvents] : [...dailySampleEvents, ...dailyRecurringEvents, ...fetchingMonthlyAllRecurringEvents];
+    const eventsAtTimeSlot = calendarUserId && calendarUserId !== "All" ? [...resourceCalendarEvents, ...recurringResourceEvents, ...resourceMonthlyRecurringEvents] : [...dailySampleEvents, ...dailyRecurringEvents, ...fetchingMonthlyAllRecurringEvents];
     let backgroundColor = "";
     if (eventsAtTimeSlot.length < parseInt(resourceData.length / 2)) backgroundColor = "green";else if (eventsAtTimeSlot.length >= resourceData.length) backgroundColor = "red";else backgroundColor = "orangered";
     return /*#__PURE__*/React.createElement("div", {
@@ -868,7 +988,7 @@ const CalendarPage = _ref => {
         backgroundColor,
         borderRight: '2px solid gray',
         borderLeft: "2px solid gray",
-        borderBottom: (calendarUserId === "All" || calendarUserId === "Select Member" || calendarUserId === "Select Resource" ? sampleData.some(prev => {
+        borderBottom: (calendarUserId === "All" || !calendarUserId ? sampleData.some(prev => {
           var _prev$allEvents, _prev$allEvents2;
           const isMatchingDay = prev.date === currentDate.getDate().toString() && prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear();
           if (!isMatchingDay && !dailyRecurringEvents) return false;
@@ -884,7 +1004,7 @@ const CalendarPage = _ref => {
         })) || [...recurringResourceEvents].length > 0) ? "1px solid gray" : "1px solid transparent"
       } : {},
       onClick: () => handleDailyCalendarEvent(i, eventsAtTimeSlot.length)
-    }, calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? resourceCalendar.map(prev => {
+    }, calendarUserId && calendarUserId !== "All" ? resourceCalendar.map(prev => {
       if (prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === currentDate.getDate()) {
         return prev.events.map(item => {
           const midpoint = Math.floor((item.from + item.to) / 2);
@@ -981,6 +1101,18 @@ const CalendarPage = _ref => {
     const resourceMonthlyRecurringEvents = (recurringResourceCalendar === null || recurringResourceCalendar === void 0 || (_recurringResourceCal4 = recurringResourceCalendar[monthlyRecurringAttribute.toLowerCase()]) === null || _recurringResourceCal4 === void 0 ? void 0 : _recurringResourceCal4[hourKey]) || [];
     const recurringResourceEvents = matchingEventsSlot.filter(item => {
       if (item.isRecurring) {
+        // Check if current date is within the recurring event date range
+        // Only apply date range check if both startDate and endDate are present
+        if (item.startDate && item.endDate) {
+          const dayObj = dayjs(day);
+          const startDate = dayjs(item.startDate);
+          const endDate = dayjs(item.endDate);
+
+          // Check if day is between start and end dates (inclusive)
+          const isAfterStart = dayObj.isAfter(startDate) || dayObj.isSame(startDate, 'day');
+          const isBeforeEnd = dayObj.isBefore(endDate) || dayObj.isSame(endDate, 'day');
+          if (!(isAfterStart && isBeforeEnd)) return false;
+        }
         if (item.frequency === "daily") {
           return item.from <= currentHourSlot && currentHourSlot < item.to;
         } else if (item.frequency === "weekly") {
@@ -991,6 +1123,7 @@ const CalendarPage = _ref => {
            item.from <= currentHourSlot && currentHourSlot < item.to;
          } */}
       }
+      return false;
     });
     const eventsAtTimeSlot = calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? [...resourceCalendarEvents, ...recurringResourceEvents, ...resourceMonthlyRecurringEvents] : [...sampleEvents, ...recurringEvents, ...fetchingMonthlyAllRecurringEvent];
     let backgroundColor = "";
@@ -1000,7 +1133,7 @@ const CalendarPage = _ref => {
       className: "time-section",
       style: eventsAtTimeSlot.length > 0 ? {
         backgroundColor,
-        borderBottom: (calendarUserId === "All" || calendarUserId === "Select Member" || calendarUserId === "Select Resource" ? sampleData.some(prev => {
+        borderBottom: (calendarUserId === "All" || !calendarUserId ? sampleData.some(prev => {
           var _prev$allEvents4, _prev$allEvents5;
           const isMatchingDay = prev.date === day.getDate().toString() && prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear();
           if (!isMatchingDay) return false;
@@ -1022,7 +1155,7 @@ const CalendarPage = _ref => {
       onClick: () => {
         handleWeeklyCalendarEvent(hour, day, eventsAtTimeSlot.length);
       }
-    }, calendarUserId !== "All" && calendarUserId !== "Select Member" && calendarUserId !== "Select Resource" ? resourceCalendar.map(prev => {
+    }, calendarUserId && calendarUserId !== "All" ? resourceCalendar.map(prev => {
       if (prev.month === monthName && parseInt(prev.year) === currentDate.getFullYear() && parseInt(prev.date) === day.getDate()) {
         var _prev$events4;
         return (_prev$events4 = prev.events) === null || _prev$events4 === void 0 ? void 0 : _prev$events4.map(item => {
@@ -1081,7 +1214,7 @@ const CalendarPage = _ref => {
     },
     className: "memberResourceInput",
     placeholder: "Search for members",
-    value: selectedMemberId,
+    value: getMemberNameById(selectedMemberId),
     onChange: e => handleMembersDropDown(e.target.value)
   })), newErrors.selectedMemberId && /*#__PURE__*/React.createElement("span", {
     className: "inputError1"
@@ -1098,7 +1231,7 @@ const CalendarPage = _ref => {
     },
     className: "memberResourceInput",
     placeholder: "Search for resource",
-    value: selectedResourceId,
+    value: getResourceNameById(selectedResourceId),
     onChange: e => handleResourceDropDown(e.target.value)
   })), newErrors.selectedResourceId && /*#__PURE__*/React.createElement("span", {
     className: "inputError2"
@@ -1163,7 +1296,47 @@ const CalendarPage = _ref => {
     }
   }, days.map((day, index) => /*#__PURE__*/React.createElement("option", {
     value: day.day
-  }, " " + day.day))))), /*#__PURE__*/React.createElement("h3", null, "From :", /*#__PURE__*/React.createElement(TimePicker, {
+  }, " " + day.day))))), frequencyOfEvent !== "noRecurring" && /*#__PURE__*/React.createElement(Row, {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      flexDirection: 'column',
+      gap: '15px',
+      marginTop: '15px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '15px',
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("h3", null, "Start Date: ", " "), /*#__PURE__*/React.createElement(DatePicker, {
+    value: recurringStartDate,
+    onChange: date => setRecurringStartDate(date),
+    format: "YYYY-MM-DD",
+    style: {
+      width: '150px'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '15px',
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("h3", null, "End Date: ", " "), /*#__PURE__*/React.createElement(DatePicker, {
+    value: recurringEndDate,
+    onChange: date => setRecurringEndDate(date),
+    format: "YYYY-MM-DD",
+    disabledDate: current => {
+      if (!recurringStartDate) return false;
+      return current && current.isBefore(recurringStartDate, 'day');
+    },
+    style: {
+      width: '150px'
+    }
+  }))), /*#__PURE__*/React.createElement("h3", null, "From :", /*#__PURE__*/React.createElement(TimePicker, {
     format: "h A",
     style: {
       width: '100px'
