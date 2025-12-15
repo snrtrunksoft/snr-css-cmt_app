@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
@@ -9,43 +9,7 @@ import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updat
 import PunchCardsPage  from "./PunchCardsPage";
 import dayjs from "dayjs";
 
-// Mock subscription plans data - replace with API call later
-const MOCK_SUBSCRIPTION_PLANS = [
-  {
-    "price": 490.0,
-    "noOfSubscriptions": 50.0,
-    "entityId": "w_123",
-    "id": "sub_21",
-    "isActive": true,
-    "type": "RECURRING"
-  },
-  {
-    "price": 20.0,
-    "noOfSubscriptions": 30.0,
-    "entityId": "w_123",
-    "id": "sub_22",
-    "isActive": true,
-    "type": "RECURRING"
-  },
-  {
-    "createdDate": "2025-11-12 09:00:00.0",
-    "price": 499.0,
-    "entityId": "w_123",
-    "noOfSubscriptions": 10.0,
-    "updatedDate": "2025-11-12 10:30:00.0",
-    "id": "sub_23",
-    "isActive": true,
-    "type": "ONETIME"
-  },
-  {
-    "price": 390.0,
-    "noOfSubscriptions": 50.0,
-    "entityId": "w_123",
-    "id": "sub_24",
-    "isActive": true,
-    "type": "RECURRING"
-  }
-];
+const { Option } = Select;
 
 const NameCard = ({ 
     membersPage,
@@ -76,6 +40,9 @@ const NameCard = ({
     const [ statusModal, setStatusModal ] = useState({ visible: false, type: "", title: "", message: "" });
     const [ subscriptionPlans, setSubscriptionPlans ] = useState([]);
     const [ loadingPlans, setLoadingPlans ] = useState(false);
+    const [ isUpdating, setIsUpdating ] = useState(false);
+    const [ isAddingComment, setIsAddingComment ] = useState(false);
+    const [ isDeletingComment, setIsDeletingComment ] = useState(false);
     const { useBreakpoint } = Grid;
     const [ form ] = Form.useForm();
     const screens = useBreakpoint();
@@ -105,12 +72,19 @@ const NameCard = ({
     useEffect(() => {
         if (nameCardDrawer && membersPage) {
             setLoadingPlans(true);
-            // Simulate API call delay
-            setTimeout(() => {
-                setSubscriptionPlans(MOCK_SUBSCRIPTION_PLANS);
-                console.log("Subscription Plans loaded from mock data:", MOCK_SUBSCRIPTION_PLANS);
-                setLoadingPlans(false);
-            }, 300);
+            // Fetch subscription plans from API
+            const fetchSubscriptionPlans = async () => {
+                try {
+                    const res = await getSubscriptionPlans(entityId);
+                    setSubscriptionPlans(res);
+                    console.log("Subscription Plans loaded from API:", res);
+                } catch(error) {
+                    console.log("Error fetching subscription plans:", error);
+                } finally {
+                    setLoadingPlans(false);
+                }
+            }
+            fetchSubscriptionPlans();
         }
     }, [nameCardDrawer, membersPage]);
 
@@ -122,7 +96,6 @@ const NameCard = ({
         return '100%';
     };
     const onFinish = (values) => {
-        setIsEditable(false);
         console.log("form values:", values);
 
         // ---------- STEP 1: Find the correct data source ----------
@@ -160,6 +133,7 @@ const NameCard = ({
 
         // ---------- STEP 3: API update ----------
         const updateNameCard = async () => {
+            setIsUpdating(true);
             console.log("Using entityId:", entityId)
             try {
                 const membersPage_local = membersPage;
@@ -191,6 +165,8 @@ const NameCard = ({
                     title: "Update Error",
                     message: "Network or server error occurred. Please try again."
                 });
+            } finally {
+                setIsUpdating(false);
             }
             };
         // ---------- STEP 4: Local state update ----------
@@ -268,6 +244,7 @@ const NameCard = ({
             console.log("updatedRecord:", updatedRecord);
 
             const uploadComment = async () => {
+            setIsAddingComment(true);
             try {
                 // Create a clean copy before modifying
                 let recordToUpload = { ...updatedRecord };
@@ -353,6 +330,8 @@ const NameCard = ({
                     title: "Comment Error",
                     message: "Failed to post comment. Please try again."
                 });
+            } finally {
+                setIsAddingComment(false);
             }
             };
 
@@ -415,6 +394,7 @@ const NameCard = ({
         });
 
         const deleteCommentAPI = async () => {
+            setIsDeletingComment(true);
             try {
                 let recordToUpload = { ...updatedRecord };
                 if (!membersPage) {
@@ -450,6 +430,8 @@ const NameCard = ({
             } catch (error) {
                 console.error("Failed to delete comment:", error);
                 message.error("Failed to delete comment");
+            } finally {
+                setIsDeletingComment(false);
             }
         }
 
@@ -520,243 +502,339 @@ const NameCard = ({
                     }}>Status : { status }</p>
             </div>
             <Drawer
-                open={nameCardDrawer}
-                style={{backgroundColor:'whitesmoke'}}
-                title={null}
-                // closable={false}
-                width= {getDrawerWidth()}
-                onClose={()=>{
-                        setNameCardDrawer(false);
-                        setNewComment("");
-                        setGroupMessages(prev => ({
-                            ...prev,
-                            [groupId]: { ...prev[groupId], hasUnread: false }
-                        }));
-                    }}
+            open={nameCardDrawer}
+            width={getDrawerWidth()}
+            onClose={() => {
+                setNameCardDrawer(false);
+                setNewComment("");
+                setGroupMessages(prev => ({
+                ...prev,
+                [groupId]: { ...prev[groupId], hasUnread: false }
+                }));
+            }}
+            bodyStyle={{ background: "#f5f7fa", padding: 0 }}
+            >
+            {/* ================= NAME CARD ================= */}
+            <Card
+            bordered={false}
+            style={{
+                marginBottom: 12,
+                borderRadius: 0,
+                boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                padding: "12px 16px",
+            }}
+            bodyStyle={{ padding: 0 }}
+            >
+            <div
+                style={{
+                display: "grid",
+                gridTemplateColumns: "80px 1fr 120px",
+                gridTemplateRows: "22px 18px 36px",
+                columnGap: 16,
+                alignItems: "center",
+                }}
+            >
+                {/* Avatar */}
+                <div style={{ gridRow: "1 / span 3" }}>
+                <Avatar
+                    src={maleAvatar}
+                    size={64}
+                    style={{ border: "2px solid #e5e7eb" }}
+                />
+                </div>
+
+                {/* Name */}
+                <Typography.Text
+                strong
+                style={{
+                    gridColumn: 2,
+                    gridRow: 1,
+                    fontSize: 16,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                }}
                 >
-                <div className="nameDrawer" style={{position:'relative'}}>
+                {customerName}
+                </Typography.Text>
+
+                {/* Actions */}
+                <div
+                style={{
+                    gridColumn: 3,
+                    gridRow: "1 / span 3",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    justifyContent: "center",
+                }}
+                >
+                <Button size="small" type="primary" onClick={() => setIsEditable(true)}>
+                    Edit
+                </Button>
+
+                <Popconfirm
+                    title="Delete"
+                    description={`Are you sure you want to delete this ${
+                    membersPage ? "member" : "resource"
+                    }?`}
+                    onConfirm={handleDeleteMember}
+                    okText="Yes"
+                    cancelText="No"
+                    okButtonProps={{ danger: true }}
+                >
+                    <Button size="small" danger icon={<DeleteOutlined />}>
+                    Delete
+                    </Button>
+                </Popconfirm>
+                </div>
+
+                {/* Phone */}
+                <Typography.Text
+                type="secondary"
+                style={{
+                    gridColumn: 2,
+                    gridRow: 2,
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                }}
+                >
+                {phoneNumber}
+                </Typography.Text>
+
+                {/* Address */}
+                <div
+                style={{
+                    gridColumn: 2,
+                    gridRow: 3,
+                    fontSize: 13,
+                    color: "#6b7280",
+                    lineHeight: "18px",
+                    overflow: "hidden",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                }}
+                >
+                {[ 
+                    address?.[0]?.street1,
+                    address?.[0]?.city,
+                    address?.[0]?.state,
+                    address?.[0]?.country,
+                ]
+                    .filter(Boolean)
+                    .join(", ")}
+                </div>
+            </div>
+            </Card>
+            
+            {/* ================= EDIT FORM ================= */}
+            <Form
+                hidden={!isEditable}
+                form={form}
+                layout="vertical"
+                onFinish={onFinish}
+            >
+                <Card title="Edit Details" style={{ margin: 16, borderRadius: 8 }}>
+                <Row gutter={16}>
+                    <Col span={12}>
+                    <Form.Item name="customerId" label="Customer ID">
+                        <Input readOnly />
+                    </Form.Item>
+                    </Col>
+
+                    <Col span={12}>
+                    <Form.Item name="customerName" label="Customer Name">
+                        <Input />
+                    </Form.Item>
+                    </Col>
+
+                    {membersPage && (
+                    <Col span={12}>
+                        <Form.Item name="email" label="Email">
+                        <Input />
+                        </Form.Item>
+                    </Col>
+                    )}
+
+                    <Col span={12}>
+                    <Form.Item name="phoneNumber" label="Phone">
+                        <Input maxLength={10} />
+                    </Form.Item>
+                    </Col>
+
+                    <Col span={12}>
+                    <Form.Item name="status" label="Status">
+                        <Select placeholder="Select status">
+                        <Option value="ACTIVE">ACTIVE</Option>
+                        <Option value="IN_PROGRESS">IN_PROGRESS</Option>
+                        <Option value="COMPLETED">COMPLETED</Option>
+                        <Option value="CANCELLED">CANCELLED</Option>
+                        </Select>
+                    </Form.Item>
+                    </Col>
+
+                    <Col span={12}>
+                    <Form.Item name="groupId" label="Group ID">
+                        <Input />
+                    </Form.Item>
+                    </Col>
+
+                    {membersPage && (
+                    <Col span={12}>
+                        <Form.Item name="subscriptionPlanId" label="Subscription Plan">
+                        <Spin spinning={loadingPlans}>
+                            <Select placeholder="Select a plan">
+                            {subscriptionPlans.map(plan => (
+                                <Option key={plan.id} value={plan.id}>
+                                {plan.id} - ${plan.price} ({plan.type})
+                                </Option>
+                            ))}
+                            </Select>
+                        </Spin>
+                        </Form.Item>
+                    </Col>
+                    )}
+
+                    <Col span={12}>
+                    <Form.Item name={["address", "city"]} label="City">
+                        <Input />
+                    </Form.Item>
+                    </Col>
+
+                    <Col span={12}>
+                    <Form.Item name={["address", "state"]} label="State">
+                        <Input />
+                    </Form.Item>
+                    </Col>
+
+                    <Col span={12}>
+                    <Form.Item name={["address", "country"]} label="Country">
+                        <Input />
+                    </Form.Item>
+                    </Col>
+
+                    <Col span={24}>
+                    <Form.Item name={["address", "street1"]} label="Street">
+                        <Input />
+                    </Form.Item>
+                    </Col>
+                </Row>
+
+                <Button type="primary" htmlType="submit" block loading={isUpdating} disabled={isUpdating}>
+                    Save Changes
+                </Button>
+                </Card>
+            </Form>
+
+            {/* ================= PUNCH CARDS ================= */}
+                {membersPage && (
+                <Card
+                    title="Punch Cards"
+                    style={{
+                    margin: "0 16px",
+                    borderRadius: 8,
+                    }}
+                    bodyStyle={{ padding: 16 }}
+                >
+                    <PunchCardsPage
+                    data={data}
+                    customerId={customerId}
+                    customerName={customerName}
+                    setNewComment={setNewComment}
+                    handleSend={handleSend}
+                    setData={setData}
+                    entityId={entityId}
+                    color={color}
+                    />
+                </Card>
+                )}
+
+
+            {/* ================= GROUP MESSAGES ================= */}
+            <Card
+                title={`Group Messages (${groupId})`}
+                style={{ margin: 16, borderRadius: 8 }}
+            >
+                {groupMessages?.[groupId]?.messages?.length ? (
+                groupMessages[groupId].messages.map((msg, idx) => (
+                    <Card
+                    key={idx}
+                    size="small"
+                    style={{ marginBottom: 8, background: "#f0f8ff" }}
+                    >
+                    <Typography.Text strong>{groupId}</Typography.Text>
+                    <div>{msg}</div>
+                    </Card>
+                ))
+                ) : (
+                <Typography.Text type="secondary">
+                    No group messages yet
+                </Typography.Text>
+                )}
+            </Card>
+
+            {/* ================= COMMENTS ================= */}
+            <Card title="Comments" style={{ margin: 16, borderRadius: 8 }}>
+                {comments?.map((comment, index) => (
+                <Badge.Ribbon
+                    key={index}
+                    text={comment.author}
+                    color={color}
+                >
+                    <Card size="small" style={{ marginBottom: 12 }}>
+                    <div>{comment.message}</div>
+
                     <div
-                        type="primary"
                         style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        zIndex: 1,
-                        display: 'flex',
-                        gap: '8px'
-                    }}>
-                        <Button
-                            type="primary"
-                            onClick={() => setIsEditable(true)}
-                        >
-                            Edit
-                        </Button>
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: 8,
+                        fontSize: 11,
+                        color: "#888",
+                        }}
+                    >
+                        {dayjs(comment.date).format("YYYY-MM-DD HH:mm:ss")}
                         <Popconfirm
-                            title="Delete"
-                            description={`Are you sure you want to delete this ${membersPage ? 'member' : 'resource'}?`}
-                            onConfirm={handleDeleteMember}
-                            okText="Yes"
-                            cancelText="No"
-                            okButtonProps={{ danger: true }}
+                        title="Delete comment?"
+                        onConfirm={() => handleDeleteComment(index)}
                         >
-                            <Button
-                                danger
-                                icon={<DeleteOutlined />}
-                            >
-                                Delete
-                            </Button>
+                        <Button
+                            type="text"
+                            danger
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            loading={isDeletingComment}
+                            disabled={isDeletingComment}
+                        />
                         </Popconfirm>
                     </div>
-                    <Row className="personalNameCard">
-                        <Col style={{padding:'5px',width:'40%'}}>
-                            <img src={maleAvatar} style={{width:'100%',height:'95%'}}/>
-                        </Col>
-                        <Col style={{margin:'5px',width:'50%'}}>
-                            <h2> {customerName} </h2>
-                            <h3 style={{marginTop:'-10px'}}>{ phoneNumber }</h3>
-                            <h3 style={{
-                                    borderRadius:'5px',
-                                    backgroundColor:'lightgrey',
-                                    padding:'5px',width:'100%',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace:'nowrap'}}>
-                                    Address : { addressKeys?.map((item,index) => 
-                                        <span key={index}>
-                                            {address[0][item]}{ item !== "country" ? ", " : "." }
-                                            {(item === "city") || (item === "state") ? "" : (<br/>) }
-                                        </span>)}
-                            </h3>
-                        </Col>
-                    </Row>
-                    <Form
-                        hidden={!isEditable}
-                        layout="vertical"
-                        form={form}
-                        onFinish={onFinish}
-                        style={{
-                            padding: '16px 24px',
-                            maxWidth: 600,
-                            margin: '0 auto',
-                            background: '#fff',
-                            borderRadius: 8,
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                        }}
-                        >
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
-                            <Form.Item name="customerId" label="Customer ID">
-                            <Input readOnly size="middle" />
-                            </Form.Item>
+                    </Card>
+                </Badge.Ribbon>
+                ))}
+            </Card>
 
-                            <Form.Item name="customerName" label="Customer Name">
-                            <Input size="middle" />
-                            </Form.Item>
+            {/* ================= ADD COMMENT ================= */}
+            <Card style={{ margin: 16, borderRadius: 8 }}>
+                <TextArea
+                rows={3}
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                />
 
-                            {membersPage && (
-                            <Form.Item name="email" label="Email">
-                                <Input size="middle" />
-                            </Form.Item>
-                            )}
-
-                            <Form.Item name="phoneNumber" label="Phone">
-                            <Input inputMode="numeric" pattern="[0-9]*" maxLength={10} size="middle" />
-                            </Form.Item>
-
-                            <Form.Item name="status" label="Status">
-                            <Input size="middle" />
-                            </Form.Item>
-
-                            <Form.Item name="groupId" label="groupId">
-                            <Input size="middle" />
-                            </Form.Item>
-
-                            {membersPage && (
-                            <Form.Item name="subscriptionPlanId" label="Subscription Plan">
-                                <Spin spinning={loadingPlans}>
-                                <Select placeholder="Select a subscription plan" size="middle">
-                                    {subscriptionPlans.map((plan) => (
-                                    <Select.Option key={plan.id} value={plan.id}>
-                                        {plan.id} - ${plan.price} ({plan.type})
-                                    </Select.Option>
-                                    ))}
-                                </Select>
-                                </Spin>
-                            </Form.Item>
-                            )}
-
-                            <Form.Item label="City" name={['address', 'city']}>
-                            <Input size="middle" />
-                            </Form.Item>
-
-                            <Form.Item label="State" name={['address', 'state']}>
-                            <Input size="middle" />
-                            </Form.Item>
-
-                            <Form.Item label="Country" name={['address', 'country']}>
-                            <Input size="middle" />
-                            </Form.Item>
-
-                            <Form.Item
-                            label="Street1"
-                            name={['address', 'street1']}
-                            style={{ gridColumn: '1 / -1' }}
-                            >
-                            <Input size="middle" />
-                            </Form.Item>
-                        </div>
-
-                        <Form.Item style={{ marginTop: 16 }}>
-                            <Button type="primary" htmlType="submit" block>
-                            Save Changes
-                            </Button>
-                        </Form.Item>
-                        </Form>
-                        {membersPage && (
-                            <PunchCardsPage
-                                data={data}
-                                customerId={customerId}
-                                customerName={customerName}
-                                setNewComment={setNewComment}
-                                handleSend={handleSend}
-                                setData={setData}
-                                entityId={entityId}
-                                color={color} />
-                        )}
-                    <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Group Messages ({groupId}) :</h3>
-                    <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
-                        {groupMessages?.[groupId]?.messages?.length > 0 ? (
-                            groupMessages[groupId].messages.map((message, index) => (
-                                <Space 
-                                    key={index}
-                                    direction="vertical"
-                                    size="middle"
-                                    style={{ width: '100%' }}>
-                                    <Card size="small" style={{ position: 'relative', paddingBottom: '24px', backgroundColor: '#f0f8ff' }}>
-                                        <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#0066cc' }}>
-                                            {groupId}
-                                        </div>
-                                        {message}
-                                    </Card>
-                                </Space>
-                            ))
-                        ) : (
-                            <p style={{ color: '#888', fontStyle: 'italic' }}>No group messages yet</p>
-                        )}
-                    </Row>
-                    <h3 style={{ marginTop: '30px', }}>Comments :</h3>
-                    <Row style={{display:'flex',flexDirection:'column',marginBottom:'20px'}}>
-                        {comments?.map((comment,index) =>(
-                            <Space 
-                                key={index}
-                                direction="vertical"
-                                size="middle"
-                                style={{
-                                    width: '100%'}}>
-                                    <Badge.Ribbon text={comment["author"]} color={color}>
-                                        <Card size="small" style={{ position: 'relative', paddingBottom: '24px' }}>
-                                            {/* <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-                                                </div> */}
-                                                <div style={{flex:1}}>
-                                                    {comment["message"]}
-                                            </div>
-                                            <div style={{
-                                                position: 'absolute',
-                                                bottom: '4px',
-                                                right: '8px',
-                                                fontSize: '11px',
-                                                color: '#888',
-                                                gap: '8px',
-                                            }}>
-                                                <Popconfirm
-                                                    title="Delete Comment"
-                                                    description="Are you sure you want to delete this comment?"
-                                                    onConfirm={() => handleDeleteComment(index)}
-                                                    okText="Yes"
-                                                    cancelText="No"
-                                                    okButtonProps={{ danger: true }}
-                                                >
-                                                    <Button type="text" danger size="small" icon={<DeleteOutlined />} style={{marginLeft:'8px'}} />
-                                                </Popconfirm>
-                                                {dayjs(comment['date']).format("YYYY-MM-DD HH:mm:ss")}
-                                            </div>
-                                        </Card>
-                                    </Badge.Ribbon>
-                            </Space>
-                        ))}
-                    </Row>
-                    <Row>
-                        <TextArea
-                            placeholder="Enter your Comments"
-                            value={newComment}
-                            style={{fontSize:'18px'}}
-                            onChange={(e) => setNewComment(e.target.value)}
-                        ></TextArea>
-                        <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between',width:'100%',padding:'10px'}}>
-                            <Button onClick={()=>handleClear()}>Clear</Button>
-                            <Button type="primary" onClick={() => handleSend()}>send</Button>
-                        </Row>
-                    </Row>
-                </div>
+                <Row justify="end" style={{ marginTop: 12 }}>
+                <Space>
+                    <Button onClick={handleClear} disabled={isAddingComment}>Clear</Button>
+                    <Button type="primary" onClick={handleSend} loading={isAddingComment} disabled={isAddingComment}>
+                    Send
+                    </Button>
+                </Space>
+                </Row>
+            </Card>
             </Drawer>
 
             {/* Status Modal */}

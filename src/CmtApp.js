@@ -200,7 +200,7 @@ const CmtApp = ({ setSelectedApp, selectedGroup, groupMessages, setGroupMessages
   // Unique groupId list for dropdown
   const uniqueGroups = Array.from(
     new Set(
-      data.map(item => item?.groupId?.trim()).filter(Boolean)
+      data.map(item => item?.groupId[0]?.trim()).filter(Boolean)
     )
   );
 

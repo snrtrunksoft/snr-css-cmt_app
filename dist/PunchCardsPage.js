@@ -258,28 +258,26 @@ const PunchCardsPage = _ref => {
     }));
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "punch-cards-container"
-  }, data && /*#__PURE__*/React.createElement("h2", {
+    className: "punch-cards-container",
     style: {
-      marginBottom: '20px',
-      color: '#333'
+      padding: "0 16px 12px"
     }
-  }, "Punch Cards:"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      gap: '10px',
-      marginBottom: '20px',
-      justifyContent: 'center'
+      display: "flex",
+      gap: 8,
+      marginBottom: 12,
+      justifyContent: "center"
     }
   }, /*#__PURE__*/React.createElement(Button, {
-    type: subscriptionStatus === 'ACTIVE' ? 'primary' : 'default',
-    onClick: () => setSubscriptionStatus('ACTIVE'),
-    size: "large"
-  }, "Active Subscriptions"), /*#__PURE__*/React.createElement(Button, {
-    type: subscriptionStatus === 'COMPLETED' ? 'primary' : 'default',
-    onClick: () => setSubscriptionStatus('COMPLETED'),
-    size: "large"
-  }, "Completed Subscriptions")), punchCards.length > 0 ? /*#__PURE__*/React.createElement("div", {
+    type: subscriptionStatus === "ACTIVE" ? "primary" : "default",
+    onClick: () => setSubscriptionStatus("ACTIVE"),
+    size: "middle"
+  }, "Active"), /*#__PURE__*/React.createElement(Button, {
+    type: subscriptionStatus === "COMPLETED" ? "primary" : "default",
+    onClick: () => setSubscriptionStatus("COMPLETED"),
+    size: "middle"
+  }, "Completed")), punchCards.length > 0 ? /*#__PURE__*/React.createElement("div", {
     className: "punch-cards-grid"
   }, punchCards.map(card => /*#__PURE__*/React.createElement("div", {
     key: card.id,
@@ -293,33 +291,47 @@ const PunchCardsPage = _ref => {
       borderColor: color
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "punch-card-header"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: "punch-card-header",
     style: {
-      margin: 0,
-      fontSize: '1.2rem'
+      marginBottom: 8
     }
-  }, "Subscription Services"), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      margin: '4px 0 0 0',
-      fontSize: '0.9rem',
-      opacity: 0.9
+      fontSize: 15,
+      fontWeight: 600,
+      lineHeight: "18px"
     }
-  }, card.noOfServicesCompleted, "/", card.totalNumberOfServices, " Completed")), /*#__PURE__*/React.createElement("div", {
+  }, "Subscription Services"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      opacity: 0.85,
+      marginTop: 2
+    }
+  }, card.noOfServicesCompleted, "/", card.totalNumberOfServices, " completed")), /*#__PURE__*/React.createElement("div", {
     className: "status-badge",
     style: {
-      backgroundColor: card.status === 'COMPLETED' ? '#52c41a' : '#faad14',
-      color: '#fff'
+      fontSize: 11,
+      padding: "2px 8px",
+      borderRadius: 12,
+      backgroundColor: card.status === "COMPLETED" ? "#52c41a" : "#faad14",
+      color: "#fff"
     }
   }, card.status)), /*#__PURE__*/React.createElement("div", {
     className: "punchCards"
   }, renderCardContent(card)), renderActionButtons(card)), /*#__PURE__*/React.createElement("div", {
     className: "punch-card-back"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flipped-content"
+    className: "flipped-content",
+    style: {
+      fontSize: 12,
+      lineHeight: "18px"
+    }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "detail-item"
-  }, /*#__PURE__*/React.createElement("strong", null, customerName)), /*#__PURE__*/React.createElement("div", {
+    className: "detail-item",
+    style: {
+      fontWeight: 600
+    }
+  }, customerName), /*#__PURE__*/React.createElement("div", {
     className: "detail-item"
   }, "Purchased: ", card.purchasedDate), /*#__PURE__*/React.createElement("div", {
     className: "detail-item"
@@ -330,36 +342,34 @@ const PunchCardsPage = _ref => {
   }, "Completed: ", card.noOfServicesCompleted), /*#__PURE__*/React.createElement("div", {
     className: "detail-item",
     style: {
-      color: '#ffd700',
-      fontWeight: 'bold'
+      color: "#ffd700",
+      fontWeight: 600
     }
   }, "Remaining: ", card.noOfServicesLeft)), /*#__PURE__*/React.createElement(Button, {
     className: "flip-btn",
     onClick: () => toggleFlip(card.id),
     icon: /*#__PURE__*/React.createElement(SwapOutlined, null),
+    size: "small",
     style: {
-      background: "rgba(255, 255, 255, 0.2)",
+      background: "rgba(255,255,255,0.2)",
       color: "#fff"
     },
     title: "View punch card"
   })))))) : /*#__PURE__*/React.createElement("div", {
     style: {
-      textAlign: 'center',
-      padding: '40px 20px',
-      color: '#999'
+      textAlign: "center",
+      padding: "24px 12px",
+      color: "#999",
+      fontSize: 13
     }
-  }, /*#__PURE__*/React.createElement("p", {
+  }, "No ", subscriptionStatus.toLowerCase(), " subscriptions"), data && subscriptionStatus === "ACTIVE" && punchCards.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: '1.1rem'
-    }
-  }, "No ", subscriptionStatus.toLowerCase(), " subscriptions")), data && subscriptionStatus === 'ACTIVE' && punchCards.length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: 'center',
-      marginTop: '20px'
+      textAlign: "center",
+      marginTop: 12
     }
   }, /*#__PURE__*/React.createElement(Button, {
     type: "primary",
-    size: "large",
+    size: "middle",
     onClick: addNewSubscription,
     loading: isLoading
   }, "+ Add Active Subscription")));

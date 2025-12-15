@@ -437,7 +437,7 @@ export async function getSubscriptionPlans(entityId) {
   console.log('InvAPIUtil entityId:' + entityId);
   const op = get({
     apiName: "SubscriptionsAPI",
-    path: "/subscription-plans",
+    path: "/subscriptions",
     options: {
       headers: {
         entityid: entityId

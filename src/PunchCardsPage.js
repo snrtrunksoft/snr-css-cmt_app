@@ -284,136 +284,180 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
     };
     
     return (
-        <div className="punch-cards-container">
-            {data && <h2 style={{ marginBottom: '20px', color: '#333' }}>Punch Cards:</h2>}
+        <div className="punch-cards-container" style={{ padding: "0 16px 12px" }}>
 
-            {/* Status Filter Buttons */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }}>
-                <Button
-                    type={subscriptionStatus === 'ACTIVE' ? 'primary' : 'default'}
-                    onClick={() => setSubscriptionStatus('ACTIVE')}
-                    size="large"
+  {/* ================= FILTER BUTTONS ================= */}
+  <div
+    style={{
+      display: "flex",
+      gap: 8,
+      marginBottom: 12,
+      justifyContent: "center",
+    }}
+  >
+    <Button
+      type={subscriptionStatus === "ACTIVE" ? "primary" : "default"}
+      onClick={() => setSubscriptionStatus("ACTIVE")}
+      size="middle"
+    >
+      Active
+    </Button>
+
+    <Button
+      type={subscriptionStatus === "COMPLETED" ? "primary" : "default"}
+      onClick={() => setSubscriptionStatus("COMPLETED")}
+      size="middle"
+    >
+      Completed
+    </Button>
+  </div>
+
+  {/* ================= CARDS GRID ================= */}
+  {punchCards.length > 0 ? (
+    <div className="punch-cards-grid">
+      {punchCards.map((card) => (
+        <div
+          key={card.id}
+          className={`punch-card ${flippedCards[card.id] ? "flipped" : ""}`}
+        >
+          <div className="punch-card-inner">
+
+            {/* ========== FRONT ========== */}
+            <div
+              className="punch-card-front"
+              style={{ backgroundColor: color, borderColor: color }}
+            >
+              {/* Header */}
+              <div
+                className="punch-card-header"
+                style={{ marginBottom: 8 }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 600,
+                      lineHeight: "18px",
+                    }}
+                  >
+                    Subscription Services
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      opacity: 0.85,
+                      marginTop: 2,
+                    }}
+                  >
+                    {card.noOfServicesCompleted}/{card.totalNumberOfServices} completed
+                  </div>
+                </div>
+
+                <div
+                  className="status-badge"
+                  style={{
+                    fontSize: 11,
+                    padding: "2px 8px",
+                    borderRadius: 12,
+                    backgroundColor:
+                      card.status === "COMPLETED" ? "#52c41a" : "#faad14",
+                    color: "#fff",
+                  }}
                 >
-                    Active Subscriptions
-                </Button>
-                <Button
-                    type={subscriptionStatus === 'COMPLETED' ? 'primary' : 'default'}
-                    onClick={() => setSubscriptionStatus('COMPLETED')}
-                    size="large"
-                >
-                    Completed Subscriptions
-                </Button>
+                  {card.status}
+                </div>
+              </div>
+
+              {/* Punch grid */}
+              <div className="punchCards">
+                {renderCardContent(card)}
+              </div>
+
+              {/* Actions */}
+              {renderActionButtons(card)}
             </div>
 
-            {/* Cards Display */}
-            {punchCards.length > 0 ? (
-                <div className="punch-cards-grid">
-                    {punchCards.map((card) => (
-                        <div
-                            key={card.id}
-                            className={`punch-card ${flippedCards[card.id] ? "flipped" : ""}`}
-                        >
-                            <div className="punch-card-inner">
-                                {/* FRONT */}
-                                <div
-                                    className="punch-card-front"
-                                    style={{ backgroundColor: color, borderColor: color }}
-                                >
-                                    <div className="punch-card-header">
-                                        <div>
-                                            <h3 style={{ margin: 0, fontSize: '1.2rem' }}>
-                                                Subscription Services
-                                            </h3>
-                                            <p
-                                                style={{
-                                                    margin: '4px 0 0 0',
-                                                    fontSize: '0.9rem',
-                                                    opacity: 0.9
-                                                }}
-                                            >
-                                                {card.noOfServicesCompleted}/{card.totalNumberOfServices} Completed
-                                            </p>
-                                        </div>
-                                        <div
-                                            className="status-badge"
-                                            style={{
-                                                backgroundColor:
-                                                    card.status === 'COMPLETED' ? '#52c41a' : '#faad14',
-                                                color: '#fff'
-                                            }}
-                                        >
-                                            {card.status}
-                                        </div>
-                                    </div>
-
-                                    <div className="punchCards">
-                                        {renderCardContent(card)}
-                                    </div>
-
-                                    {renderActionButtons(card)}
-                                </div>
-
-                                {/* BACK */}
-                                <div className="punch-card-back">
-                                    <div className="flipped-content">
-                                        <div className="detail-item">
-                                            <strong>{customerName}</strong>
-                                        </div>
-                                        <div className="detail-item">
-                                            Purchased: {card.purchasedDate}
-                                        </div>
-                                        <div className="detail-item">
-                                            Expires: {card.completedDate}
-                                        </div>
-                                        <div className="detail-item">
-                                            Total: {card.totalNumberOfServices}
-                                        </div>
-                                        <div className="detail-item">
-                                            Completed: {card.noOfServicesCompleted}
-                                        </div>
-                                        <div
-                                            className="detail-item"
-                                            style={{ color: '#ffd700', fontWeight: 'bold' }}
-                                        >
-                                            Remaining: {card.noOfServicesLeft}
-                                        </div>
-                                    </div>
-                                    <Button
-                                        className="flip-btn"
-                                        onClick={() => toggleFlip(card.id)}
-                                        icon={<SwapOutlined />}
-                                        style={{ background: "rgba(255, 255, 255, 0.2)", color: "#fff" }}
-                                        title="View punch card"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+            {/* ========== BACK ========== */}
+            <div className="punch-card-back">
+              <div
+                className="flipped-content"
+                style={{ fontSize: 12, lineHeight: "18px" }}
+              >
+                <div className="detail-item" style={{ fontWeight: 600 }}>
+                  {customerName}
                 </div>
-            ) : (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#999' }}>
-                    <p style={{ fontSize: '1.1rem' }}>
-                        No {subscriptionStatus.toLowerCase()} subscriptions
-                    </p>
-                </div>
-            )}
 
-            {/* Add New Subscription Button */}
-            {data &&
-                subscriptionStatus === 'ACTIVE' &&
-                punchCards.length === 0 && (
-                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                        <Button
-                            type="primary"
-                            size="large"
-                            onClick={addNewSubscription}
-                            loading={isLoading}
-                        >
-                            + Add Active Subscription
-                        </Button>
-                    </div>
-                )}
+                <div className="detail-item">
+                  Purchased: {card.purchasedDate}
+                </div>
+
+                <div className="detail-item">
+                  Expires: {card.completedDate}
+                </div>
+
+                <div className="detail-item">
+                  Total: {card.totalNumberOfServices}
+                </div>
+
+                <div className="detail-item">
+                  Completed: {card.noOfServicesCompleted}
+                </div>
+
+                <div
+                  className="detail-item"
+                  style={{ color: "#ffd700", fontWeight: 600 }}
+                >
+                  Remaining: {card.noOfServicesLeft}
+                </div>
+              </div>
+
+              <Button
+                className="flip-btn"
+                onClick={() => toggleFlip(card.id)}
+                icon={<SwapOutlined />}
+                size="small"
+                style={{
+                  background: "rgba(255,255,255,0.2)",
+                  color: "#fff",
+                }}
+                title="View punch card"
+              />
+            </div>
+
+          </div>
         </div>
+      ))}
+    </div>
+  ) : (
+    <div
+      style={{
+        textAlign: "center",
+        padding: "24px 12px",
+        color: "#999",
+        fontSize: 13,
+      }}
+    >
+      No {subscriptionStatus.toLowerCase()} subscriptions
+    </div>
+  )}
+
+  {/* ================= ADD SUBSCRIPTION ================= */}
+  {data &&
+    subscriptionStatus === "ACTIVE" &&
+    punchCards.length === 0 && (
+      <div style={{ textAlign: "center", marginTop: 12 }}>
+        <Button
+          type="primary"
+          size="middle"
+          onClick={addNewSubscription}
+          loading={isLoading}
+        >
+          + Add Active Subscription
+        </Button>
+      </div>
+    )}
+</div>
     );
 }
 

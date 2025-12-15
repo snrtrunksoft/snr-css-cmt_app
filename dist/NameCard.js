@@ -10,7 +10,7 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
@@ -18,41 +18,11 @@ import StatusModal from "./StatusModal";
 import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource } from "./api/APIUtil";
 import PunchCardsPage from "./PunchCardsPage";
 import dayjs from "dayjs";
-
-// Mock subscription plans data - replace with API call later
-const MOCK_SUBSCRIPTION_PLANS = [{
-  "price": 490.0,
-  "noOfSubscriptions": 50.0,
-  "entityId": "w_123",
-  "id": "sub_21",
-  "isActive": true,
-  "type": "RECURRING"
-}, {
-  "price": 20.0,
-  "noOfSubscriptions": 30.0,
-  "entityId": "w_123",
-  "id": "sub_22",
-  "isActive": true,
-  "type": "RECURRING"
-}, {
-  "createdDate": "2025-11-12 09:00:00.0",
-  "price": 499.0,
-  "entityId": "w_123",
-  "noOfSubscriptions": 10.0,
-  "updatedDate": "2025-11-12 10:30:00.0",
-  "id": "sub_23",
-  "isActive": true,
-  "type": "ONETIME"
-}, {
-  "price": 390.0,
-  "noOfSubscriptions": 50.0,
-  "entityId": "w_123",
-  "id": "sub_24",
-  "isActive": true,
-  "type": "RECURRING"
-}];
+const {
+  Option
+} = Select;
 const NameCard = _ref => {
-  var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7, _address$8, _groupMessages$groupI, _groupMessages$groupI2, _groupMessages$groupI3, _groupMessages$groupI4;
+  var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7, _address$8, _groupMessages$groupI, _groupMessages$groupI2, _groupMessages$groupI3, _address$9, _address$0, _address$1, _address$10, _groupMessages$groupI4;
   let {
     membersPage,
     data,
@@ -87,6 +57,9 @@ const NameCard = _ref => {
   });
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isAddingComment, setIsAddingComment] = useState(false);
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
   const {
     useBreakpoint
   } = Grid;
@@ -115,12 +88,19 @@ const NameCard = _ref => {
   useEffect(() => {
     if (nameCardDrawer && membersPage) {
       setLoadingPlans(true);
-      // Simulate API call delay
-      setTimeout(() => {
-        setSubscriptionPlans(MOCK_SUBSCRIPTION_PLANS);
-        console.log("Subscription Plans loaded from mock data:", MOCK_SUBSCRIPTION_PLANS);
-        setLoadingPlans(false);
-      }, 300);
+      // Fetch subscription plans from API
+      const fetchSubscriptionPlans = async () => {
+        try {
+          const res = await getSubscriptionPlans(entityId);
+          setSubscriptionPlans(res);
+          console.log("Subscription Plans loaded from API:", res);
+        } catch (error) {
+          console.log("Error fetching subscription plans:", error);
+        } finally {
+          setLoadingPlans(false);
+        }
+      };
+      fetchSubscriptionPlans();
     }
   }, [nameCardDrawer, membersPage]);
   const getDrawerWidth = () => {
@@ -131,7 +111,6 @@ const NameCard = _ref => {
     return '100%';
   };
   const onFinish = values => {
-    setIsEditable(false);
     console.log("form values:", values);
 
     // ---------- STEP 1: Find the correct data source ----------
@@ -173,6 +152,7 @@ const NameCard = _ref => {
 
     // ---------- STEP 3: API update ----------
     const updateNameCard = async () => {
+      setIsUpdating(true);
       console.log("Using entityId:", entityId);
       try {
         const membersPage_local = membersPage;
@@ -202,6 +182,8 @@ const NameCard = _ref => {
           title: "Update Error",
           message: "Network or server error occurred. Please try again."
         });
+      } finally {
+        setIsUpdating(false);
       }
     };
     // ---------- STEP 4: Local state update ----------
@@ -274,6 +256,7 @@ const NameCard = _ref => {
       });
       console.log("updatedRecord:", updatedRecord);
       const uploadComment = async () => {
+        setIsAddingComment(true);
         try {
           // Create a clean copy before modifying
           let recordToUpload = _objectSpread({}, updatedRecord);
@@ -360,6 +343,8 @@ const NameCard = _ref => {
             title: "Comment Error",
             message: "Failed to post comment. Please try again."
           });
+        } finally {
+          setIsAddingComment(false);
         }
       };
       uploadComment();
@@ -434,6 +419,7 @@ const NameCard = _ref => {
       delete sub.id;
     });
     const deleteCommentAPI = async () => {
+      setIsDeletingComment(true);
       try {
         let recordToUpload = _objectSpread({}, updatedRecord);
         if (!membersPage) {
@@ -462,6 +448,8 @@ const NameCard = _ref => {
       } catch (error) {
         console.error("Failed to delete comment:", error);
         message.error("Failed to delete comment");
+      } finally {
+        setIsDeletingComment(false);
       }
     };
     deleteCommentAPI();
@@ -526,12 +514,6 @@ const NameCard = _ref => {
     }
   }, "Status : ", status)), /*#__PURE__*/React.createElement(Drawer, {
     open: nameCardDrawer,
-    style: {
-      backgroundColor: 'whitesmoke'
-    },
-    title: null
-    // closable={false}
-    ,
     width: getDrawerWidth(),
     onClose: () => {
       setNameCardDrawer(false);
@@ -541,28 +523,66 @@ const NameCard = _ref => {
           hasUnread: false
         })
       }));
+    },
+    bodyStyle: {
+      background: "#f5f7fa",
+      padding: 0
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    bordered: false,
+    style: {
+      marginBottom: 12,
+      borderRadius: 0,
+      boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+      padding: "12px 16px"
+    },
+    bodyStyle: {
+      padding: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "nameDrawer",
     style: {
-      position: 'relative'
+      display: "grid",
+      gridTemplateColumns: "80px 1fr 120px",
+      gridTemplateRows: "22px 18px 36px",
+      columnGap: 16,
+      alignItems: "center"
     }
   }, /*#__PURE__*/React.createElement("div", {
-    type: "primary",
     style: {
-      position: 'absolute',
-      top: '10px',
-      right: '10px',
-      zIndex: 1,
-      display: 'flex',
-      gap: '8px'
+      gridRow: "1 / span 3"
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    src: maleAvatar,
+    size: 64,
+    style: {
+      border: "2px solid #e5e7eb"
+    }
+  })), /*#__PURE__*/React.createElement(Typography.Text, {
+    strong: true,
+    style: {
+      gridColumn: 2,
+      gridRow: 1,
+      fontSize: 16,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, customerName), /*#__PURE__*/React.createElement("div", {
+    style: {
+      gridColumn: 3,
+      gridRow: "1 / span 3",
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      justifyContent: "center"
     }
   }, /*#__PURE__*/React.createElement(Button, {
+    size: "small",
     type: "primary",
     onClick: () => setIsEditable(true)
   }, "Edit"), /*#__PURE__*/React.createElement(Popconfirm, {
     title: "Delete",
-    description: "Are you sure you want to delete this ".concat(membersPage ? 'member' : 'resource', "?"),
+    description: "Are you sure you want to delete this ".concat(membersPage ? "member" : "resource", "?"),
     onConfirm: handleDeleteMember,
     okText: "Yes",
     cancelText: "No",
@@ -570,138 +590,136 @@ const NameCard = _ref => {
       danger: true
     }
   }, /*#__PURE__*/React.createElement(Button, {
+    size: "small",
     danger: true,
     icon: /*#__PURE__*/React.createElement(DeleteOutlined, null)
-  }, "Delete"))), /*#__PURE__*/React.createElement(Row, {
-    className: "personalNameCard"
-  }, /*#__PURE__*/React.createElement(Col, {
+  }, "Delete"))), /*#__PURE__*/React.createElement(Typography.Text, {
+    type: "secondary",
     style: {
-      padding: '5px',
-      width: '40%'
+      gridColumn: 2,
+      gridRow: 2,
+      fontSize: 13,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
     }
-  }, /*#__PURE__*/React.createElement("img", {
-    src: maleAvatar,
+  }, phoneNumber), /*#__PURE__*/React.createElement("div", {
     style: {
-      width: '100%',
-      height: '95%'
+      gridColumn: 2,
+      gridRow: 3,
+      fontSize: 13,
+      color: "#6b7280",
+      lineHeight: "18px",
+      overflow: "hidden",
+      display: "-webkit-box",
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: "vertical"
     }
-  })), /*#__PURE__*/React.createElement(Col, {
-    style: {
-      margin: '5px',
-      width: '50%'
-    }
-  }, /*#__PURE__*/React.createElement("h2", null, " ", customerName, " "), /*#__PURE__*/React.createElement("h3", {
-    style: {
-      marginTop: '-10px'
-    }
-  }, phoneNumber), /*#__PURE__*/React.createElement("h3", {
-    style: {
-      borderRadius: '5px',
-      backgroundColor: 'lightgrey',
-      padding: '5px',
-      width: '100%',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap'
-    }
-  }, "Address : ", addressKeys === null || addressKeys === void 0 ? void 0 : addressKeys.map((item, index) => /*#__PURE__*/React.createElement("span", {
-    key: index
-  }, address[0][item], item !== "country" ? ", " : ".", item === "city" || item === "state" ? "" : /*#__PURE__*/React.createElement("br", null)))))), /*#__PURE__*/React.createElement(Form, {
+  }, [address === null || address === void 0 || (_address$9 = address[0]) === null || _address$9 === void 0 ? void 0 : _address$9.street1, address === null || address === void 0 || (_address$0 = address[0]) === null || _address$0 === void 0 ? void 0 : _address$0.city, address === null || address === void 0 || (_address$1 = address[0]) === null || _address$1 === void 0 ? void 0 : _address$1.state, address === null || address === void 0 || (_address$10 = address[0]) === null || _address$10 === void 0 ? void 0 : _address$10.country].filter(Boolean).join(", ")))), /*#__PURE__*/React.createElement(Form, {
     hidden: !isEditable,
-    layout: "vertical",
     form: form,
-    onFinish: onFinish,
+    layout: "vertical",
+    onFinish: onFinish
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Edit Details",
     style: {
-      padding: '16px 24px',
-      maxWidth: 600,
-      margin: '0 auto',
-      background: '#fff',
-      borderRadius: 8,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+      margin: 16,
+      borderRadius: 8
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '12px 16px'
-    }
+  }, /*#__PURE__*/React.createElement(Row, {
+    gutter: 16
+  }, /*#__PURE__*/React.createElement(Col, {
+    span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "customerId",
     label: "Customer ID"
   }, /*#__PURE__*/React.createElement(Input, {
-    readOnly: true,
-    size: "middle"
-  })), /*#__PURE__*/React.createElement(Form.Item, {
+    readOnly: true
+  }))), /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "customerName",
     label: "Customer Name"
-  }, /*#__PURE__*/React.createElement(Input, {
-    size: "middle"
-  })), membersPage && /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Input, null))), membersPage && /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "email",
     label: "Email"
-  }, /*#__PURE__*/React.createElement(Input, {
-    size: "middle"
-  })), /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "phoneNumber",
     label: "Phone"
   }, /*#__PURE__*/React.createElement(Input, {
-    inputMode: "numeric",
-    pattern: "[0-9]*",
-    maxLength: 10,
-    size: "middle"
-  })), /*#__PURE__*/React.createElement(Form.Item, {
+    maxLength: 10
+  }))), /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "status",
     label: "Status"
-  }, /*#__PURE__*/React.createElement(Input, {
-    size: "middle"
-  })), /*#__PURE__*/React.createElement(Form.Item, {
+  }, /*#__PURE__*/React.createElement(Select, {
+    placeholder: "Select status"
+  }, /*#__PURE__*/React.createElement(Option, {
+    value: "ACTIVE"
+  }, "ACTIVE"), /*#__PURE__*/React.createElement(Option, {
+    value: "IN_PROGRESS"
+  }, "IN_PROGRESS"), /*#__PURE__*/React.createElement(Option, {
+    value: "COMPLETED"
+  }, "COMPLETED"), /*#__PURE__*/React.createElement(Option, {
+    value: "CANCELLED"
+  }, "CANCELLED")))), /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "groupId",
-    label: "groupId"
-  }, /*#__PURE__*/React.createElement(Input, {
-    size: "middle"
-  })), membersPage && /*#__PURE__*/React.createElement(Form.Item, {
+    label: "Group ID"
+  }, /*#__PURE__*/React.createElement(Input, null))), membersPage && /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "subscriptionPlanId",
     label: "Subscription Plan"
   }, /*#__PURE__*/React.createElement(Spin, {
     spinning: loadingPlans
   }, /*#__PURE__*/React.createElement(Select, {
-    placeholder: "Select a subscription plan",
-    size: "middle"
-  }, subscriptionPlans.map(plan => /*#__PURE__*/React.createElement(Select.Option, {
+    placeholder: "Select a plan"
+  }, subscriptionPlans.map(plan => /*#__PURE__*/React.createElement(Option, {
     key: plan.id,
     value: plan.id
-  }, plan.id, " - $", plan.price, " (", plan.type, ")"))))), /*#__PURE__*/React.createElement(Form.Item, {
-    label: "City",
-    name: ['address', 'city']
-  }, /*#__PURE__*/React.createElement(Input, {
-    size: "middle"
-  })), /*#__PURE__*/React.createElement(Form.Item, {
-    label: "State",
-    name: ['address', 'state']
-  }, /*#__PURE__*/React.createElement(Input, {
-    size: "middle"
-  })), /*#__PURE__*/React.createElement(Form.Item, {
-    label: "Country",
-    name: ['address', 'country']
-  }, /*#__PURE__*/React.createElement(Input, {
-    size: "middle"
-  })), /*#__PURE__*/React.createElement(Form.Item, {
-    label: "Street1",
-    name: ['address', 'street1'],
-    style: {
-      gridColumn: '1 / -1'
-    }
-  }, /*#__PURE__*/React.createElement(Input, {
-    size: "middle"
-  }))), /*#__PURE__*/React.createElement(Form.Item, {
-    style: {
-      marginTop: 16
-    }
-  }, /*#__PURE__*/React.createElement(Button, {
+  }, plan.id, " - $", plan.price, " (", plan.type, ")")))))), /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: ["address", "city"],
+    label: "City"
+  }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: ["address", "state"],
+    label: "State"
+  }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: ["address", "country"],
+    label: "Country"
+  }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
+    span: 24
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: ["address", "street1"],
+    label: "Street"
+  }, /*#__PURE__*/React.createElement(Input, null)))), /*#__PURE__*/React.createElement(Button, {
     type: "primary",
     htmlType: "submit",
-    block: true
-  }, "Save Changes"))), membersPage && /*#__PURE__*/React.createElement(PunchCardsPage, {
+    block: true,
+    loading: isUpdating,
+    disabled: isUpdating
+  }, "Save Changes"))), membersPage && /*#__PURE__*/React.createElement(Card, {
+    title: "Punch Cards",
+    style: {
+      margin: "0 16px",
+      borderRadius: 8
+    },
+    bodyStyle: {
+      padding: 16
+    }
+  }, /*#__PURE__*/React.createElement(PunchCardsPage, {
     data: data,
     customerId: customerId,
     customerName: customerName,
@@ -710,119 +728,81 @@ const NameCard = _ref => {
     setData: setData,
     entityId: entityId,
     color: color
-  }), /*#__PURE__*/React.createElement("h3", {
+  })), /*#__PURE__*/React.createElement(Card, {
+    title: "Group Messages (".concat(groupId, ")"),
     style: {
-      marginTop: '30px',
-      marginBottom: '15px'
+      margin: 16,
+      borderRadius: 8
     }
-  }, "Group Messages (", groupId, ") :"), /*#__PURE__*/React.createElement(Row, {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      marginBottom: '20px'
-    }
-  }, (groupMessages === null || groupMessages === void 0 || (_groupMessages$groupI4 = groupMessages[groupId]) === null || _groupMessages$groupI4 === void 0 || (_groupMessages$groupI4 = _groupMessages$groupI4.messages) === null || _groupMessages$groupI4 === void 0 ? void 0 : _groupMessages$groupI4.length) > 0 ? groupMessages[groupId].messages.map((message, index) => /*#__PURE__*/React.createElement(Space, {
-    key: index,
-    direction: "vertical",
-    size: "middle",
-    style: {
-      width: '100%'
-    }
-  }, /*#__PURE__*/React.createElement(Card, {
+  }, groupMessages !== null && groupMessages !== void 0 && (_groupMessages$groupI4 = groupMessages[groupId]) !== null && _groupMessages$groupI4 !== void 0 && (_groupMessages$groupI4 = _groupMessages$groupI4.messages) !== null && _groupMessages$groupI4 !== void 0 && _groupMessages$groupI4.length ? groupMessages[groupId].messages.map((msg, idx) => /*#__PURE__*/React.createElement(Card, {
+    key: idx,
     size: "small",
     style: {
-      position: 'relative',
-      paddingBottom: '24px',
-      backgroundColor: '#f0f8ff'
+      marginBottom: 8,
+      background: "#f0f8ff"
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Typography.Text, {
+    strong: true
+  }, groupId), /*#__PURE__*/React.createElement("div", null, msg))) : /*#__PURE__*/React.createElement(Typography.Text, {
+    type: "secondary"
+  }, "No group messages yet")), /*#__PURE__*/React.createElement(Card, {
+    title: "Comments",
     style: {
-      fontWeight: 'bold',
-      marginBottom: '8px',
-      color: '#0066cc'
+      margin: 16,
+      borderRadius: 8
     }
-  }, groupId), message))) : /*#__PURE__*/React.createElement("p", {
-    style: {
-      color: '#888',
-      fontStyle: 'italic'
-    }
-  }, "No group messages yet")), /*#__PURE__*/React.createElement("h3", {
-    style: {
-      marginTop: '30px'
-    }
-  }, "Comments :"), /*#__PURE__*/React.createElement(Row, {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      marginBottom: '20px'
-    }
-  }, comments === null || comments === void 0 ? void 0 : comments.map((comment, index) => /*#__PURE__*/React.createElement(Space, {
+  }, comments === null || comments === void 0 ? void 0 : comments.map((comment, index) => /*#__PURE__*/React.createElement(Badge.Ribbon, {
     key: index,
-    direction: "vertical",
-    size: "middle",
-    style: {
-      width: '100%'
-    }
-  }, /*#__PURE__*/React.createElement(Badge.Ribbon, {
-    text: comment["author"],
+    text: comment.author,
     color: color
   }, /*#__PURE__*/React.createElement(Card, {
     size: "small",
     style: {
-      position: 'relative',
-      paddingBottom: '24px'
+      marginBottom: 12
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, comment.message), /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 8,
+      fontSize: 11,
+      color: "#888"
     }
-  }, comment["message"]), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      bottom: '4px',
-      right: '8px',
-      fontSize: '11px',
-      color: '#888',
-      gap: '8px'
-    }
-  }, /*#__PURE__*/React.createElement(Popconfirm, {
-    title: "Delete Comment",
-    description: "Are you sure you want to delete this comment?",
-    onConfirm: () => handleDeleteComment(index),
-    okText: "Yes",
-    cancelText: "No",
-    okButtonProps: {
-      danger: true
-    }
+  }, dayjs(comment.date).format("YYYY-MM-DD HH:mm:ss"), /*#__PURE__*/React.createElement(Popconfirm, {
+    title: "Delete comment?",
+    onConfirm: () => handleDeleteComment(index)
   }, /*#__PURE__*/React.createElement(Button, {
     type: "text",
     danger: true,
     size: "small",
     icon: /*#__PURE__*/React.createElement(DeleteOutlined, null),
+    loading: isDeletingComment,
+    disabled: isDeletingComment
+  }))))))), /*#__PURE__*/React.createElement(Card, {
     style: {
-      marginLeft: '8px'
+      margin: 16,
+      borderRadius: 8
     }
-  })), dayjs(comment['date']).format("YYYY-MM-DD HH:mm:ss"))))))), /*#__PURE__*/React.createElement(Row, null, /*#__PURE__*/React.createElement(TextArea, {
-    placeholder: "Enter your Comments",
+  }, /*#__PURE__*/React.createElement(TextArea, {
+    rows: 3,
+    placeholder: "Write a comment...",
     value: newComment,
-    style: {
-      fontSize: '18px'
-    },
     onChange: e => setNewComment(e.target.value)
   }), /*#__PURE__*/React.createElement(Row, {
+    justify: "end",
     style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      width: '100%',
-      padding: '10px'
+      marginTop: 12
     }
-  }, /*#__PURE__*/React.createElement(Button, {
-    onClick: () => handleClear()
+  }, /*#__PURE__*/React.createElement(Space, null, /*#__PURE__*/React.createElement(Button, {
+    onClick: handleClear,
+    disabled: isAddingComment
   }, "Clear"), /*#__PURE__*/React.createElement(Button, {
     type: "primary",
-    onClick: () => handleSend()
-  }, "send"))))), /*#__PURE__*/React.createElement(StatusModal, {
+    onClick: handleSend,
+    loading: isAddingComment,
+    disabled: isAddingComment
+  }, "Send"))))), /*#__PURE__*/React.createElement(StatusModal, {
     visible: statusModal.visible,
     type: statusModal.type,
     title: statusModal.title,

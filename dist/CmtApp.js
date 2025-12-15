@@ -197,8 +197,8 @@ const CmtApp = _ref => {
 
   // Unique groupId list for dropdown
   const uniqueGroups = Array.from(new Set(data.map(item => {
-    var _item$groupId;
-    return item === null || item === void 0 || (_item$groupId = item.groupId) === null || _item$groupId === void 0 ? void 0 : _item$groupId.trim();
+    var _item$groupId$;
+    return item === null || item === void 0 || (_item$groupId$ = item.groupId[0]) === null || _item$groupId$ === void 0 ? void 0 : _item$groupId$.trim();
   }).filter(Boolean)));
 
   // Legend labels mirror labels by default; customize here if needed
