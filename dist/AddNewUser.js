@@ -1,45 +1,13 @@
 import React, { useState, useEffect } from "react";
 import "./AddNewUser.css";
 import { Row, Col, Input, Select, Button, Form, Typography, Spin } from 'antd';
+import { getSubscriptionPlans } from "./api/APIUtil";
 const {
   Option
 } = Select;
 const {
   Title
 } = Typography;
-
-// Mock subscription plans data - replace with API call later
-const MOCK_SUBSCRIPTION_PLANS = [{
-  "price": 490.0,
-  "noOfSubscriptions": 50.0,
-  "entityId": "w_123",
-  "id": "sub_21",
-  "isActive": true,
-  "type": "RECURRING"
-}, {
-  "price": 20.0,
-  "noOfSubscriptions": 30.0,
-  "entityId": "w_123",
-  "id": "sub_22",
-  "isActive": true,
-  "type": "RECURRING"
-}, {
-  "createdDate": "2025-11-12 09:00:00.0",
-  "price": 499.0,
-  "entityId": "w_123",
-  "noOfSubscriptions": 10.0,
-  "updatedDate": "2025-11-12 10:30:00.0",
-  "id": "sub_23",
-  "isActive": true,
-  "type": "ONETIME"
-}, {
-  "price": 390.0,
-  "noOfSubscriptions": 50.0,
-  "entityId": "w_123",
-  "id": "sub_24",
-  "isActive": true,
-  "type": "RECURRING"
-}];
 
 /**
  * Self-contained form:
@@ -92,6 +60,19 @@ const AddNewUser = _ref => {
       setLoadingCountries(false);
     }
   };
+  useEffect(() => {
+    const fetchSubscriptionPlans = async () => {
+      try {
+        const response = await getSubscriptionPlans(entityId);
+        setSubscriptionPlans(response);
+      } catch (error) {
+        console.error("Error fetching subscription plans:", error);
+      }
+    };
+    if (mode === "member") {
+      fetchSubscriptionPlans();
+    }
+  }, [mode, entityId]);
   const handleCountryChange = value => {
     const selected = countries.find(c => c.name === value);
     if (selected) {
@@ -140,17 +121,19 @@ const AddNewUser = _ref => {
       setLoadingStates(false);
     }
   };
-  useEffect(() => {
-    if (mode === "member") {
-      setLoadingPlans(true);
-      // Simulate API call delay
-      setTimeout(() => {
-        setSubscriptionPlans(MOCK_SUBSCRIPTION_PLANS);
-        console.log("Subscription Plans loaded from mock data:", MOCK_SUBSCRIPTION_PLANS);
-        setLoadingPlans(false);
-      }, 300);
-    }
-  }, [mode]);
+
+  // useEffect(() => {
+  //   if (mode === "member") {
+  //     setLoadingPlans(true);
+  //     // Simulate API call delay
+  //     setTimeout(() => {
+  //       setSubscriptionPlans(MOCK_SUBSCRIPTION_PLANS);
+  //       console.log("Subscription Plans loaded from mock data:", MOCK_SUBSCRIPTION_PLANS);
+  //       setLoadingPlans(false);
+  //     }, 300);
+  //   }
+  // }, [mode]);
+
   const handleSubmit = values => {
     onSubmit === null || onSubmit === void 0 || onSubmit(values);
     form.resetFields();
@@ -353,11 +336,8 @@ const AddNewUser = _ref => {
     value: "CANCELLED"
   }, "CANCELLED"))), mode === "member" && /*#__PURE__*/React.createElement(Form.Item, {
     name: "subscriptionPlanId",
-    label: "Subscription Plan",
-    rules: [{
-      required: true,
-      message: 'Subscription plan is required'
-    }]
+    label: "Subscription Plan"
+    // rules={[{ required: true, message: 'Subscription plan is required' }]}
   }, /*#__PURE__*/React.createElement(Select, {
     placeholder: "Select a subscription plan",
     loading: loadingPlans

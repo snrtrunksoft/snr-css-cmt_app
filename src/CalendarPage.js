@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./CalendarPage.css";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit } from "lucide-react";
 import { getRecurringCalendar, getAllRecurringCalendar, getCalendar, createEvent, updateEvent, deleteEvent } from "./api/APIUtil";
 
 import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid, Spin, DatePicker } from "antd";
@@ -52,6 +52,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   const [ availableResourcesForSlot, setAvailableResourcesForSlot ] = useState([]);
   const [ recurringStartDate, setRecurringStartDate ] = useState(null);
   const [ recurringEndDate, setRecurringEndDate ] = useState(null);
+  const [ selectedRecurringEvent, setSelectedRecurringEvent ] = useState(null);
+  const [ deleteRecurringType, setDeleteRecurringType ] = useState('all'); // 'all' or 'single'
+  const [ isRecurringEventModalOpen, setIsRecurringEventModalOpen ] = useState(false);
 
   const [effectiveEntityId, setEffectiveEntityId] = useState(entityId || null);
 
@@ -334,6 +337,36 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     }, 2000);
   }
 
+  // Modal Management Helper Functions
+  const closeAllModals = () => {
+    setOpenEventSlot(false);
+    setOpenBookedEventModal(false);
+    setIsRecurringEventModalOpen(false);
+    setOpenEventStatusModal(false);
+    // Don't reset selected events here - they'll be reset when modals close
+  };
+
+  const closeAllModalsAndResetSelection = () => {
+    closeAllModals();
+    setSelectedBookedEvent(null);
+    setSelectedRecurringEvent(null);
+  };
+
+  const openEventSlotModal = () => {
+    closeAllModals();
+    setTimeout(() => setOpenEventSlot(true), 100);
+  };
+
+  const openBookedEventModalOnly = () => {
+    closeAllModals();
+    setTimeout(() => setOpenBookedEventModal(true), 100);
+  };
+
+  const openRecurringEventModalOnly = () => {
+    closeAllModals();
+    setTimeout(() => setIsRecurringEventModalOpen(true), 100);
+  };
+
   // Unified refresh function to reload calendar data from backend
   const refreshCalendarUI = async (userId = calendarUserId, date = currentDate) => {
     if (userId === "Select Member" || userId === "Select Resource") {
@@ -410,8 +443,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         setEventStatus(isUpdate ? "Event updated successfully!" : "Event created successfully!");
 
         // Close modals
-        setOpenBookedEventModal(false);
-        setOpenEventSlot(false);
+        closeAllModals();
         handleCloseEventSlot();
 
         // Refresh UI after brief delay to allow success message to display
@@ -467,8 +499,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       setEventStatus("Event deleted successfully!");
 
       // Close modals
-      setOpenBookedEventModal(false);
-      setOpenEventSlot(false);
+      closeAllModals();
       handleCloseEventSlot();
 
       // Refresh UI after brief delay
@@ -480,6 +511,41 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       console.log("Unable to delete event:", error);
       setEventLoading(false);
       setEventStatus("Error deleting event. Please try again.");
+    }
+  };
+
+  const handleDeleteRecurringEvent = async () => {
+    if (!selectedRecurringEvent) {
+      setEventStatus("No recurring event selected to delete.");
+      return;
+    }
+
+    setEventLoading(true);
+    setOpenEventStatusModal(true);
+
+    try {
+      // For now, we delete the entire recurring event
+      // In future, could implement delete single occurrence logic
+      await deleteEvent(effectiveEntityId, selectedRecurringEvent.id);
+
+      console.log("Recurring event deleted successfully:", selectedRecurringEvent);
+
+      // Show success message
+      setEventLoading(false);
+      setEventStatus(`Recurring event deleted successfully${deleteRecurringType === 'single' ? ' (this occurrence)' : ' (all occurrences)'}!`);
+
+      // Close modals
+      closeAllModals();
+
+      // Refresh UI after brief delay
+      setTimeout(() => {
+        refreshCalendarUI(calendarUserId, currentDate);
+      }, 800);
+
+    } catch (error) {
+      console.log("Unable to delete recurring event:", error);
+      setEventLoading(false);
+      setEventStatus("Error deleting recurring event. Please try again.");
     }
   };
 
@@ -501,6 +567,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     setIsEditingEvent(false);
     setBookSameSlot(false);
     setOpenAppointment(false);
+    setSelectedBookedEvent(null);
+    setSelectedRecurringEvent(null);
   };
 
   // Helper function to get member name from ID
@@ -636,17 +704,52 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   };
 
   const handleShowBookedEventDetails = (event) => {
-    setSelectedBookedEvent(event);
-    setOpenBookedEventModal(true);
-    
-    // Calculate available resources for this slot
-    const eventHour = event.from;
-    const hourKey = `hour_${eventHour}`;
-    const bookedInSlot = sampleData.flatMap(day => day.allEvents?.[hourKey] ?? []);
-    const available = resourceData.filter(res => 
-      !bookedInSlot.some(booked => booked === res.resourceName || booked === event.resourceId)
-    );
-    setAvailableResourcesForSlot(available);
+    // Check if this is a recurring event
+    if (event.isRecurring) {
+      setSelectedRecurringEvent(event);
+      openRecurringEventModalOnly();
+    } else {
+      setSelectedBookedEvent(event);
+      openBookedEventModalOnly();
+      
+      // Calculate available resources for this slot
+      const eventHour = event.from;
+      const hourKey = `hour_${eventHour}`;
+      const bookedInSlot = sampleData.flatMap(day => day.allEvents?.[hourKey] ?? []);
+      const available = resourceData.filter(res => 
+        !bookedInSlot.some(booked => booked === res.resourceName || booked === event.resourceId)
+      );
+      setAvailableResourcesForSlot(available);
+    }
+  };
+
+  // Helper function to check if a date falls within recurring event range
+  const isDateInRecurringRange = (date, event) => {
+    if (!event.startDate || !event.endDate) return true;
+    const checkDate = dayjs(date);
+    const startDate = dayjs(event.startDate);
+    const endDate = dayjs(event.endDate);
+    const isAfterStart = checkDate.isAfter(startDate) || checkDate.isSame(startDate, 'day');
+    const isBeforeEnd = checkDate.isBefore(endDate) || checkDate.isSame(endDate, 'day');
+    return isAfterStart && isBeforeEnd;
+  };
+
+  // Helper function to check if a recurring event occurs on a specific date
+  const isRecurringEventOnDate = (event, date) => {
+    if (!event.isRecurring) return false;
+    if (!isDateInRecurringRange(date, event)) return false;
+
+    const dayOfWeek = dayjs(date).format('dddd').toUpperCase();
+    const dateOfMonth = dayjs(date).date();
+
+    if (event.frequency === 'daily') {
+      return true;
+    } else if (event.frequency === 'weekly') {
+      return event.days === dayOfWeek || event.day === dayOfWeek;
+    } else if (event.frequency === 'monthly') {
+      return dateOfMonth === parseInt(event.monthDays?.[0] || event.date);
+    }
+    return false;
   };
 
   const dropDownList = (
@@ -693,11 +796,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       setWeekEventDate(null);
       setMonthlyRecurring(currentDate.getDate());
      if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
-        setOpenEventSlot(true);
+        openEventSlotModal();
         setOpenAppointment(true);
       } else if (bookedEventsList < resourceData.length) {
         setOpenAppointment(false);
-        setOpenEventSlot(true);
+        openEventSlotModal();
     }
       setTimeSlot(time);
       const dayFormat = dayjs(dayjs().date()).format('dddd');
@@ -721,11 +824,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     }
 
     if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
-        setOpenEventSlot(true);
+        openEventSlotModal();
         setOpenAppointment(true);
       } else if (bookedEventsList < resourceData.length) {
         setOpenAppointment(false);
-        setOpenEventSlot(true);
+        openEventSlotModal();
     }
       setTimeSlot(hour);
       const dayFormat = dayjs(date).format('dddd');
@@ -1099,7 +1202,33 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                     }) : ""}
                     {calendarUserId && calendarUserId !== "All" ? recurringResourceEvents.map(item => {
                       const midpoint = Math.floor((item.from + item.to) / 2);
-                      return i === midpoint ? item.title : "";
+                      return i === midpoint ? (
+                        <div
+                          key={`${item.id}-daily-recurring`}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '3px 6px',
+                            backgroundColor: '#ffd666',
+                            borderRadius: '2px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShowBookedEventDetails(item);
+                          }}
+                          title={`${item.title} - Recurring ${item.frequency} event`}
+                        >
+                          <span>{item.title} 🔄</span>
+                          <span style={{marginLeft: '4px', fontSize: '11px'}}>✎</span>
+                        </div>
+                      ) : "";
                     }) : ""}
                       {currentHour === i && (
                         <div
@@ -1288,9 +1417,46 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                             const fromTime = parseInt(item.from, 10);
                             const toTime = parseInt(item.to, 10);
                             const midpoint = Math.floor((fromTime + toTime) / 2); // Midpoint calculation
+                            const currentHourInt = parseInt(dayjs(hour,"h A").format("HH"), 10);
 
-                            return parseInt(dayjs(hour,"h A").format("HH"), 10) == midpoint ? item.title : ""; // Show only at midpoint
-                          }):""}                          {currentHour == parseInt(dayjs(hour,"h A").format("HH"), 10) && (
+                            return currentHourInt == midpoint ? (
+                              <div 
+                                key={`${item.id}-recurring`}
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '2px 4px',
+                                  backgroundColor: '#ffd666',
+                                  borderRadius: '2px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleShowBookedEventDetails(item);
+                                }}
+                              >
+                                <span title="Recurring Event">
+                                  {item.title} 
+                                  <span style={{marginLeft: '3px', fontSize: '10px', fontStyle: 'italic'}}>
+                                    🔄 {item.frequency}
+                                  </span>
+                                </span>
+                                <span 
+                                  style={{
+                                    marginLeft: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    fontSize: '12px'
+                                  }}
+                                  title="Edit or Delete">
+                                  ✎
+                                </span>
+                              </div>
+                            ) : "";
+                          }):""}                         {currentHour == parseInt(dayjs(hour,"h A").format("HH"), 10) && (
                             <div
                               className="current-time-line"
                               style={{
@@ -1440,10 +1606,13 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                   )}
             </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
                 {paginateEvents.map(item => (
-                  <center key={item.title}>
-                    <h2 style={{cursor:'pointer', color:'#1890ff'}} onClick={() => {
+                  <center key={item.title} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginBottom:'10px'}}>
+                    <h2>{item.title} </h2>
+                    <span style={{marginLeft: '5px', marginTop:'10px', cursor: 'pointer', fontSize: '18px', color:'#1890ff'}} onClick={() => {
                       handleShowBookedEventDetails(filteredEvents[currentPage - 1]);
-                    }}>{item.title}</h2>
+                      // setOpenBookedEventModal(false);
+                      // setOpenEventSlot(true);
+                    }}><Edit /></span>
                   </center>
                 ))}
               <Pagination
@@ -1462,23 +1631,19 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
             title="Booked Event Details"
             open={openBookedEventModal}
             onCancel={() => {
-              setOpenBookedEventModal(false);
-              setSelectedBookedEvent(null);
+              closeAllModalsAndResetSelection();
             }}
             footer={[
               <Button key="back" onClick={() => {
-                setOpenBookedEventModal(false);
-                setSelectedBookedEvent(null);
+                closeAllModalsAndResetSelection();
               }}>Close</Button>,
               <Button key="book" type="primary" onClick={() => {
-                setOpenBookedEventModal(false);
                 setOpenAppointment(false);
-                setOpenEventSlot(true);
+                openEventSlotModal();
               }}>Book New Event</Button>,
               <Button key="edit" type="primary" onClick={() => {
                 handleUpdateExistingEventDetails(selectedBookedEvent);
-                setOpenBookedEventModal(false);
-                setOpenEventSlot(true);
+                openEventSlotModal();
               }}>Edit</Button>,
               <Button key="delete" danger onClick={() => {
                 handleDeleteEvent();
@@ -1541,6 +1706,82 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+         </Modal>
+         <Modal 
+            title="Recurring Event Details"
+            open={isRecurringEventModalOpen}
+            onCancel={() => {
+              closeAllModalsAndResetSelection();
+            }}
+            footer={[
+              <Button key="back" onClick={() => {
+                closeAllModalsAndResetSelection();
+              }}>Close</Button>,
+              <Button key="edit" type="primary" onClick={() => {
+                if (selectedRecurringEvent) {
+                  handleUpdateExistingEventDetails(selectedRecurringEvent);
+                  openEventSlotModal();
+                }
+              }}>Edit</Button>,
+              <Button key="delete" danger onClick={() => {
+                handleDeleteRecurringEvent();
+              }}>Delete All Occurrences</Button>
+            ]}
+            width={600}
+         >
+            {selectedRecurringEvent && (
+              <div style={{textAlign:'left', display:'flex', flexDirection:'column', gap:'15px'}}>
+                <div>
+                  <strong>Event Title:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedRecurringEvent.title}</p>
+                </div>
+                <div>
+                  <strong>Member:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedRecurringEvent.memberId}</p>
+                </div>
+                <div>
+                  <strong>Resource:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedRecurringEvent.resourceId}</p>
+                </div>
+                <div>
+                  <strong>Time Slot:</strong>
+                  <p style={{margin:'5px 0'}}>
+                    {selectedRecurringEvent.from === 0 ? '12 AM' : selectedRecurringEvent.from < 12 ? `${selectedRecurringEvent.from} AM` : selectedRecurringEvent.from === 12 ? '12 PM' : `${selectedRecurringEvent.from - 12} PM`}
+                    {' to '}
+                    {selectedRecurringEvent.to === 0 ? '12 AM' : selectedRecurringEvent.to < 12 ? `${selectedRecurringEvent.to} AM` : selectedRecurringEvent.to === 12 ? '12 PM' : `${selectedRecurringEvent.to - 12} PM`}
+                  </p>
+                </div>
+                <div style={{backgroundColor:'#fff7e6', padding:'10px', borderRadius:'4px', border:'1px solid #ffd666'}}>
+                  <strong>📅 Recurrence Pattern:</strong>
+                  <div style={{margin:'8px 0', marginLeft:'15px'}}>
+                    <div><strong>Frequency:</strong> {selectedRecurringEvent.frequency?.toUpperCase()}</div>
+                    {selectedRecurringEvent.frequency === 'weekly' && (
+                      <div><strong>Day:</strong> {selectedRecurringEvent.day || selectedRecurringEvent.days}</div>
+                    )}{selectedRecurringEvent.frequency === 'monthly' && (
+                      <div><strong>Day of Month:</strong> {selectedRecurringEvent.monthDays?.[0] || selectedRecurringEvent.date}</div>
+                    )}</div>
+                </div>
+                <div>
+                  <strong>📆 Date Range:</strong>
+                  <p style={{margin:'5px 0'}}>
+                    From: <strong>{selectedRecurringEvent.startDate || 'Not specified'}</strong>
+                  </p>
+                  <p style={{margin:'5px 0'}}>
+                    To: <strong>{selectedRecurringEvent.endDate || 'Not specified'}</strong>
+                  </p>
+                </div>
+                <div>
+                  <strong>Notes:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedRecurringEvent.notes || 'N/A'}</p>
+                </div>
+                <div style={{backgroundColor:'#e6f7ff', padding:'10px', borderRadius:'4px', border:'1px solid #91d5ff'}}>
+                  <strong>ℹ️ Information:</strong>
+                  <p style={{margin:'8px 0', fontSize:'13px'}}>
+                    This is a recurring event. Deleting it will remove all occurrences within the specified date range from the calendar. The resource will become available during these time slots.
+                  </p>
+                </div>
               </div>
             )}
          </Modal>
