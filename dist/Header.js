@@ -11,6 +11,7 @@ import { HEADER_TITLE } from "./properties/properties";
 import image from "./assets/logosnr.png";
 const Header = _ref => {
   let {
+    tenantConfig,
     commentBox,
     membersPage,
     openCalendarPage,
@@ -91,7 +92,7 @@ const Header = _ref => {
     style: isMobile ? {
       padding: '0px'
     } : {}
-  }, HEADER_TITLE), isMobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
+  }, (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.headerTitle) || HEADER_TITLE), isMobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
     icon: /*#__PURE__*/React.createElement(MenuOutlined, null),
     onClick: () => setMenuDrawerVisible(true),
     style: {

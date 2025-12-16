@@ -11,6 +11,7 @@ import { HEADER_TITLE } from "./properties/properties";
 import image from "./assets/logosnr.png";
 
 const Header = ({
+  tenantConfig,
   commentBox,
   membersPage,
   openCalendarPage,
@@ -89,7 +90,7 @@ const Header = ({
     <header className="CMTheader">
       <img src={image} alt="logosnr" className="app-logo"/>
         <div className="CMTheader-left" style={isMobile ? { padding: '0px' } : {}}>
-          {HEADER_TITLE}
+          {tenantConfig?.headerTitle || HEADER_TITLE}
         </div>
 
       {isMobile ? (

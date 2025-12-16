@@ -33,6 +33,7 @@ const {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 const CmtApp = _ref => {
   let {
+    tenantConfig,
     setSelectedApp,
     selectedGroup,
     groupMessages,
@@ -383,6 +384,7 @@ const CmtApp = _ref => {
   }, /*#__PURE__*/React.createElement("div", {
     className: "home_app"
   }, /*#__PURE__*/React.createElement(Header, {
+    tenantConfig: tenantConfig,
     commentBox: commentBox,
     membersPage: membersPage,
     openCalendarPage: openCalendarPage,
