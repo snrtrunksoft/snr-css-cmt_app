@@ -23,7 +23,7 @@ import CalendarPage from './CalendarPage';
 import './CmtApp.css';
 
 // APIUtil imports
-import { getMembers, getResources, getCalendar, createMember } from "./api/APIUtil";
+import { getMembers, getResources, getCalendar, createMember, getAvailableGroups } from "./api/APIUtil";
 import dayjs from 'dayjs';
 const {
   useBreakpoint
@@ -100,6 +100,7 @@ const CmtApp = _ref => {
   // Cache flags to avoid repeat backend calls when re-entering tabs
   const [hasLoadedMembers, setHasLoadedMembers] = useState(false);
   const [hasLoadedCalendar, setHasLoadedCalendar] = useState(false);
+  const [uniqueGroups, setUniqueGroups] = useState([]);
 
   // Reset caches when tenant changes
   useEffect(() => {
@@ -123,7 +124,7 @@ const CmtApp = _ref => {
         try {
           const fetchedData = await getMembers(entityId);
           const groupingData = fetchedData.map(prev => _objectSpread(_objectSpread({}, prev), {}, {
-            groupId: prev.groupId || "group_1"
+            groupId: [prev.groupId] || ["undefined"]
           }));
           setData(groupingData);
         } catch (error) {
@@ -132,7 +133,7 @@ const CmtApp = _ref => {
         try {
           const fetchedResources = await getResources(entityId);
           const groupingData = fetchedResources.map(prev => _objectSpread(_objectSpread({}, prev), {}, {
-            groupId: prev.groupId || "group_1"
+            groupId: [prev.groupId] || ["undefined"]
           }));
           setResourceData1(groupingData);
         } catch (error) {
@@ -140,6 +141,13 @@ const CmtApp = _ref => {
         } finally {
           setHasLoadedMembers(true);
           setIsLoading(false);
+        }
+        try {
+          const res = await getAvailableGroups(entityId);
+          const groups = res.map(group => group.groupName);
+          setUniqueGroups(groups);
+        } catch (error) {
+          console.log("Error fetching available groups:", error);
         }
       };
       fetchingData();
@@ -195,12 +203,6 @@ const CmtApp = _ref => {
     var _addr$city;
     return addr === null || addr === void 0 || (_addr$city = addr.city) === null || _addr$city === void 0 ? void 0 : _addr$city.trim();
   }).filter(Boolean))));
-
-  // Unique groupId list for dropdown
-  const uniqueGroups = Array.from(new Set(data.map(item => {
-    var _item$groupId$;
-    return item === null || item === void 0 || (_item$groupId$ = item.groupId[0]) === null || _item$groupId$ === void 0 ? void 0 : _item$groupId$.trim();
-  }).filter(Boolean)));
 
   // Legend labels mirror labels by default; customize here if needed
   const legendLabels = uniqueCities.reduce((acc, city) => {
@@ -268,7 +270,7 @@ const CmtApp = _ref => {
       }],
       comments: [],
       status: status,
-      groupId: groupId,
+      groupId: [groupId],
       subscriptions: []
     };
     const addNewMember = async () => {
@@ -306,36 +308,80 @@ const CmtApp = _ref => {
     };
     addNewMember();
   };
+
+  // Helper function to apply all active filters together
+  const applyAllFilters = function (dataToFilter) {
+    let filters = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    const {
+      status = statusSelection,
+      group = groupSelection,
+      search = searchText,
+      isResource = false
+    } = filters;
+    return dataToFilter.filter(item => {
+      // Status filter
+      const statusMatch = status === "All" ? true : Array.isArray(item.address) && item.address.some(addr => addr.city === status);
+
+      // Group filter - handle both simple array and nested array cases
+      let groupMatch = group === "All" ? true : false;
+      if (group !== "All" && item.groupId) {
+        if (Array.isArray(item.groupId)) {
+          // Check if it's a nested array (e.g., [["group1", "group2"]])
+          if (item.groupId.length > 0 && Array.isArray(item.groupId[0])) {
+            // Flatten and check
+            groupMatch = item.groupId[0].includes(group);
+          } else {
+            // Simple array (e.g., ["group1", "group2"])
+            groupMatch = item.groupId.includes(group);
+          }
+        }
+      }
+
+      // Search filter
+      const q = search.toLowerCase();
+      const searchMatch = search === "" ? true : (isResource ? (item.resourceName || '').toLowerCase().includes(q) : (item.customerName || '').toLowerCase().includes(q)) || (item.phoneNumber || '').includes(search);
+      return statusMatch && groupMatch && searchMatch;
+    });
+  };
   const handleStatusSelection = value => {
     setStatusSelection(value);
-    setShowDashboard(true);
-    if (value === "All") {
-      setDuplicateData(data);
-      setShowDashboard(false);
-    } else {
-      const filteredRecords = data.filter(item => Array.isArray(item.address) && item.address.some(addr => addr.city === value));
-      setDuplicateData(filteredRecords);
-    }
+    setShowDashboard(value !== "All");
+    const filtered = applyAllFilters(data, {
+      status: value,
+      group: groupSelection,
+      search: searchText,
+      isResource: false
+    });
+    setDuplicateData(filtered);
   };
   const handleGroupSelection = value => {
     setGroupSelection(value);
-    if (value === "All") {
-      setDuplicateData(data);
-    } else {
-      const filteredRecords = data.filter(item => item.groupId === value);
-      setDuplicateData(filteredRecords);
-    }
+    const filtered = applyAllFilters(data, {
+      status: statusSelection,
+      group: value,
+      search: searchText,
+      isResource: false
+    });
+    setDuplicateData(filtered);
   };
   const handleSearchText = value => {
     setSearchText(value);
     if (membersPage) {
-      const q = value.toLowerCase();
-      const filterData = data.filter(prev => (prev.customerName || '').toLowerCase().includes(q) || (prev.phoneNumber || '').includes(value));
-      setDuplicateData(filterData);
+      const filtered = applyAllFilters(data, {
+        status: statusSelection,
+        group: groupSelection,
+        search: value,
+        isResource: false
+      });
+      setDuplicateData(filtered);
     } else {
-      const q = value.toLowerCase();
-      const filteredResourceData = resourceData1.filter(prev => (prev.resourceName || '').toLowerCase().includes(q) || (prev.phoneNumber || '').includes(value));
-      setResourceData(filteredResourceData);
+      const filtered = applyAllFilters(resourceData1, {
+        status: statusSelection,
+        group: groupSelection,
+        search: value,
+        isResource: true
+      });
+      setResourceData(filtered);
     }
   };
   const dropDownList = /*#__PURE__*/React.createElement("select", {

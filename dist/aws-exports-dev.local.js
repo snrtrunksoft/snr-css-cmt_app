@@ -58,6 +58,11 @@ const awsExports = {
         endpoint: "https://3xn3udyc7b.execute-api.us-east-1.amazonaws.com/dev/",
         region: "us-east-1",
         authorizationType: "AMAZON_COGNITO_USER_POOLS"
+      },
+      AvailableGroupsAPI: {
+        endpoint: "https://kn3lzbft9a.execute-api.us-east-1.amazonaws.com/dev/",
+        region: "us-east-1",
+        authorizationType: "AMAZON_COGNITO_USER_POOLS"
       }
     }
   }
