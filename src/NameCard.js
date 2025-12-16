@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar, Tag } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
@@ -47,13 +47,27 @@ const NameCard = ({
     const [ form ] = Form.useForm();
     const screens = useBreakpoint();
 
+    // Helper to safely extract groupId from any nested structure
+    const getGroupIdValue = () => {
+      if (Array.isArray(groupId)) {
+        if (groupId.length === 0) return "";
+        // Handle nested array case: [["group1", "group2"]]
+        if (Array.isArray(groupId[0])) {
+          return groupId[0][0] || "";
+        }
+        // Simple array case: ["group1", "group2"]
+        return groupId[0] || "";
+      }
+      return groupId || "";
+    };
+
     const [defaultValues] = useState({
         customerId: customerId || "",
         customerName: customerName || "",
         phoneNumber: phoneNumber || "",
         email: email || "",
         status: status || "",
-        groupId: groupId || "",
+        groupId: getGroupIdValue(),
         address: {
             houseNo: address?.[0]?.houseNo || "",
             street1: address?.[0]?.street1 || "",
@@ -111,7 +125,7 @@ const NameCard = ({
             : { resourceName: values.customerName }),
             phoneNumber: values.phoneNumber,
             status: values.status,
-            groupId: values.groupId,
+            groupId: Array.isArray(values.groupId) ? values.groupId : (values.groupId ? [values.groupId] : []),
             ...(isMember && values.subscriptionPlanId && { subscriptionPlanId: values.subscriptionPlanId }),
             address: [
             {
@@ -181,7 +195,7 @@ const NameCard = ({
                     : { resourceName: values.customerName }),
                 phoneNumber: values.phoneNumber,
                 status: values.status,
-                groupId: values.groupId,
+                groupId: Array.isArray(values.groupId) ? values.groupId : (values.groupId ? [values.groupId] : []),
                 address: [
                     {
                     ...customer.address?.[0],
@@ -233,7 +247,7 @@ const NameCard = ({
                 "address" : address,
                 "email" : email,
                 "subscriptions" : subscriptions,
-                "groupId" : groupId,
+                "groupId" : [Array.isArray(groupId) ? (groupId.length > 0 ? groupId[0] : "") : (groupId || "")],
                 "phoneNumber" : phoneNumber,
                 "comments" : commentBody
             }
@@ -383,7 +397,7 @@ const NameCard = ({
             "address": address,
             "email": email,
             "subscriptions": subscriptions,
-            "groupId": groupId,
+            "groupId": [Array.isArray(groupId) ? (groupId.length > 0 ? groupId[0] : "") : (groupId || "")],
             "phoneNumber": phoneNumber,
             "comments": updatedComments
         }
@@ -457,14 +471,14 @@ const NameCard = ({
                     }}>Name : { customerName }</h3>
                     <Badge 
                         count={
-                          (selectedGroup === groupId && groupMessages?.[groupId]?.hasUnread) 
-                            ? groupMessages[groupId].messages?.length 
+                          (selectedGroup === (Array.isArray(groupId) ? groupId[0] : groupId) && groupMessages?.[Array.isArray(groupId) ? groupId[0] : groupId]?.hasUnread) 
+                            ? groupMessages[Array.isArray(groupId) ? groupId[0] : groupId]?.messages?.length 
                             : 0
                         }
                         overflowCount={99}
                         showZero={false}
                         style={{ 
-                          backgroundColor: (selectedGroup === groupId && groupMessages?.[groupId]?.hasUnread) ? '#ff4d4f' : 'transparent'
+                          backgroundColor: (selectedGroup === (Array.isArray(groupId) ? groupId[0] : groupId) && groupMessages?.[Array.isArray(groupId) ? groupId[0] : groupId]?.hasUnread) ? '#ff4d4f' : 'transparent'
                         }}
                         offset={[ -15, -5 ]}>
                         <div style={{width:'30px', height:'15px', backgroundColor:`${color}`,}}></div>
@@ -507,9 +521,10 @@ const NameCard = ({
             onClose={() => {
                 setNameCardDrawer(false);
                 setNewComment("");
+                const currentGroupKey = Array.isArray(groupId) ? groupId[0] : groupId;
                 setGroupMessages(prev => ({
                 ...prev,
-                [groupId]: { ...prev[groupId], hasUnread: false }
+                [currentGroupKey]: { ...prev[currentGroupKey], hasUnread: false }
                 }));
             }}
             bodyStyle={{ background: "#f5f7fa", padding: 0 }}
@@ -646,7 +661,7 @@ const NameCard = ({
                     </Col>
 
                     <Col span={12}>
-                    <Form.Item name="customerName" label="Customer Name">
+                    <Form.Item name="groupId" label="Group ID">
                         <Input />
                     </Form.Item>
                     </Col>
@@ -677,8 +692,20 @@ const NameCard = ({
                     </Col>
 
                     <Col span={12}>
-                    <Form.Item name="groupId" label="Group ID">
-                        <Input />
+                    <Form.Item
+                        name="groupId"
+                        label="Group Name"
+                        // rules={[
+                        //     { required: true, message: "Please add at least one group name" },
+                        // ]}
+                        >
+                        <Select
+                            mode="tags"
+                            placeholder="Add or select group names"
+                            style={{ fontSize: "14px" }}
+                            dropdownStyle={{ fontSize: "14px" }}
+                            tokenSeparators={[","]}
+                        />
                     </Form.Item>
                     </Col>
 
@@ -755,25 +782,28 @@ const NameCard = ({
 
             {/* ================= GROUP MESSAGES ================= */}
             <Card
-                title={`Group Messages (${groupId})`}
+                title={`Group Messages (${Array.isArray(groupId) ? groupId[0] : groupId})`}
                 style={{ margin: 16, borderRadius: 8 }}
             >
-                {groupMessages?.[groupId]?.messages?.length ? (
-                groupMessages[groupId].messages.map((msg, idx) => (
-                    <Card
-                    key={idx}
-                    size="small"
-                    style={{ marginBottom: 8, background: "#f0f8ff" }}
-                    >
-                    <Typography.Text strong>{groupId}</Typography.Text>
-                    <div>{msg}</div>
-                    </Card>
-                ))
-                ) : (
-                <Typography.Text type="secondary">
-                    No group messages yet
-                </Typography.Text>
-                )}
+                {(() => {
+                    const currentGroupKey = Array.isArray(groupId) ? groupId[0] : groupId;
+                    return groupMessages?.[currentGroupKey]?.messages?.length ? (
+                    groupMessages[currentGroupKey].messages.map((msg, idx) => (
+                        <Card
+                        key={idx}
+                        size="small"
+                        style={{ marginBottom: 8, background: "#f0f8ff" }}
+                        >
+                        <Typography.Text strong>{currentGroupKey}</Typography.Text>
+                        <div>{msg}</div>
+                        </Card>
+                    ))
+                    ) : (
+                    <Typography.Text type="secondary">
+                        No group messages yet
+                    </Typography.Text>
+                    );
+                })()}
             </Card>
 
             {/* ================= COMMENTS ================= */}

@@ -58,7 +58,7 @@ const ResourcePage = _ref => {
         state: state || ""
       }],
       status: status,
-      groupId: groupId,
+      groupId: groupId ? [groupId] : ["undefined"],
       comments: []
     };
     const addNewResource = async () => {

@@ -10,7 +10,7 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useEffect, useState } from "react";
 import "./NameCard.css";
-import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar } from "antd";
+import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar, Tag } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
@@ -22,7 +22,7 @@ const {
   Option
 } = Select;
 const NameCard = _ref => {
-  var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7, _address$8, _groupMessages$groupI, _groupMessages$groupI2, _groupMessages$groupI3, _address$9, _address$0, _address$1, _address$10, _groupMessages$groupI4;
+  var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7, _address$8, _groupMessages, _groupMessages2, _groupMessages3, _address$9, _address$0, _address$1, _address$10;
   let {
     membersPage,
     data,
@@ -65,13 +65,27 @@ const NameCard = _ref => {
   } = Grid;
   const [form] = Form.useForm();
   const screens = useBreakpoint();
+
+  // Helper to safely extract groupId from any nested structure
+  const getGroupIdValue = () => {
+    if (Array.isArray(groupId)) {
+      if (groupId.length === 0) return "";
+      // Handle nested array case: [["group1", "group2"]]
+      if (Array.isArray(groupId[0])) {
+        return groupId[0][0] || "";
+      }
+      // Simple array case: ["group1", "group2"]
+      return groupId[0] || "";
+    }
+    return groupId || "";
+  };
   const [defaultValues] = useState({
     customerId: customerId || "",
     customerName: customerName || "",
     phoneNumber: phoneNumber || "",
     email: email || "",
     status: status || "",
-    groupId: groupId || "",
+    groupId: getGroupIdValue(),
     address: {
       houseNo: (address === null || address === void 0 || (_address$ = address[0]) === null || _address$ === void 0 ? void 0 : _address$.houseNo) || "",
       street1: (address === null || address === void 0 || (_address$2 = address[0]) === null || _address$2 === void 0 ? void 0 : _address$2.street1) || "",
@@ -127,7 +141,7 @@ const NameCard = _ref => {
       }), {}, {
         phoneNumber: values.phoneNumber,
         status: values.status,
-        groupId: values.groupId
+        groupId: Array.isArray(values.groupId) ? values.groupId : values.groupId ? [values.groupId] : []
       }, isMember && values.subscriptionPlanId && {
         subscriptionPlanId: values.subscriptionPlanId
       }), {}, {
@@ -198,7 +212,7 @@ const NameCard = _ref => {
         }), {}, {
           phoneNumber: values.phoneNumber,
           status: values.status,
-          groupId: values.groupId,
+          groupId: Array.isArray(values.groupId) ? values.groupId : values.groupId ? [values.groupId] : [],
           address: [_objectSpread(_objectSpread({}, (_customer$address = customer.address) === null || _customer$address === void 0 ? void 0 : _customer$address[0]), {}, {
             city: values.address.city,
             state: values.address.state,
@@ -246,7 +260,7 @@ const NameCard = _ref => {
         "address": address,
         "email": email,
         "subscriptions": subscriptions,
-        "groupId": groupId,
+        "groupId": [Array.isArray(groupId) ? groupId.length > 0 ? groupId[0] : "" : groupId || ""],
         "phoneNumber": phoneNumber,
         "comments": commentBody
       });
@@ -410,7 +424,7 @@ const NameCard = _ref => {
       "address": address,
       "email": email,
       "subscriptions": subscriptions,
-      "groupId": groupId,
+      "groupId": [Array.isArray(groupId) ? groupId.length > 0 ? groupId[0] : "" : groupId || ""],
       "phoneNumber": phoneNumber,
       "comments": updatedComments
     });
@@ -477,11 +491,11 @@ const NameCard = _ref => {
       whiteSpace: 'nowrap'
     }
   }, "Name : ", customerName), /*#__PURE__*/React.createElement(Badge, {
-    count: selectedGroup === groupId && groupMessages !== null && groupMessages !== void 0 && (_groupMessages$groupI = groupMessages[groupId]) !== null && _groupMessages$groupI !== void 0 && _groupMessages$groupI.hasUnread ? (_groupMessages$groupI2 = groupMessages[groupId].messages) === null || _groupMessages$groupI2 === void 0 ? void 0 : _groupMessages$groupI2.length : 0,
+    count: selectedGroup === (Array.isArray(groupId) ? groupId[0] : groupId) && groupMessages !== null && groupMessages !== void 0 && (_groupMessages = groupMessages[Array.isArray(groupId) ? groupId[0] : groupId]) !== null && _groupMessages !== void 0 && _groupMessages.hasUnread ? (_groupMessages2 = groupMessages[Array.isArray(groupId) ? groupId[0] : groupId]) === null || _groupMessages2 === void 0 || (_groupMessages2 = _groupMessages2.messages) === null || _groupMessages2 === void 0 ? void 0 : _groupMessages2.length : 0,
     overflowCount: 99,
     showZero: false,
     style: {
-      backgroundColor: selectedGroup === groupId && groupMessages !== null && groupMessages !== void 0 && (_groupMessages$groupI3 = groupMessages[groupId]) !== null && _groupMessages$groupI3 !== void 0 && _groupMessages$groupI3.hasUnread ? '#ff4d4f' : 'transparent'
+      backgroundColor: selectedGroup === (Array.isArray(groupId) ? groupId[0] : groupId) && groupMessages !== null && groupMessages !== void 0 && (_groupMessages3 = groupMessages[Array.isArray(groupId) ? groupId[0] : groupId]) !== null && _groupMessages3 !== void 0 && _groupMessages3.hasUnread ? '#ff4d4f' : 'transparent'
     },
     offset: [-15, -5]
   }, /*#__PURE__*/React.createElement("div", {
@@ -518,8 +532,9 @@ const NameCard = _ref => {
     onClose: () => {
       setNameCardDrawer(false);
       setNewComment("");
+      const currentGroupKey = Array.isArray(groupId) ? groupId[0] : groupId;
       setGroupMessages(prev => _objectSpread(_objectSpread({}, prev), {}, {
-        [groupId]: _objectSpread(_objectSpread({}, prev[groupId]), {}, {
+        [currentGroupKey]: _objectSpread(_objectSpread({}, prev[currentGroupKey]), {}, {
           hasUnread: false
         })
       }));
@@ -638,8 +653,8 @@ const NameCard = _ref => {
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
-    name: "customerName",
-    label: "Customer Name"
+    name: "groupId",
+    label: "Group ID"
   }, /*#__PURE__*/React.createElement(Input, null))), membersPage && /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
@@ -671,8 +686,21 @@ const NameCard = _ref => {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "groupId",
-    label: "Group ID"
-  }, /*#__PURE__*/React.createElement(Input, null))), membersPage && /*#__PURE__*/React.createElement(Col, {
+    label: "Group Name"
+    // rules={[
+    //     { required: true, message: "Please add at least one group name" },
+    // ]}
+  }, /*#__PURE__*/React.createElement(Select, {
+    mode: "tags",
+    placeholder: "Add or select group names",
+    style: {
+      fontSize: "14px"
+    },
+    dropdownStyle: {
+      fontSize: "14px"
+    },
+    tokenSeparators: [","]
+  }))), membersPage && /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "subscriptionPlanId",
@@ -729,23 +757,26 @@ const NameCard = _ref => {
     entityId: entityId,
     color: color
   })), /*#__PURE__*/React.createElement(Card, {
-    title: "Group Messages (".concat(groupId, ")"),
+    title: "Group Messages (".concat(Array.isArray(groupId) ? groupId[0] : groupId, ")"),
     style: {
       margin: 16,
       borderRadius: 8
     }
-  }, groupMessages !== null && groupMessages !== void 0 && (_groupMessages$groupI4 = groupMessages[groupId]) !== null && _groupMessages$groupI4 !== void 0 && (_groupMessages$groupI4 = _groupMessages$groupI4.messages) !== null && _groupMessages$groupI4 !== void 0 && _groupMessages$groupI4.length ? groupMessages[groupId].messages.map((msg, idx) => /*#__PURE__*/React.createElement(Card, {
-    key: idx,
-    size: "small",
-    style: {
-      marginBottom: 8,
-      background: "#f0f8ff"
-    }
-  }, /*#__PURE__*/React.createElement(Typography.Text, {
-    strong: true
-  }, groupId), /*#__PURE__*/React.createElement("div", null, msg))) : /*#__PURE__*/React.createElement(Typography.Text, {
-    type: "secondary"
-  }, "No group messages yet")), /*#__PURE__*/React.createElement(Card, {
+  }, (_groupMessages$curren => {
+    const currentGroupKey = Array.isArray(groupId) ? groupId[0] : groupId;
+    return groupMessages !== null && groupMessages !== void 0 && (_groupMessages$curren = groupMessages[currentGroupKey]) !== null && _groupMessages$curren !== void 0 && (_groupMessages$curren = _groupMessages$curren.messages) !== null && _groupMessages$curren !== void 0 && _groupMessages$curren.length ? groupMessages[currentGroupKey].messages.map((msg, idx) => /*#__PURE__*/React.createElement(Card, {
+      key: idx,
+      size: "small",
+      style: {
+        marginBottom: 8,
+        background: "#f0f8ff"
+      }
+    }, /*#__PURE__*/React.createElement(Typography.Text, {
+      strong: true
+    }, currentGroupKey), /*#__PURE__*/React.createElement("div", null, msg))) : /*#__PURE__*/React.createElement(Typography.Text, {
+      type: "secondary"
+    }, "No group messages yet");
+  })()), /*#__PURE__*/React.createElement(Card, {
     title: "Comments",
     style: {
       margin: 16,

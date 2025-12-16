@@ -47,7 +47,7 @@ const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityI
             state: state || ""
           }],
           status: status,
-          groupId: groupId,
+          groupId: groupId ? [groupId] : ["undefined"],
           comments: []
         };
       

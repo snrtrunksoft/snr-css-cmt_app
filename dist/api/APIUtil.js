@@ -843,3 +843,22 @@ export async function getDashboardMetrics(entityId, metric) {
   } = await op.response;
   return body.json();
 }
+
+// Available Groups of the members
+export async function getAvailableGroups(entityId) {
+  console.log('InvAPIUtil entityId:' + entityId);
+  const op = get({
+    apiName: 'AvailableGroupsAPI',
+    path: '/memberGroups/',
+    options: {
+      headers: {
+        entityid: entityId
+      }
+    },
+    authMode: 'userPool'
+  });
+  const {
+    body
+  } = await op.response;
+  return body.json();
+}
