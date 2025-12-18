@@ -55,6 +55,11 @@ const awsExports = {
           authorizationType: "AMAZON_COGNITO_USER_POOLS"
         },
         SubscriptionsAPI: {
+          endpoint: "https://pky0yuomvc.execute-api.us-east-1.amazonaws.com/dev/",
+          region: "us-east-1",
+          authorizationType: "AMAZON_COGNITO_USER_POOLS"
+        },
+        SubscriptionPlansAPI: {
           endpoint: "https://3xn3udyc7b.execute-api.us-east-1.amazonaws.com/dev/",
           region: "us-east-1",
           authorizationType: "AMAZON_COGNITO_USER_POOLS"

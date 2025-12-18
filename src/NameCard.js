@@ -31,7 +31,8 @@ const NameCard = ({
     setCommentBox,
     selectedGroup,
     groupMessages,
-    setGroupMessages
+    setGroupMessages,
+    uniqueGroups = []
     }) => {
     const [ isHovered, setIsHovered ] = useState(false);
     const [ newComment, setNewComment ] = useState("");
@@ -42,23 +43,29 @@ const NameCard = ({
     const [ loadingPlans, setLoadingPlans ] = useState(false);
     const [ isUpdating, setIsUpdating ] = useState(false);
     const [ isAddingComment, setIsAddingComment ] = useState(false);
-    const [ isDeletingComment, setIsDeletingComment ] = useState(false);
+    // Track which comment index is currently being deleted (null = none)
+    const [ deletingCommentIndex, setDeletingCommentIndex ] = useState(null);
+
+    // Country/State data for address edit (copied behavior from AddNewUser)
+    const [countries, setCountries] = useState([]);
+    const [loadingCountries, setLoadingCountries] = useState(false);
+    const [states, setStates] = useState([]);
+    const [loadingStates, setLoadingStates] = useState(false);
+    const [selectedCountry, setSelectedCountry] = useState(null);
+    const [countryCode, setCountryCode] = useState("");
+
     const { useBreakpoint } = Grid;
     const [ form ] = Form.useForm();
     const screens = useBreakpoint();
 
-    // Helper to safely extract groupId from any nested structure
-    const getGroupIdValue = () => {
+    // Helper to ensure groupId is an array of strings
+    const getGroupArrayValue = () => {
       if (Array.isArray(groupId)) {
-        if (groupId.length === 0) return "";
-        // Handle nested array case: [["group1", "group2"]]
-        if (Array.isArray(groupId[0])) {
-          return groupId[0][0] || "";
-        }
-        // Simple array case: ["group1", "group2"]
-        return groupId[0] || "";
+        if (groupId.length === 0) return [];
+        if (Array.isArray(groupId[0])) return groupId[0];
+        return groupId;
       }
-      return groupId || "";
+      return groupId ? [groupId] : [];
     };
 
     const [defaultValues] = useState({
@@ -67,7 +74,7 @@ const NameCard = ({
         phoneNumber: phoneNumber || "",
         email: email || "",
         status: status || "",
-        groupId: getGroupIdValue(),
+        groupId: getGroupArrayValue(),
         address: {
             houseNo: address?.[0]?.houseNo || "",
             street1: address?.[0]?.street1 || "",
@@ -100,7 +107,102 @@ const NameCard = ({
             }
             fetchSubscriptionPlans();
         }
+
+        // Fetch country/state data when drawer opens (also used for phone country code)
+        if (nameCardDrawer) {
+            fetchCountries();
+        }
     }, [nameCardDrawer, membersPage]);
+
+    // Fetch countries from restcountries API (copied logic from AddNewUser)
+    const fetchCountries = async () => {
+      if (countries.length > 0) return; // already loaded
+      setLoadingCountries(true);
+      try {
+        const response = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd,region,states");
+        const data = await response.json();
+        const sortedCountries = data
+          .map((country) => ({
+            name: country.name.common,
+            code: country.cca2,
+            dialCode: country.idd?.root + (country.idd?.suffixes?.[0] || ''),
+            region: country.region,
+            states: country.states || []
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        setCountries(sortedCountries);
+        console.log("Countries loaded:", sortedCountries);
+
+        // If this record already had a country selected, set it
+        const initCountry = defaultValues.address?.country;
+        if (initCountry) {
+          const found = sortedCountries.find(c => c.name === initCountry);
+          if (found) {
+            setSelectedCountry(found);
+            setCountryCode(found.dialCode || "");
+            fetchStates(found.name);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching countries:", error);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+
+    const fetchStates = async (countryName) => {
+      setLoadingStates(true);
+      try {
+        const response = await fetch(`https://countriesnow.space/api/v0.1/countries/states`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: countryName })
+        });
+        const data = await response.json();
+        console.log("States response for", countryName, ":", data);
+        if (data.data && data.data.states && Array.isArray(data.data.states)) {
+          const statesList = data.data.states
+            .map((state) => ({ name: state.name, code: state.state_code || state.name }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+          console.log("Parsed states:", statesList);
+          setStates(statesList);
+        } else {
+          console.log("No states found for", countryName);
+          setStates([]);
+        }
+      } catch (error) {
+        console.error("Error fetching states:", error);
+        setStates([]);
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+
+    const handleCountryChange = (value) => {
+      const selected = countries.find((c) => c.name === value);
+      if (selected) {
+        setSelectedCountry(selected);
+        setCountryCode(selected.dialCode || "");
+        fetchStates(selected.name);
+        // Reset nested state field
+        form.setFieldsValue({ address: { state: undefined } });
+      }
+    };
+
+    useEffect(() => {
+      // If countries are already loaded and drawer just opened, ensure state is synced
+      if (nameCardDrawer && countries.length > 0) {
+        const initCountry = defaultValues.address?.country;
+        if (initCountry) {
+          const found = countries.find(c => c.name === initCountry);
+          if (found) {
+            setSelectedCountry(found);
+            setCountryCode(found.dialCode || "");
+            fetchStates(found.name);
+          }
+        }
+      }
+    }, [nameCardDrawer, countries]);
 
     const getDrawerWidth = () => {
         if (screens.xl) return 600;
@@ -247,7 +349,7 @@ const NameCard = ({
                 "address" : address,
                 "email" : email,
                 "subscriptions" : subscriptions,
-                "groupId" : [Array.isArray(groupId) ? (groupId.length > 0 ? groupId[0] : "") : (groupId || "")],
+                "groupId" : Array.isArray(groupId) ? (groupId.length > 0 ? groupId : "") : (groupId || ""),
                 "phoneNumber" : phoneNumber,
                 "comments" : commentBody
             }
@@ -397,7 +499,7 @@ const NameCard = ({
             "address": address,
             "email": email,
             "subscriptions": subscriptions,
-            "groupId": [Array.isArray(groupId) ? (groupId.length > 0 ? groupId[0] : "") : (groupId || "")],
+            "groupId": Array.isArray(groupId) ? (groupId.length > 0 ? groupId : "") : (groupId || ""),
             "phoneNumber": phoneNumber,
             "comments": updatedComments
         }
@@ -408,7 +510,8 @@ const NameCard = ({
         });
 
         const deleteCommentAPI = async () => {
-            setIsDeletingComment(true);
+            // Indicate which comment index is being deleted so only that button shows loading
+            setDeletingCommentIndex(commentId);
             try {
                 let recordToUpload = { ...updatedRecord };
                 if (!membersPage) {
@@ -422,7 +525,11 @@ const NameCard = ({
                     await updateResource(entityId, customerId, recordToUpload);
                 }
 
+                // Show both quick message and StatusModal for consistent UX
                 message.success("Comment deleted successfully");
+                setStatusModal({ visible: true, type: "success", title: "Comment Deleted", message: "Comment has been deleted successfully." });
+                setTimeout(() => setStatusModal({ visible: false, type: "", title: "", message: "" }), 1500);
+
                 // Update local state
                 if (membersPage) {
                     setData(prev => 
@@ -444,8 +551,10 @@ const NameCard = ({
             } catch (error) {
                 console.error("Failed to delete comment:", error);
                 message.error("Failed to delete comment");
+                setStatusModal({ visible: true, type: "error", title: "Delete Error", message: "Failed to delete comment. Please try again." });
+                setTimeout(() => setStatusModal({ visible: false, type: "", title: "", message: "" }), 2000);
             } finally {
-                setIsDeletingComment(false);
+                setDeletingCommentIndex(null);
             }
         }
 
@@ -661,27 +770,41 @@ const NameCard = ({
                     </Col>
 
                     <Col span={12}>
-                    <Form.Item name="groupId" label="Group ID">
-                        <Input />
+                    <Form.Item name="customerName" label="Name" rules={[
+                        { required: true, message: 'Name is required' },
+                        { pattern: /^[a-zA-Z][a-zA-Z0-9._]*$/, message: 'Name must start with a letter and can contain letters, numbers, underscores, and dots' },
+                        { min: 7, message: 'Name should have at least 7 characters' }
+                    ]}>
+                        <Input placeholder="Enter name (start with letter, min 7 chars)" />
                     </Form.Item>
                     </Col>
 
                     {membersPage && (
                     <Col span={12}>
-                        <Form.Item name="email" label="Email">
+                        <Form.Item name="email" label="Email" rules={[
+                          { required: true, message: 'Email is required' },
+                          { type: 'email', message: 'Please enter a valid email address' }
+                        ]}>
                         <Input />
                         </Form.Item>
                     </Col>
                     )}
 
                     <Col span={12}>
-                    <Form.Item name="phoneNumber" label="Phone">
-                        <Input maxLength={10} />
+                    <Form.Item name="phoneNumber" label="Phone" rules={[
+                      { required: true, message: 'Phone number is required' },
+                      { pattern: /^[0-9]{10}$/, message: 'Phone number should be exactly 10 digits' }
+                    ]}>
+                        <Input
+                          maxLength={10}
+                          placeholder={countryCode ? `${countryCode} - 10-digit number` : "Select country first"}
+                          prefix={countryCode ? countryCode : undefined}
+                        />
                     </Form.Item>
                     </Col>
 
                     <Col span={12}>
-                    <Form.Item name="status" label="Status">
+                    <Form.Item name="status" label="Status" rules={[{ required: true, message: 'Status is required' }]}>
                         <Select placeholder="Select status">
                         <Option value="ACTIVE">ACTIVE</Option>
                         <Option value="IN_PROGRESS">IN_PROGRESS</Option>
@@ -692,19 +815,13 @@ const NameCard = ({
                     </Col>
 
                     <Col span={12}>
-                    <Form.Item
-                        name="groupId"
-                        label="Group Name"
-                        // rules={[
-                        //     { required: true, message: "Please add at least one group name" },
-                        // ]}
-                        >
+                    <Form.Item name="groupId" label="Group Name">
                         <Select
-                            mode="tags"
-                            placeholder="Add or select group names"
+                            mode="multiple"
+                            placeholder="Select one or more groups"
                             style={{ fontSize: "14px" }}
-                            dropdownStyle={{ fontSize: "14px" }}
-                            tokenSeparators={[","]}
+                            options={(uniqueGroups || []).map(g => ({ label: g, value: g }))}
+                            allowClear
                         />
                     </Form.Item>
                     </Col>
@@ -726,25 +843,49 @@ const NameCard = ({
                     )}
 
                     <Col span={12}>
-                    <Form.Item name={["address", "city"]} label="City">
+                    <Form.Item name={["address", "city"]} label="City" rules={[
+                      { required: true, message: 'City is required' },
+                      { pattern: /^[a-zA-Z\s]+$/, message: 'City should contain only letters' },
+                      { min: 2, message: 'City name should have at least 2 characters' }
+                    ]}>
                         <Input />
                     </Form.Item>
                     </Col>
 
                     <Col span={12}>
-                    <Form.Item name={["address", "state"]} label="State">
-                        <Input />
+                    <Form.Item name={["address", "state"]} label="State/Province" rules={[{ required: true, message: 'State is required' }]}>
+                        <Select
+                          placeholder={!selectedCountry ? "Select a country first" : "Select a state/province"}
+                          allowClear
+                          disabled={!selectedCountry || states.length === 0}
+                          loading={loadingStates}
+                          showSearch
+                          filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                          options={states.map((state) => ({ label: state.name, value: state.name }))}
+                          onChange={() => form.validateFields([['address','state']])}
+                        />
                     </Form.Item>
                     </Col>
 
                     <Col span={12}>
-                    <Form.Item name={["address", "country"]} label="Country">
-                        <Input />
+                    <Form.Item name={["address", "country"]} label="Country" rules={[{ required: true, message: 'Country is required' }]}>
+                        <Select
+                          placeholder="Select a country"
+                          onChange={(value) => handleCountryChange(value)}
+                          allowClear
+                          showSearch
+                          loading={loadingCountries}
+                          filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                          options={countries.map((country) => ({ label: country.name, value: country.name }))}
+                        />
                     </Form.Item>
                     </Col>
 
                     <Col span={24}>
-                    <Form.Item name={["address", "street1"]} label="Street">
+                    <Form.Item name={["address", "street1"]} label="Street" rules={[
+                      { required: true, message: 'Street is required' },
+                      { min: 5, message: 'Street should have at least 5 characters' }
+                    ]}>
                         <Input />
                     </Form.Item>
                     </Col>
@@ -827,20 +968,26 @@ const NameCard = ({
                         color: "#888",
                         }}
                     >
-                        {dayjs(comment.date).format("YYYY-MM-DD HH:mm:ss")}
-                        <Popconfirm
-                        title="Delete comment?"
-                        onConfirm={() => handleDeleteComment(index)}
-                        >
-                        <Button
-                            type="text"
-                            danger
-                            size="small"
-                            icon={<DeleteOutlined />}
-                            loading={isDeletingComment}
-                            disabled={isDeletingComment}
-                        />
-                        </Popconfirm>
+                        {/* <div style={{display: 'flex', alignItems: 'center', gap: 8}}> */}
+                          <div>{dayjs(comment.date).format("YYYY-MM-DD HH:mm:ss")}</div>
+                          {deletingCommentIndex === index ? (
+                            <Typography.Text type="secondary" style={{ marginLeft: 8, fontStyle: 'italic' }}>Deleting...</Typography.Text>
+                          ) : (
+                            <Popconfirm
+                              title="Delete comment?"
+                              onConfirm={() => handleDeleteComment(index)}
+                            >
+                              <Button
+                                type="text"
+                                danger
+                                size="small"
+                                icon={<DeleteOutlined />}
+                                loading={deletingCommentIndex === index}
+                                disabled={deletingCommentIndex === index}
+                              />
+                            </Popconfirm>
+                          )}
+                        {/* </div> */}
                     </div>
                     </Card>
                 </Badge.Ribbon>

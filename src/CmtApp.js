@@ -536,6 +536,7 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
                           selectedGroup={selectedGroup}
                           groupMessages={groupMessages}
                           setGroupMessages={setGroupMessages}
+                          uniqueGroups={uniqueGroups}
                         />
                       </Col>
                     )) : <h2>No NameCards Found...</h2>}
@@ -616,6 +617,7 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
               groupMessages={groupMessages}
               setGroupMessages={setGroupMessages}
               selectedGroup={selectedGroup}
+              uniqueGroups={uniqueGroups}
             /> : openCalendarPage ?
               <CalendarPage
                 sampleData={sampleData}

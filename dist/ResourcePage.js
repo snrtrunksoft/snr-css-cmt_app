@@ -25,7 +25,8 @@ const ResourcePage = _ref => {
     setCommentBox,
     groupMessages,
     setGroupMessages,
-    selectedGroup
+    selectedGroup,
+    uniqueGroups
   } = _ref;
   const [isLoading, setIsLoading] = useState(true);
   const [addNewResourceModal, setAddNewResourceModal] = useState(false);
@@ -157,7 +158,8 @@ const ResourcePage = _ref => {
     setCommentBox: setCommentBox,
     groupMessages: groupMessages,
     setGroupMessages: setGroupMessages,
-    selectedGroup: selectedGroup
+    selectedGroup: selectedGroup,
+    uniqueGroups: uniqueGroups
   }))) : /*#__PURE__*/React.createElement("h2", null, "No NameCards Found..."), /*#__PURE__*/React.createElement(Col, {
     xs: 20,
     md: 12,

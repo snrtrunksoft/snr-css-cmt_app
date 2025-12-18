@@ -43,7 +43,8 @@ const NameCard = _ref => {
     setCommentBox,
     selectedGroup,
     groupMessages,
-    setGroupMessages
+    setGroupMessages,
+    uniqueGroups = []
   } = _ref;
   const [isHovered, setIsHovered] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -59,25 +60,30 @@ const NameCard = _ref => {
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAddingComment, setIsAddingComment] = useState(false);
-  const [isDeletingComment, setIsDeletingComment] = useState(false);
+  // Track which comment index is currently being deleted (null = none)
+  const [deletingCommentIndex, setDeletingCommentIndex] = useState(null);
+
+  // Country/State data for address edit (copied behavior from AddNewUser)
+  const [countries, setCountries] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [states, setStates] = useState([]);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [countryCode, setCountryCode] = useState("");
   const {
     useBreakpoint
   } = Grid;
   const [form] = Form.useForm();
   const screens = useBreakpoint();
 
-  // Helper to safely extract groupId from any nested structure
-  const getGroupIdValue = () => {
+  // Helper to ensure groupId is an array of strings
+  const getGroupArrayValue = () => {
     if (Array.isArray(groupId)) {
-      if (groupId.length === 0) return "";
-      // Handle nested array case: [["group1", "group2"]]
-      if (Array.isArray(groupId[0])) {
-        return groupId[0][0] || "";
-      }
-      // Simple array case: ["group1", "group2"]
-      return groupId[0] || "";
+      if (groupId.length === 0) return [];
+      if (Array.isArray(groupId[0])) return groupId[0];
+      return groupId;
     }
-    return groupId || "";
+    return groupId ? [groupId] : [];
   };
   const [defaultValues] = useState({
     customerId: customerId || "",
@@ -85,7 +91,7 @@ const NameCard = _ref => {
     phoneNumber: phoneNumber || "",
     email: email || "",
     status: status || "",
-    groupId: getGroupIdValue(),
+    groupId: getGroupArrayValue(),
     address: {
       houseNo: (address === null || address === void 0 || (_address$ = address[0]) === null || _address$ === void 0 ? void 0 : _address$.houseNo) || "",
       street1: (address === null || address === void 0 || (_address$2 = address[0]) === null || _address$2 === void 0 ? void 0 : _address$2.street1) || "",
@@ -116,7 +122,111 @@ const NameCard = _ref => {
       };
       fetchSubscriptionPlans();
     }
+
+    // Fetch country/state data when drawer opens (also used for phone country code)
+    if (nameCardDrawer) {
+      fetchCountries();
+    }
   }, [nameCardDrawer, membersPage]);
+
+  // Fetch countries from restcountries API (copied logic from AddNewUser)
+  const fetchCountries = async () => {
+    if (countries.length > 0) return; // already loaded
+    setLoadingCountries(true);
+    try {
+      var _defaultValues$addres;
+      const response = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd,region,states");
+      const data = await response.json();
+      const sortedCountries = data.map(country => {
+        var _country$idd, _country$idd2;
+        return {
+          name: country.name.common,
+          code: country.cca2,
+          dialCode: ((_country$idd = country.idd) === null || _country$idd === void 0 ? void 0 : _country$idd.root) + (((_country$idd2 = country.idd) === null || _country$idd2 === void 0 || (_country$idd2 = _country$idd2.suffixes) === null || _country$idd2 === void 0 ? void 0 : _country$idd2[0]) || ''),
+          region: country.region,
+          states: country.states || []
+        };
+      }).sort((a, b) => a.name.localeCompare(b.name));
+      setCountries(sortedCountries);
+      console.log("Countries loaded:", sortedCountries);
+
+      // If this record already had a country selected, set it
+      const initCountry = (_defaultValues$addres = defaultValues.address) === null || _defaultValues$addres === void 0 ? void 0 : _defaultValues$addres.country;
+      if (initCountry) {
+        const found = sortedCountries.find(c => c.name === initCountry);
+        if (found) {
+          setSelectedCountry(found);
+          setCountryCode(found.dialCode || "");
+          fetchStates(found.name);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching countries:", error);
+    } finally {
+      setLoadingCountries(false);
+    }
+  };
+  const fetchStates = async countryName => {
+    setLoadingStates(true);
+    try {
+      const response = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          country: countryName
+        })
+      });
+      const data = await response.json();
+      console.log("States response for", countryName, ":", data);
+      if (data.data && data.data.states && Array.isArray(data.data.states)) {
+        const statesList = data.data.states.map(state => ({
+          name: state.name,
+          code: state.state_code || state.name
+        })).sort((a, b) => a.name.localeCompare(b.name));
+        console.log("Parsed states:", statesList);
+        setStates(statesList);
+      } else {
+        console.log("No states found for", countryName);
+        setStates([]);
+      }
+    } catch (error) {
+      console.error("Error fetching states:", error);
+      setStates([]);
+    } finally {
+      setLoadingStates(false);
+    }
+  };
+  const handleCountryChange = value => {
+    const selected = countries.find(c => c.name === value);
+    if (selected) {
+      setSelectedCountry(selected);
+      setCountryCode(selected.dialCode || "");
+      fetchStates(selected.name);
+      // Reset nested state field
+      form.setFieldsValue({
+        address: {
+          state: undefined
+        }
+      });
+    }
+  };
+  useEffect(() => {
+    // If countries are already loaded and drawer just opened, ensure state is synced
+    if (nameCardDrawer && countries.length > 0) {
+      var _defaultValues$addres2;
+      const initCountry = (_defaultValues$addres2 = defaultValues.address) === null || _defaultValues$addres2 === void 0 ? void 0 : _defaultValues$addres2.country;
+      if (initCountry) {
+        const found = countries.find(c => c.name === initCountry);
+        if (found) {
+          setSelectedCountry(found);
+          setCountryCode(found.dialCode || "");
+          fetchStates(found.name);
+        }
+      }
+    }
+  }, [nameCardDrawer, countries]);
   const getDrawerWidth = () => {
     if (screens.xl) return 600;
     if (screens.lg) return 550;
@@ -260,7 +370,7 @@ const NameCard = _ref => {
         "address": address,
         "email": email,
         "subscriptions": subscriptions,
-        "groupId": [Array.isArray(groupId) ? groupId.length > 0 ? groupId[0] : "" : groupId || ""],
+        "groupId": Array.isArray(groupId) ? groupId.length > 0 ? groupId : "" : groupId || "",
         "phoneNumber": phoneNumber,
         "comments": commentBody
       });
@@ -424,7 +534,7 @@ const NameCard = _ref => {
       "address": address,
       "email": email,
       "subscriptions": subscriptions,
-      "groupId": [Array.isArray(groupId) ? groupId.length > 0 ? groupId[0] : "" : groupId || ""],
+      "groupId": Array.isArray(groupId) ? groupId.length > 0 ? groupId : "" : groupId || "",
       "phoneNumber": phoneNumber,
       "comments": updatedComments
     });
@@ -433,7 +543,8 @@ const NameCard = _ref => {
       delete sub.id;
     });
     const deleteCommentAPI = async () => {
-      setIsDeletingComment(true);
+      // Indicate which comment index is being deleted so only that button shows loading
+      setDeletingCommentIndex(commentId);
       try {
         let recordToUpload = _objectSpread({}, updatedRecord);
         if (!membersPage) {
@@ -448,7 +559,22 @@ const NameCard = _ref => {
         } else {
           await updateResource(entityId, customerId, recordToUpload);
         }
+
+        // Show both quick message and StatusModal for consistent UX
         message.success("Comment deleted successfully");
+        setStatusModal({
+          visible: true,
+          type: "success",
+          title: "Comment Deleted",
+          message: "Comment has been deleted successfully."
+        });
+        setTimeout(() => setStatusModal({
+          visible: false,
+          type: "",
+          title: "",
+          message: ""
+        }), 1500);
+
         // Update local state
         if (membersPage) {
           setData(prev => prev.map(item => item.id === customerId ? _objectSpread(_objectSpread({}, item), {}, {
@@ -462,8 +588,20 @@ const NameCard = _ref => {
       } catch (error) {
         console.error("Failed to delete comment:", error);
         message.error("Failed to delete comment");
+        setStatusModal({
+          visible: true,
+          type: "error",
+          title: "Delete Error",
+          message: "Failed to delete comment. Please try again."
+        });
+        setTimeout(() => setStatusModal({
+          visible: false,
+          type: "",
+          title: "",
+          message: ""
+        }), 2000);
       } finally {
-        setIsDeletingComment(false);
+        setDeletingCommentIndex(null);
       }
     };
     deleteCommentAPI();
@@ -653,25 +791,57 @@ const NameCard = _ref => {
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
-    name: "groupId",
-    label: "Group ID"
-  }, /*#__PURE__*/React.createElement(Input, null))), membersPage && /*#__PURE__*/React.createElement(Col, {
+    name: "customerName",
+    label: "Name",
+    rules: [{
+      required: true,
+      message: 'Name is required'
+    }, {
+      pattern: /^[a-zA-Z][a-zA-Z0-9._]*$/,
+      message: 'Name must start with a letter and can contain letters, numbers, underscores, and dots'
+    }, {
+      min: 7,
+      message: 'Name should have at least 7 characters'
+    }]
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Enter name (start with letter, min 7 chars)"
+  }))), membersPage && /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "email",
-    label: "Email"
+    label: "Email",
+    rules: [{
+      required: true,
+      message: 'Email is required'
+    }, {
+      type: 'email',
+      message: 'Please enter a valid email address'
+    }]
   }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "phoneNumber",
-    label: "Phone"
+    label: "Phone",
+    rules: [{
+      required: true,
+      message: 'Phone number is required'
+    }, {
+      pattern: /^[0-9]{10}$/,
+      message: 'Phone number should be exactly 10 digits'
+    }]
   }, /*#__PURE__*/React.createElement(Input, {
-    maxLength: 10
+    maxLength: 10,
+    placeholder: countryCode ? "".concat(countryCode, " - 10-digit number") : "Select country first",
+    prefix: countryCode ? countryCode : undefined
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "status",
-    label: "Status"
+    label: "Status",
+    rules: [{
+      required: true,
+      message: 'Status is required'
+    }]
   }, /*#__PURE__*/React.createElement(Select, {
     placeholder: "Select status"
   }, /*#__PURE__*/React.createElement(Option, {
@@ -687,19 +857,17 @@ const NameCard = _ref => {
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "groupId",
     label: "Group Name"
-    // rules={[
-    //     { required: true, message: "Please add at least one group name" },
-    // ]}
   }, /*#__PURE__*/React.createElement(Select, {
-    mode: "tags",
-    placeholder: "Add or select group names",
+    mode: "multiple",
+    placeholder: "Select one or more groups",
     style: {
       fontSize: "14px"
     },
-    dropdownStyle: {
-      fontSize: "14px"
-    },
-    tokenSeparators: [","]
+    options: (uniqueGroups || []).map(g => ({
+      label: g,
+      value: g
+    })),
+    allowClear: true
   }))), membersPage && /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
@@ -716,22 +884,76 @@ const NameCard = _ref => {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: ["address", "city"],
-    label: "City"
+    label: "City",
+    rules: [{
+      required: true,
+      message: 'City is required'
+    }, {
+      pattern: /^[a-zA-Z\s]+$/,
+      message: 'City should contain only letters'
+    }, {
+      min: 2,
+      message: 'City name should have at least 2 characters'
+    }]
   }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: ["address", "state"],
-    label: "State"
-  }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
+    label: "State/Province",
+    rules: [{
+      required: true,
+      message: 'State is required'
+    }]
+  }, /*#__PURE__*/React.createElement(Select, {
+    placeholder: !selectedCountry ? "Select a country first" : "Select a state/province",
+    allowClear: true,
+    disabled: !selectedCountry || states.length === 0,
+    loading: loadingStates,
+    showSearch: true,
+    filterOption: (input, option) => {
+      var _option$label;
+      return ((_option$label = option === null || option === void 0 ? void 0 : option.label) !== null && _option$label !== void 0 ? _option$label : '').toLowerCase().includes(input.toLowerCase());
+    },
+    options: states.map(state => ({
+      label: state.name,
+      value: state.name
+    })),
+    onChange: () => form.validateFields([['address', 'state']])
+  }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: ["address", "country"],
-    label: "Country"
-  }, /*#__PURE__*/React.createElement(Input, null))), /*#__PURE__*/React.createElement(Col, {
+    label: "Country",
+    rules: [{
+      required: true,
+      message: 'Country is required'
+    }]
+  }, /*#__PURE__*/React.createElement(Select, {
+    placeholder: "Select a country",
+    onChange: value => handleCountryChange(value),
+    allowClear: true,
+    showSearch: true,
+    loading: loadingCountries,
+    filterOption: (input, option) => {
+      var _option$label2;
+      return ((_option$label2 = option === null || option === void 0 ? void 0 : option.label) !== null && _option$label2 !== void 0 ? _option$label2 : '').toLowerCase().includes(input.toLowerCase());
+    },
+    options: countries.map(country => ({
+      label: country.name,
+      value: country.name
+    }))
+  }))), /*#__PURE__*/React.createElement(Col, {
     span: 24
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: ["address", "street1"],
-    label: "Street"
+    label: "Street",
+    rules: [{
+      required: true,
+      message: 'Street is required'
+    }, {
+      min: 5,
+      message: 'Street should have at least 5 characters'
+    }]
   }, /*#__PURE__*/React.createElement(Input, null)))), /*#__PURE__*/React.createElement(Button, {
     type: "primary",
     htmlType: "submit",
@@ -800,7 +1022,13 @@ const NameCard = _ref => {
       fontSize: 11,
       color: "#888"
     }
-  }, dayjs(comment.date).format("YYYY-MM-DD HH:mm:ss"), /*#__PURE__*/React.createElement(Popconfirm, {
+  }, /*#__PURE__*/React.createElement("div", null, dayjs(comment.date).format("YYYY-MM-DD HH:mm:ss")), deletingCommentIndex === index ? /*#__PURE__*/React.createElement(Typography.Text, {
+    type: "secondary",
+    style: {
+      marginLeft: 8,
+      fontStyle: 'italic'
+    }
+  }, "Deleting...") : /*#__PURE__*/React.createElement(Popconfirm, {
     title: "Delete comment?",
     onConfirm: () => handleDeleteComment(index)
   }, /*#__PURE__*/React.createElement(Button, {
@@ -808,8 +1036,8 @@ const NameCard = _ref => {
     danger: true,
     size: "small",
     icon: /*#__PURE__*/React.createElement(DeleteOutlined, null),
-    loading: isDeletingComment,
-    disabled: isDeletingComment
+    loading: deletingCommentIndex === index,
+    disabled: deletingCommentIndex === index
   }))))))), /*#__PURE__*/React.createElement(Card, {
     style: {
       margin: 16,

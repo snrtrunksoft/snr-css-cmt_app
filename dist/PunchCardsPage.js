@@ -5,7 +5,7 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button, Checkbox, message } from "antd";
-import { createSubscription, updateSubscription } from "./api/APIUtil";
+import { createSubscription, updateSubscription, updateMember, deleteSubscription } from "./api/APIUtil";
 import { SwapOutlined } from "@ant-design/icons";
 const PunchCardsPage = _ref => {
   let {
@@ -119,6 +119,50 @@ const PunchCardsPage = _ref => {
         }
         return member;
       }));
+
+      // Also persist the updated member (with new subscriptions) to the server
+      try {
+        // Build a payload similar to NameCard's shape and snapshot previous subscriptions
+        const member = (data || []).find(m => m.id === customerId) || {};
+        const prevSubscriptions = member.subscriptions ? [...member.subscriptions] : [];
+        const updatedSubscriptions = [...prevSubscriptions, newSubscriptionWithId];
+        const recordToUpload = _objectSpread(_objectSpread({}, member.customerName ? {
+          customerName: member.customerName
+        } : {}), {}, {
+          status: member.status,
+          address: member.address,
+          email: member.email,
+          subscriptions: updatedSubscriptions,
+          groupId: Array.isArray(member.groupId) ? member.groupId.length > 0 ? member.groupId : "" : member.groupId || "",
+          phoneNumber: member.phoneNumber,
+          comments: member.comments || []
+        });
+
+        // Remove server-only fields from subscriptions
+        recordToUpload.subscriptions.forEach(sub => {
+          delete sub.entityId;
+          // delete sub.id;
+        });
+        await updateMember(effectiveEntityId, customerId, recordToUpload);
+        message.success("Member updated with new subscription");
+        console.log("✅ Member updated with new subscription");
+      } catch (err) {
+        console.error("❌ Failed to update member with new subscription:", err);
+
+        // Rollback local UI state
+        setData(prev => prev.map(member => member.id === customerId ? _objectSpread(_objectSpread({}, member), {}, {
+          subscriptions: (member.subscriptions || []).filter(sub => sub.id !== newSubscriptionWithId.id)
+        }) : member));
+
+        // Try to delete the created subscription on the server
+        try {
+          await deleteSubscription(effectiveEntityId, newSubscriptionWithId.id);
+          console.log("🗑️ Deleted subscription on server due to member update failure");
+        } catch (delErr) {
+          console.error("❌ Failed to delete subscription after rollback:", delErr);
+        }
+        message.error("Failed to save member. New subscription was rolled back.");
+      }
     } catch (error) {
       console.error("❌ Error creating subscription:", error);
       message.error("Failed to add subscription");
@@ -182,7 +226,7 @@ const PunchCardsPage = _ref => {
       message.error("Failed to save services");
     } finally {
       setIsLoading(false);
-      handleSend();
+      // handleSend();
     }
   }, [checkedServices, customerId, effectiveEntityId, setData, setNewComment, handleSend]);
 
@@ -202,10 +246,7 @@ const PunchCardsPage = _ref => {
     }, (_, index) => /*#__PURE__*/React.createElement("div", {
       key: "completed-".concat(card.id, "-").concat(index),
       className: "individualCards completed-card"
-    }, /*#__PURE__*/React.createElement(Checkbox, {
-      checked: true,
-      disabled: true
-    }), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       className: "card-label"
     }, "\u2713"))), Array.from({
       length: leftCount
