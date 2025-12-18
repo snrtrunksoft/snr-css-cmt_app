@@ -9,7 +9,7 @@ import { createResource } from "./api/APIUtil";
 
 const { useBreakpoint } = Grid;
 
-const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityId, dataView, commentBox, setCommentBox, groupMessages, setGroupMessages, selectedGroup }) =>{
+const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityId, dataView, commentBox, setCommentBox, groupMessages, setGroupMessages, selectedGroup, uniqueGroups }) =>{
     const [ isLoading, setIsLoading ] = useState(true);
     const [ addNewResourceModal, setAddNewResourceModal ] = useState(false);
     const [form] = Form.useForm();
@@ -142,6 +142,7 @@ const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityI
                                     groupMessages={groupMessages}
                                     setGroupMessages={setGroupMessages}
                                     selectedGroup={selectedGroup}
+                                    uniqueGroups={uniqueGroups}
                                 />
                         </Col>
                     )) : <h2>No NameCards Found...</h2>}

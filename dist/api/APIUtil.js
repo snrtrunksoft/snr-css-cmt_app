@@ -436,7 +436,7 @@ export async function deleteSubscription(entityId, subscriptionId) {
 export async function getSubscriptionPlans(entityId) {
   console.log('InvAPIUtil entityId:' + entityId);
   const op = get({
-    apiName: "SubscriptionsAPI",
+    apiName: "SubscriptionPlansAPI",
     path: "/subscriptions",
     options: {
       headers: {

@@ -600,7 +600,8 @@ const CmtApp = _ref => {
     setCommentBox: setCommentBox,
     selectedGroup: selectedGroup,
     groupMessages: groupMessages,
-    setGroupMessages: setGroupMessages
+    setGroupMessages: setGroupMessages,
+    uniqueGroups: uniqueGroups
   }))) : /*#__PURE__*/React.createElement("h2", null, "No NameCards Found..."), /*#__PURE__*/React.createElement(Col, {
     xs: 20,
     md: 12,
@@ -696,7 +697,8 @@ const CmtApp = _ref => {
     setCommentBox: setCommentBox,
     groupMessages: groupMessages,
     setGroupMessages: setGroupMessages,
-    selectedGroup: selectedGroup
+    selectedGroup: selectedGroup,
+    uniqueGroups: uniqueGroups
   }) : openCalendarPage ? /*#__PURE__*/React.createElement(CalendarPage, {
     sampleData: sampleData,
     setSampleData: setSampleData,

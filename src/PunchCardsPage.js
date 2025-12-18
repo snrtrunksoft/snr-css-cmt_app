@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button, Checkbox, message } from "antd";
-import { createSubscription, updateSubscription } from "./api/APIUtil";
+import { createSubscription, updateSubscription, updateMember, deleteSubscription } from "./api/APIUtil";
 import { SwapOutlined } from "@ant-design/icons";
 
 const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSend, setData, entityId, color}) => {
@@ -116,6 +116,56 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                     return member;
                 })
             );
+
+            // Also persist the updated member (with new subscriptions) to the server
+            try {
+                // Build a payload similar to NameCard's shape and snapshot previous subscriptions
+                const member = (data || []).find(m => m.id === customerId) || {};
+                const prevSubscriptions = member.subscriptions ? [...member.subscriptions] : [];
+                const updatedSubscriptions = [...prevSubscriptions, newSubscriptionWithId];
+
+                const recordToUpload = {
+                    ...(member.customerName ? { customerName: member.customerName } : {}),
+                    status: member.status,
+                    address: member.address,
+                    email: member.email,
+                    subscriptions: updatedSubscriptions,
+                    groupId: Array.isArray(member.groupId) ? (member.groupId.length > 0 ? member.groupId : "") : (member.groupId || ""),
+                    phoneNumber: member.phoneNumber,
+                    comments: member.comments || []
+                };
+
+                // Remove server-only fields from subscriptions
+                recordToUpload.subscriptions.forEach(sub => {
+                    delete sub.entityId;
+                    // delete sub.id;
+                });
+
+                await updateMember(effectiveEntityId, customerId, recordToUpload);
+                message.success("Member updated with new subscription");
+                console.log("✅ Member updated with new subscription");
+            } catch (err) {
+                console.error("❌ Failed to update member with new subscription:", err);
+
+                // Rollback local UI state
+                setData(prev =>
+                    prev.map(member =>
+                        member.id === customerId
+                            ? { ...member, subscriptions: (member.subscriptions || []).filter(sub => sub.id !== newSubscriptionWithId.id) }
+                            : member
+                    )
+                );
+
+                // Try to delete the created subscription on the server
+                try {
+                    await deleteSubscription(effectiveEntityId, newSubscriptionWithId.id);
+                    console.log("🗑️ Deleted subscription on server due to member update failure");
+                } catch (delErr) {
+                    console.error("❌ Failed to delete subscription after rollback:", delErr);
+                }
+
+                message.error("Failed to save member. New subscription was rolled back.");
+            }
         } catch (error) {
             console.error("❌ Error creating subscription:", error);
             message.error("Failed to add subscription");
@@ -195,7 +245,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
             message.error("Failed to save services");
         } finally {
             setIsLoading(false);
-            handleSend();
+            // handleSend();
         }
     }, [checkedServices, customerId, effectiveEntityId, setData, setNewComment, handleSend]);
 
@@ -220,7 +270,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                         key={`completed-${card.id}-${index}`} 
                         className="individualCards completed-card"
                     >
-                        <Checkbox checked disabled />
+                        {/* <Checkbox checked disabled /> */}
                         <span className="card-label">✓</span>
                     </div>
                 ))}
