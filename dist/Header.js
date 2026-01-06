@@ -20,8 +20,7 @@ const Header = _ref => {
     setOpenCalendarPage,
     setMembersPage,
     setResourcePage,
-    setTodosPage,
-    setSelectedApp
+    setTodosPage
   } = _ref;
   const [handleInboxDrawer, setHandleInboxDrawer] = useState(false);
   const [menuDrawerVisible, setMenuDrawerVisible] = useState(false);
@@ -84,7 +83,7 @@ const Header = _ref => {
   return /*#__PURE__*/React.createElement("header", {
     className: "CMTheader"
   }, /*#__PURE__*/React.createElement("img", {
-    src: image,
+    src: (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.logoPath) || image,
     alt: "logosnr",
     className: "app-logo"
   }), /*#__PURE__*/React.createElement("div", {

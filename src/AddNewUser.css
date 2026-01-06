@@ -3,10 +3,19 @@ form input{
     background-color : #0001;
     border-radius : 5px; 
     outline: none;
-    padding: 3px;
-    font-weight: bold;
+    padding: 6px 8px;
+    font-weight: 500;
     font-size: medium;
 }
 form h2{
     margin: 5px;
+}
+
+/* Center the form title and add subtle spacing */
+.ant-typography {
+  text-align: center;
+}
+
+div[role="form"] {
+  margin-top: 8px;
 }

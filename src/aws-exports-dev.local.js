@@ -69,6 +69,10 @@ const awsExports = {
           region: "us-east-1",
           authorizationType: "AMAZON_COGNITO_USER_POOLS"
         }
+      },
+      ExternalApis: {
+        restCountries: "https://restcountries.com/v3.1/all?fields=name,cca2,idd,region,states",
+        countriesNowStates: "https://countriesnow.space/api/v0.1/countries/states"
       }
     }
   };

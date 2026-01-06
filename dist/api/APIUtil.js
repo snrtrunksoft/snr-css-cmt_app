@@ -1,5 +1,6 @@
 // src/api/APIUtil.js
 import { get, post, put, del } from "aws-amplify/api";
+import awsExports from "../aws-exports-dev.local";
 
 /**
  * ============================================
@@ -449,6 +450,70 @@ export async function getSubscriptionPlans(entityId) {
     body
   } = await op.response;
   return body.json();
+}
+
+/**
+ * External country/state helper methods
+ */
+export async function getCountries() {
+  try {
+    const url = awsExports && awsExports.API && awsExports.API.ExternalApis && awsExports.API.ExternalApis.restCountries || "https://restcountries.com/v3.1/all?fields=name,cca2,idd,region,states";
+    const response = await fetch(url);
+    const data = await response.json();
+    const sortedCountries = data.map(country => {
+      var _country$idd;
+      const rawRoot = country.idd && country.idd.root ? String(country.idd.root).trim() : '';
+      const suffixes = Array.isArray((_country$idd = country.idd) === null || _country$idd === void 0 ? void 0 : _country$idd.suffixes) ? country.idd.suffixes : [];
+      // Prefer the first suffix when available (covers common cases). If none, use root alone.
+      let dialCode = rawRoot || '';
+      if (dialCode && suffixes.length >= 1 && suffixes[0]) {
+        dialCode = "".concat(dialCode).concat(suffixes[0]);
+      }
+      // Normalize: ensure a single leading '+' and no whitespace
+      if (dialCode) {
+        dialCode = dialCode.replace(/\s+/g, '');
+        if (!dialCode.startsWith('+')) dialCode = "+".concat(dialCode);
+        // Condense any accidental multiple pluses
+        dialCode = dialCode.replace(/^\++/, '+');
+      }
+      return {
+        name: country.name.common,
+        code: country.cca2,
+        dialCode,
+        region: country.region,
+        states: country.states || []
+      };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+    return sortedCountries;
+  } catch (error) {
+    console.error("Error fetching countries:", error);
+    throw error;
+  }
+}
+export async function getCountryStates(countryName) {
+  try {
+    const url = awsExports && awsExports.API && awsExports.API.ExternalApis && awsExports.API.ExternalApis.countriesNowStates || "https://countriesnow.space/api/v0.1/countries/states";
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        country: countryName
+      })
+    });
+    const data = await response.json();
+    if (data.data && data.data.states && Array.isArray(data.data.states)) {
+      return data.data.states.map(state => ({
+        name: state.name,
+        code: state.state_code || state.name
+      })).sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching states:", error);
+    return [];
+  }
 }
 export async function getSubscriptionPlanById(entityId, planId) {
   console.log('InvAPIUtil entityId:' + entityId);

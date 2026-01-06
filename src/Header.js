@@ -21,7 +21,6 @@ const Header = ({
   setMembersPage,
   setResourcePage,
   setTodosPage,
-  setSelectedApp
 }) => {
   
   const [handleInboxDrawer, setHandleInboxDrawer] = useState(false);
@@ -88,7 +87,7 @@ const Header = ({
 
   return (
     <header className="CMTheader">
-      <img src={image} alt="logosnr" className="app-logo"/>
+      <img src={tenantConfig?.logoPath || image} alt="logosnr" className="app-logo"/>
         <div className="CMTheader-left" style={isMobile ? { padding: '0px' } : {}}>
           {tenantConfig?.headerTitle || HEADER_TITLE}
         </div>

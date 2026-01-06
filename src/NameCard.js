@@ -5,7 +5,7 @@ import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import StatusModal from "./StatusModal";
-import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource } from "./api/APIUtil";
+import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource, getCountries, getCountryStates } from "./api/APIUtil";
 import PunchCardsPage  from "./PunchCardsPage";
 import dayjs from "dayjs";
 
@@ -114,22 +114,12 @@ const NameCard = ({
         }
     }, [nameCardDrawer, membersPage]);
 
-    // Fetch countries from restcountries API (copied logic from AddNewUser)
+    // Fetch countries using shared helper
     const fetchCountries = async () => {
       if (countries.length > 0) return; // already loaded
       setLoadingCountries(true);
       try {
-        const response = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd,region,states");
-        const data = await response.json();
-        const sortedCountries = data
-          .map((country) => ({
-            name: country.name.common,
-            code: country.cca2,
-            dialCode: country.idd?.root + (country.idd?.suffixes?.[0] || ''),
-            region: country.region,
-            states: country.states || []
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name));
+        const sortedCountries = await getCountries();
         setCountries(sortedCountries);
         console.log("Countries loaded:", sortedCountries);
 
@@ -153,23 +143,9 @@ const NameCard = ({
     const fetchStates = async (countryName) => {
       setLoadingStates(true);
       try {
-        const response = await fetch(`https://countriesnow.space/api/v0.1/countries/states`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ country: countryName })
-        });
-        const data = await response.json();
-        console.log("States response for", countryName, ":", data);
-        if (data.data && data.data.states && Array.isArray(data.data.states)) {
-          const statesList = data.data.states
-            .map((state) => ({ name: state.name, code: state.state_code || state.name }))
-            .sort((a, b) => a.name.localeCompare(b.name));
-          console.log("Parsed states:", statesList);
-          setStates(statesList);
-        } else {
-          console.log("No states found for", countryName);
-          setStates([]);
-        }
+        const statesList = await getCountryStates(countryName);
+        console.log("Parsed states:", statesList);
+        setStates(statesList);
       } catch (error) {
         console.error("Error fetching states:", error);
         setStates([]);
@@ -349,7 +325,7 @@ const NameCard = ({
                 "address" : address,
                 "email" : email,
                 "subscriptions" : subscriptions,
-                "groupId" : Array.isArray(groupId) ? (groupId.length > 0 ? groupId : "") : (groupId || ""),
+                "groupId": Array.isArray(groupId)? groupId.flat().filter(Boolean): groupId? [groupId]: [],
                 "phoneNumber" : phoneNumber,
                 "comments" : commentBody
             }
@@ -499,14 +475,14 @@ const NameCard = ({
             "address": address,
             "email": email,
             "subscriptions": subscriptions,
-            "groupId": Array.isArray(groupId) ? (groupId.length > 0 ? groupId : "") : (groupId || ""),
+            "groupId": Array.isArray(groupId)? groupId.flat().filter(Boolean): groupId? [groupId]: [],
             "phoneNumber": phoneNumber,
             "comments": updatedComments
         }
         
         Object.values(updatedRecord.subscriptions).forEach(sub => {
             delete sub.entityId;
-            delete sub.id;
+            // delete sub.id;
         });
 
         const deleteCommentAPI = async () => {
@@ -922,7 +898,7 @@ const NameCard = ({
 
 
             {/* ================= GROUP MESSAGES ================= */}
-            <Card
+            {/* <Card
                 title={`Group Messages (${Array.isArray(groupId) ? groupId[0] : groupId})`}
                 style={{ margin: 16, borderRadius: 8 }}
             >
@@ -945,11 +921,11 @@ const NameCard = ({
                     </Typography.Text>
                     );
                 })()}
-            </Card>
+            </Card> */}
 
             {/* ================= COMMENTS ================= */}
             <Card title="Comments" style={{ margin: 16, borderRadius: 8 }}>
-                {comments?.map((comment, index) => (
+                {comments.length > 0 ? comments.map((comment, index) => (
                 <Badge.Ribbon
                     key={index}
                     text={comment.author}
@@ -991,7 +967,8 @@ const NameCard = ({
                     </div>
                     </Card>
                 </Badge.Ribbon>
-                ))}
+                )): 
+                <Typography.Text type="secondary">No comments yet.</Typography.Text>}
             </Card>
 
             {/* ================= ADD COMMENT ================= */}

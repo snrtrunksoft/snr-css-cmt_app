@@ -133,7 +133,8 @@ const PunchCardsPage = _ref => {
           address: member.address,
           email: member.email,
           subscriptions: updatedSubscriptions,
-          groupId: Array.isArray(member.groupId) ? member.groupId.length > 0 ? member.groupId : "" : member.groupId || "",
+          groupId: Array.isArray(member.groupId) ? member.groupId.filter(Boolean).flat() : member.groupId ? [member.groupId] : [],
+          // groupId: Array.isArray(member.groupId) ? (member.groupId.length > 0 ? member.groupId : "") : (member.groupId || ""),
           phoneNumber: member.phoneNumber,
           comments: member.comments || []
         });

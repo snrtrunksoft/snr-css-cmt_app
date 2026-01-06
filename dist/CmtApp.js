@@ -4,9 +4,9 @@ function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useState, useEffect } from 'react';
-import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, Form } from 'antd';
+import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, Tooltip, Form } from 'antd';
 import { Bar, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip as ChartTooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession } from 'aws-amplify/auth';
@@ -30,7 +30,7 @@ const {
 } = Grid;
 
 // Registering necessary Chart.js components
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, Legend, ArcElement);
 const CmtApp = _ref => {
   let {
     tenantConfig,
@@ -132,9 +132,12 @@ const CmtApp = _ref => {
         }
         try {
           const fetchedResources = await getResources(entityId);
-          const groupingData = fetchedResources.map(prev => _objectSpread(_objectSpread({}, prev), {}, {
-            groupId: [prev.groupId] || ["undefined"]
-          }));
+          const groupingData = fetchedResources.map(prev => {
+            var _prev$groupId;
+            return _objectSpread(_objectSpread({}, prev), {}, {
+              groupId: [(_prev$groupId = prev.groupId) !== null && _prev$groupId !== void 0 ? _prev$groupId : "undefined"]
+            });
+          });
           setResourceData1(groupingData);
         } catch (error) {
           console.error("Error while fetching resources", error);
@@ -294,6 +297,10 @@ const CmtApp = _ref => {
           message: "New user \"".concat(newRecord.customerName, "\" has been added successfully!"),
           entityType: "user"
         });
+        return {
+          success: true,
+          record: updatedRecord
+        };
       } catch (error) {
         console.log("unable to add new member", error);
         // Show error modal
@@ -304,9 +311,12 @@ const CmtApp = _ref => {
           message: "Failed to add new user. Please try again.",
           entityType: "user"
         });
+        // Re-throw so callers can catch
+        throw error;
       }
     };
-    addNewMember();
+    // Return the promise so callers (e.g., AddNewUser) can await completion
+    return addNewMember();
   };
 
   // Helper function to apply all active filters together
@@ -440,7 +450,9 @@ const CmtApp = _ref => {
     setMembersPage: setMembersPage,
     setResourcePage: setResourcePage,
     setTodosPage: setTodosPage,
-    setSelectedApp: setSelectedApp
+    setSelectedApp: setSelectedApp,
+    searchText: searchText,
+    handleSearchText: handleSearchText
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'flex',
@@ -606,14 +618,8 @@ const CmtApp = _ref => {
     xs: 20,
     md: 12,
     lg: colSize,
-    className: "nameCard",
-    onClick: () => setIsAddNewNameCardModalOpen(true),
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-    }
+    className: "nameCard add-card",
+    onClick: () => setIsAddNewNameCardModalOpen(true)
   }, /*#__PURE__*/React.createElement(Button, {
     style: {
       border: 'transparent',
