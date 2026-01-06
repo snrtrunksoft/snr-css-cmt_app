@@ -8,7 +8,7 @@ import NameCard from "./NameCard";
 import "./ResourcePage.css";
 import "./NameCard.css";
 import { LoadingOutlined } from "@ant-design/icons";
-import { Button, Col, Grid, Modal, Row, Form } from "antd";
+import { Button, Col, Grid, Modal, Row, Form, Tooltip } from "antd";
 import AddNewUser from "./AddNewUser";
 import { createResource } from "./api/APIUtil";
 const {
@@ -72,13 +72,19 @@ const ResourcePage = _ref => {
         });
         setResourceData1(prev => [...prev, updatedRecord]);
         setResourceData(prev => [...prev, updatedRecord]);
+        return {
+          success: true,
+          record: updatedRecord
+        };
       } catch (error) {
         console.log("unable to add new resource", error);
+        throw error;
       } finally {
         setAddNewResourceModal(false);
       }
     };
-    addNewResource();
+    // Return so caller can await
+    return addNewResource();
   };
   useEffect(() => {
     setIsLoading(false);
@@ -127,12 +133,15 @@ const ResourcePage = _ref => {
     style: {
       margin: '10px'
     }
-  }, /*#__PURE__*/React.createElement("center", null, /*#__PURE__*/React.createElement(Button, {
+  }, /*#__PURE__*/React.createElement("center", null, /*#__PURE__*/React.createElement(Tooltip, {
+    title: "Add New Resource"
+  }, /*#__PURE__*/React.createElement(Button, {
+    "aria-label": "Add New Resource",
     style: {
       fontSize: '18px'
     },
     onClick: () => setAddNewResourceModal(true)
-  }, "+ Add New Record"))))) : /*#__PURE__*/React.createElement(Row, {
+  }, "+ Add New Record")))))) : /*#__PURE__*/React.createElement(Row, {
     className: "resource-grid ".concat(screens.xs ? "mobile-grid-alignment" : "web-grid-alignment"),
     gutter: [16, 16]
   }, resourceData.length !== 0 ? resourceData.map(item => /*#__PURE__*/React.createElement(Col, {
@@ -164,20 +173,17 @@ const ResourcePage = _ref => {
     xs: 20,
     md: 12,
     lg: colSize,
-    className: "nameCard",
-    onClick: () => setAddNewResourceModal(true),
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-    }
+    className: "nameCard add-card",
+    onClick: () => setAddNewResourceModal(true)
+  }, /*#__PURE__*/React.createElement(Tooltip, {
+    title: "Add New Resource"
   }, /*#__PURE__*/React.createElement(Button, {
+    "aria-label": "Add New Resource",
     style: {
       border: 'transparent',
       fontSize: '40px'
     }
-  }, "+")))), /*#__PURE__*/React.createElement(Modal, {
+  }, "+"))))), /*#__PURE__*/React.createElement(Modal, {
     open: addNewResourceModal,
     onCancel: () => {
       setAddNewResourceModal(false);

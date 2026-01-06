@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./AddNewUser.css";
 import { Row, Col, Input, Select, Button, Form, Typography, Spin } from 'antd';
-import { getSubscriptionPlans } from "./api/APIUtil";
+import { getSubscriptionPlans, getCountries, getCountryStates } from "./api/APIUtil";
 const {
   Option
 } = Select;
@@ -30,28 +30,17 @@ const AddNewUser = _ref => {
   const [loadingStates, setLoadingStates] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [countryCode, setCountryCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch countries on component mount
   useEffect(() => {
     fetchCountries();
   }, []);
   const fetchCountries = async () => {
+    if (countries.length > 0) return; // already loaded
     setLoadingCountries(true);
     try {
-      const response = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd,region,states");
-      const data = await response.json();
-
-      // Sort countries by name
-      const sortedCountries = data.map(country => {
-        var _country$idd, _country$idd2;
-        return {
-          name: country.name.common,
-          code: country.cca2,
-          dialCode: ((_country$idd = country.idd) === null || _country$idd === void 0 ? void 0 : _country$idd.root) + (((_country$idd2 = country.idd) === null || _country$idd2 === void 0 || (_country$idd2 = _country$idd2.suffixes) === null || _country$idd2 === void 0 ? void 0 : _country$idd2[0]) || ''),
-          region: country.region,
-          states: country.states || []
-        };
-      }).sort((a, b) => a.name.localeCompare(b.name));
+      const sortedCountries = await getCountries();
       setCountries(sortedCountries);
       console.log("Countries loaded:", sortedCountries);
     } catch (error) {
@@ -62,11 +51,15 @@ const AddNewUser = _ref => {
   };
   useEffect(() => {
     const fetchSubscriptionPlans = async () => {
+      setLoadingPlans(true);
       try {
         const response = await getSubscriptionPlans(entityId);
         setSubscriptionPlans(response);
+        console.log("Subscription Plans loaded from API:", response);
       } catch (error) {
         console.error("Error fetching subscription plans:", error);
+      } finally {
+        setLoadingPlans(false);
       }
     };
     if (mode === "member") {
@@ -91,29 +84,9 @@ const AddNewUser = _ref => {
   const fetchStates = async countryName => {
     setLoadingStates(true);
     try {
-      const response = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          country: countryName
-        })
-      });
-      const data = await response.json();
-      console.log("States response for", countryName, ":", data);
-      if (data.data && data.data.states && Array.isArray(data.data.states)) {
-        const statesList = data.data.states.map(state => ({
-          name: state.name,
-          code: state.state_code || state.name
-        })).sort((a, b) => a.name.localeCompare(b.name));
-        console.log("Parsed states:", statesList);
-        setStates(statesList);
-      } else {
-        // If no states available, set empty
-        console.log("No states found for", countryName);
-        setStates([]);
-      }
+      const statesList = await getCountryStates(countryName);
+      console.log("Parsed states:", statesList);
+      setStates(statesList);
     } catch (error) {
       console.error("Error fetching states:", error);
       setStates([]);
@@ -134,9 +107,24 @@ const AddNewUser = _ref => {
   //   }
   // }, [mode]);
 
-  const handleSubmit = values => {
-    onSubmit === null || onSubmit === void 0 || onSubmit(values);
-    form.resetFields();
+  const handleSubmit = async values => {
+    if (!onSubmit) return;
+    setIsSubmitting(true);
+    try {
+      const result = onSubmit(values);
+      // Await if the result is a promise
+      if (result && typeof result.then === 'function') {
+        await result;
+      }
+      // On success, reset fields
+      form.resetFields();
+    } catch (error) {
+      // Allow parent to handle error, but we stop spinner
+      console.error('Submit failed in AddNewUser:', error);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -157,6 +145,9 @@ const AddNewUser = _ref => {
     initialValues: {
       status: "ACTIVE"
     }
+  }, /*#__PURE__*/React.createElement(Spin, {
+    spinning: isSubmitting,
+    tip: "Submitting..."
   }, /*#__PURE__*/React.createElement(Row, {
     gutter: 16
   }, /*#__PURE__*/React.createElement(Col, {
@@ -352,7 +343,10 @@ const AddNewUser = _ref => {
       backgroundColor: '#ff5c5c',
       height: '45px',
       fontSize: '16px'
-    }
-  }, "SUBMIT"))));
+    },
+    loading: isSubmitting,
+    disabled: isSubmitting,
+    "aria-busy": isSubmitting
+  }, isSubmitting ? 'Submitting...' : 'SUBMIT')))));
 };
 export default AddNewUser;

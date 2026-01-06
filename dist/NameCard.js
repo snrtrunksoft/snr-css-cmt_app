@@ -15,7 +15,7 @@ import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import StatusModal from "./StatusModal";
-import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource } from "./api/APIUtil";
+import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource, getCountries, getCountryStates } from "./api/APIUtil";
 import PunchCardsPage from "./PunchCardsPage";
 import dayjs from "dayjs";
 const {
@@ -129,24 +129,13 @@ const NameCard = _ref => {
     }
   }, [nameCardDrawer, membersPage]);
 
-  // Fetch countries from restcountries API (copied logic from AddNewUser)
+  // Fetch countries using shared helper
   const fetchCountries = async () => {
     if (countries.length > 0) return; // already loaded
     setLoadingCountries(true);
     try {
       var _defaultValues$addres;
-      const response = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd,region,states");
-      const data = await response.json();
-      const sortedCountries = data.map(country => {
-        var _country$idd, _country$idd2;
-        return {
-          name: country.name.common,
-          code: country.cca2,
-          dialCode: ((_country$idd = country.idd) === null || _country$idd === void 0 ? void 0 : _country$idd.root) + (((_country$idd2 = country.idd) === null || _country$idd2 === void 0 || (_country$idd2 = _country$idd2.suffixes) === null || _country$idd2 === void 0 ? void 0 : _country$idd2[0]) || ''),
-          region: country.region,
-          states: country.states || []
-        };
-      }).sort((a, b) => a.name.localeCompare(b.name));
+      const sortedCountries = await getCountries();
       setCountries(sortedCountries);
       console.log("Countries loaded:", sortedCountries);
 
@@ -169,28 +158,9 @@ const NameCard = _ref => {
   const fetchStates = async countryName => {
     setLoadingStates(true);
     try {
-      const response = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          country: countryName
-        })
-      });
-      const data = await response.json();
-      console.log("States response for", countryName, ":", data);
-      if (data.data && data.data.states && Array.isArray(data.data.states)) {
-        const statesList = data.data.states.map(state => ({
-          name: state.name,
-          code: state.state_code || state.name
-        })).sort((a, b) => a.name.localeCompare(b.name));
-        console.log("Parsed states:", statesList);
-        setStates(statesList);
-      } else {
-        console.log("No states found for", countryName);
-        setStates([]);
-      }
+      const statesList = await getCountryStates(countryName);
+      console.log("Parsed states:", statesList);
+      setStates(statesList);
     } catch (error) {
       console.error("Error fetching states:", error);
       setStates([]);
@@ -370,7 +340,7 @@ const NameCard = _ref => {
         "address": address,
         "email": email,
         "subscriptions": subscriptions,
-        "groupId": Array.isArray(groupId) ? groupId.length > 0 ? groupId : "" : groupId || "",
+        "groupId": Array.isArray(groupId) ? groupId.flat().filter(Boolean) : groupId ? [groupId] : [],
         "phoneNumber": phoneNumber,
         "comments": commentBody
       });
@@ -534,13 +504,13 @@ const NameCard = _ref => {
       "address": address,
       "email": email,
       "subscriptions": subscriptions,
-      "groupId": Array.isArray(groupId) ? groupId.length > 0 ? groupId : "" : groupId || "",
+      "groupId": Array.isArray(groupId) ? groupId.flat().filter(Boolean) : groupId ? [groupId] : [],
       "phoneNumber": phoneNumber,
       "comments": updatedComments
     });
     Object.values(updatedRecord.subscriptions).forEach(sub => {
       delete sub.entityId;
-      delete sub.id;
+      // delete sub.id;
     });
     const deleteCommentAPI = async () => {
       // Indicate which comment index is being deleted so only that button shows loading
@@ -979,32 +949,12 @@ const NameCard = _ref => {
     entityId: entityId,
     color: color
   })), /*#__PURE__*/React.createElement(Card, {
-    title: "Group Messages (".concat(Array.isArray(groupId) ? groupId[0] : groupId, ")"),
-    style: {
-      margin: 16,
-      borderRadius: 8
-    }
-  }, (_groupMessages$curren => {
-    const currentGroupKey = Array.isArray(groupId) ? groupId[0] : groupId;
-    return groupMessages !== null && groupMessages !== void 0 && (_groupMessages$curren = groupMessages[currentGroupKey]) !== null && _groupMessages$curren !== void 0 && (_groupMessages$curren = _groupMessages$curren.messages) !== null && _groupMessages$curren !== void 0 && _groupMessages$curren.length ? groupMessages[currentGroupKey].messages.map((msg, idx) => /*#__PURE__*/React.createElement(Card, {
-      key: idx,
-      size: "small",
-      style: {
-        marginBottom: 8,
-        background: "#f0f8ff"
-      }
-    }, /*#__PURE__*/React.createElement(Typography.Text, {
-      strong: true
-    }, currentGroupKey), /*#__PURE__*/React.createElement("div", null, msg))) : /*#__PURE__*/React.createElement(Typography.Text, {
-      type: "secondary"
-    }, "No group messages yet");
-  })()), /*#__PURE__*/React.createElement(Card, {
     title: "Comments",
     style: {
       margin: 16,
       borderRadius: 8
     }
-  }, comments === null || comments === void 0 ? void 0 : comments.map((comment, index) => /*#__PURE__*/React.createElement(Badge.Ribbon, {
+  }, comments.length > 0 ? comments.map((comment, index) => /*#__PURE__*/React.createElement(Badge.Ribbon, {
     key: index,
     text: comment.author,
     color: color
@@ -1038,7 +988,9 @@ const NameCard = _ref => {
     icon: /*#__PURE__*/React.createElement(DeleteOutlined, null),
     loading: deletingCommentIndex === index,
     disabled: deletingCommentIndex === index
-  }))))))), /*#__PURE__*/React.createElement(Card, {
+  })))))) : /*#__PURE__*/React.createElement(Typography.Text, {
+    type: "secondary"
+  }, "No comments yet.")), /*#__PURE__*/React.createElement(Card, {
     style: {
       margin: 16,
       borderRadius: 8

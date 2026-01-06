@@ -3,7 +3,7 @@ import NameCard from "./NameCard";
 import "./ResourcePage.css";
 import "./NameCard.css";
 import { LoadingOutlined } from "@ant-design/icons";
-import { Button, Col, Grid, Modal, Row, Form } from "antd";
+import { Button, Col, Grid, Modal, Row, Form, Tooltip } from "antd";
 import AddNewUser from "./AddNewUser";
 import { createResource } from "./api/APIUtil";
 
@@ -62,13 +62,16 @@ const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityI
             };
             setResourceData1(prev => [...prev, updatedRecord]);
             setResourceData(prev => [...prev, updatedRecord]);
+            return { success: true, record: updatedRecord };
           } catch (error) {
             console.log("unable to add new resource", error);
+            throw error;
           } finally {
             setAddNewResourceModal(false);
           }
         };
-        addNewResource();
+        // Return so caller can await
+        return addNewResource();
     }
 
     useEffect(() => {
@@ -112,7 +115,9 @@ const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityI
                     <Row className="table-row add-record-row">
                         <Col span={24} style={{margin:'10px'}}>
                         <center>
-                            <Button style={{fontSize:'18px'}} onClick={() => setAddNewResourceModal(true)}>+ Add New Record</Button>
+                            <Tooltip title="Add New Resource">
+                                <Button aria-label="Add New Resource" style={{fontSize:'18px'}} onClick={() => setAddNewResourceModal(true)}>+ Add New Record</Button>
+                            </Tooltip>
                         </center>
                         </Col>
                     </Row>
@@ -149,15 +154,11 @@ const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityI
                     <Col xs={20} 
                         md={12}
                         lg={colSize}
-                        className='nameCard'
-                        onClick={()=> setAddNewResourceModal(true)}
-                        style= {{
-                        display:'flex',
-                        alignItems:'center',
-                        justifyContent:'center',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                        }}>
-                        <Button style={{border:'transparent',fontSize:'40px'}}>+</Button>
+                        className='nameCard add-card'
+                        onClick={()=> setAddNewResourceModal(true)}>
+                        <Tooltip title="Add New Resource">
+                          <Button aria-label="Add New Resource" style={{border:'transparent',fontSize:'40px'}}>+</Button>
+                        </Tooltip>
                     </Col>
                 </Row>}                
             </>

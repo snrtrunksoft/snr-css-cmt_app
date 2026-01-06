@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, Form } from 'antd';
+import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, Tooltip, Form } from 'antd';
 import { Bar, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip as ChartTooltip, Legend, ArcElement } from 'chart.js';
 import { LoadingOutlined } from '@ant-design/icons';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession } from 'aws-amplify/auth';
@@ -24,7 +24,7 @@ import dayjs from 'dayjs';
 const { useBreakpoint } = Grid;
 
 // Registering necessary Chart.js components
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, Legend, ArcElement);
 
 const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, setGroupMessages }) => {
   const [entityId, setEntityId] = useState(null);
@@ -124,7 +124,7 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
           const fetchedResources = await getResources(entityId);
           const groupingData = fetchedResources.map((prev) => ({
             ...prev,
-            groupId: [prev.groupId] || ["undefined"],
+            groupId: [prev.groupId ?? "undefined"],
           }));
           setResourceData1(groupingData);
         } catch (error) {
@@ -298,6 +298,7 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
           message: `New user "${newRecord.customerName}" has been added successfully!`,
           entityType: "user"
         });
+        return { success: true, record: updatedRecord };
       } catch (error) {
         console.log("unable to add new member", error);
         // Show error modal
@@ -308,9 +309,12 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
           message: "Failed to add new user. Please try again.",
           entityType: "user"
         });
+        // Re-throw so callers can catch
+        throw error;
       }
     };
-    addNewMember();
+    // Return the promise so callers (e.g., AddNewUser) can await completion
+    return addNewMember();
   };
 
   // Helper function to apply all active filters together
@@ -425,6 +429,8 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
           setResourcePage={setResourcePage}
           setTodosPage={setTodosPage}
           setSelectedApp={setSelectedApp}
+          searchText={searchText}
+          handleSearchText={handleSearchText}
         />
         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
           <div hidden={isLoading || openCalendarPage}>
@@ -543,14 +549,8 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
                     <Col xs={20}
                       md={12}
                       lg={colSize}
-                      className='nameCard'
-                      onClick={() => setIsAddNewNameCardModalOpen(true)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                      }}>
+                      className='nameCard add-card'
+                      onClick={() => setIsAddNewNameCardModalOpen(true)}>
                       <Button style={{ border: 'transparent', fontSize: '40px' }}>+</Button>
                     </Col>
                   </Row>)}
@@ -577,6 +577,11 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
                   </Col>
                 </Row>
               </div>}
+              {/* Floating Add Button (quick access) */}
+              {/* <Tooltip title="Add New Member">
+                <Button aria-label="Add New Member" className="floating-add-btn" type="primary" shape="circle" size="large" onClick={() => setIsAddNewNameCardModalOpen(true)}>+</Button>
+              </Tooltip> */}
+
               <Modal
                 open={isAddNewNameCardModalOpen}
                 onCancel={() => {setIsAddNewNameCardModalOpen(false); form.resetFields();}}
