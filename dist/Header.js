@@ -1,6 +1,6 @@
 import { Badge, Button, Menu, Card, Drawer, Space, Switch, Modal, Row, Col } from "antd";
-import { MenuOutlined, InboxOutlined, LogoutOutlined, ShoppingCartOutlined } from "@ant-design/icons";
-import React, { useState, useEffect } from "react";
+import { MenuOutlined, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
+import React, { useState, useEffect, useCallback } from "react";
 import "./Header.css";
 import { fetchAuthSession, signOut } from 'aws-amplify/auth';
 import { useNavigate } from 'react-router-dom';
@@ -80,27 +80,40 @@ const Header = _ref => {
     if (key === "calendar") setOpenCalendarPage(true);
     if (key === "todos") setTodosPage(true);
   };
+  function leftTitleWidth() {
+    const width = window.innerWidth;
+    if (width <= 400) return '140px';
+    if (width <= 600) return '200px';
+    if (width <= 900) return '300px';
+    return 'auto';
+  }
   return /*#__PURE__*/React.createElement("header", {
-    className: "CMTheader"
+    className: "inventory-header",
+    role: "banner"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "inventory-header-left-wrapper"
   }, /*#__PURE__*/React.createElement("img", {
     src: (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.logoPath) || image,
     alt: "logosnr",
     className: "app-logo"
   }), /*#__PURE__*/React.createElement("div", {
-    className: "CMTheader-left",
-    style: isMobile ? {
-      padding: '0px'
-    } : {}
-  }, (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.headerTitle) || HEADER_TITLE), isMobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
+    className: "inventory-header-left",
+    title: (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.headerTitle) || HEADER_TITLE,
+    style: {
+      maxWidth: leftTitleWidth()
+    }
+  }, (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.headerTitle) || HEADER_TITLE)), isMobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
     icon: /*#__PURE__*/React.createElement(MenuOutlined, null),
     onClick: () => setMenuDrawerVisible(true),
+    className: "mobile-icon-btn",
     style: {
       marginRight: 10
-    }
+    },
+    size: "middle"
   }), /*#__PURE__*/React.createElement(Drawer, {
     open: menuDrawerVisible,
     title: "Menu",
-    width: "60%",
+    width: "70%",
     onClose: () => setMenuDrawerVisible(false)
   }, /*#__PURE__*/React.createElement(Menu, {
     mode: "vertical",

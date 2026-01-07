@@ -1,6 +1,6 @@
 import { Badge, Button, Menu, Card, Drawer, Space, Switch, Modal, Row, Col } from "antd";
-import { MenuOutlined, InboxOutlined, LogoutOutlined, ShoppingCartOutlined } from "@ant-design/icons";
-import React, { useState, useEffect } from "react";
+import { MenuOutlined, InboxOutlined, LogoutOutlined } from "@ant-design/icons";
+import React, { useState, useEffect, useCallback } from "react";
 import "./Header.css";
 import { fetchAuthSession, signOut } from 'aws-amplify/auth';
 import { useNavigate } from 'react-router-dom';
@@ -85,24 +85,40 @@ const Header = ({
     if (key === "todos") setTodosPage(true);
   };
 
+  function leftTitleWidth() {
+    const width = window.innerWidth;
+    if (width <= 400) return '140px';
+    if (width <= 600) return '200px';
+    if (width <= 900) return '300px';
+    return 'auto';
+  }
+
   return (
-    <header className="CMTheader">
-      <img src={tenantConfig?.logoPath || image} alt="logosnr" className="app-logo"/>
-        <div className="CMTheader-left" style={isMobile ? { padding: '0px' } : {}}>
+    <header className="inventory-header" role="banner">
+      <div className="inventory-header-left-wrapper">
+        <img src={tenantConfig?.logoPath || image} alt="logosnr" className="app-logo" />
+        <div
+          className="inventory-header-left"
+          title={tenantConfig?.headerTitle || HEADER_TITLE}
+          style={{ maxWidth: leftTitleWidth() }}
+        >
           {tenantConfig?.headerTitle || HEADER_TITLE}
         </div>
+      </div>
 
       {isMobile ? (
         <>
           <Button
             icon={<MenuOutlined />}
             onClick={() => setMenuDrawerVisible(true)}
-            style={{ marginRight: 10 }}
+            className="mobile-icon-btn"
+            style={{marginRight:10}}
+            size="middle"
           />
           <Drawer
             open={menuDrawerVisible}
             title="Menu"
-            width="60%"
+            width="70%"
             onClose={() => setMenuDrawerVisible(false)}
           >
             <Menu mode="vertical" theme="light">
