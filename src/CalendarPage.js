@@ -6,7 +6,7 @@ import { getRecurringCalendar, getAllRecurringCalendar, getCalendar, createEvent
 import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid, Spin, DatePicker } from "antd";
 
 import dayjs from "dayjs";
-import { LoadingOutlined } from "@ant-design/icons";
+import { LoadingOutlined, LockOutlined } from "@ant-design/icons";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const { useBreakpoint } = Grid;
@@ -105,6 +105,25 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     if (!selectedMemberId) fieldError.selectedMemberId = "please enter member Id";
     if (!selectedResourceId) fieldError.selectedResourceId = "please enter resource Id";
     if (!eventTitle) fieldError.eventTitle = "Title required...!";
+
+    // For recurring events ensure start/end dates aren't in the past and the range is valid
+    if (recurring || frequencyOfEvent !== 'noRecurring') {
+      const today = dayjs().startOf('day');
+      if (!recurringStartDate) {
+        fieldError.recurringStartDate = "Start date required for recurring events";
+      } else if (recurringStartDate.isBefore(today, 'day')) {
+        fieldError.recurringStartDate = "Start date cannot be in the past";
+      }
+
+      if (recurringEndDate && recurringEndDate.isBefore(today, 'day')) {
+        fieldError.recurringEndDate = "End date cannot be in the past";
+      }
+
+      if (recurringStartDate && recurringEndDate && recurringEndDate.isBefore(recurringStartDate, 'day')) {
+        fieldError.recurringEndDate = "End date cannot be before start date";
+      }
+    }
+
     setNewErrors(fieldError);
     return Object.keys(fieldError).length === 0;
   };
@@ -124,16 +143,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
   const monthName = currentDate.toLocaleDateString("defult",{month:"long"});
 
-  console.log("Hours Array:",hours);
-  console.log("current year:",currentDate.getFullYear());
-
    const formattedDate = openDailyCalendar ? currentDate.toLocaleDateString("default", {
       weekday: "long",
       month: "long",
       day: "numeric",
     }) : currentDate.toLocaleString("default", { month: "long" });
-
-  console.log("formatted Date:",formattedDate);
 
   useEffect(() => {
     generateCalendar();
@@ -315,8 +329,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     parseInt(prev.year) === currentDate.getFullYear() &&
     parseInt(prev.date) === (weekEventDate !== null ? weekEventDate : currentDate.getDate()) ? "" : ""
   );
-  console.log("filteredEvents:",filteredEvents);
-  console.log("selected Event Item:",valueToSet);
 
   const [ currentPage, setCurrentPage ] = useState(1);
   const itemsForPage = 1;
@@ -430,10 +442,12 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         console.log("eventDetails:", eventDetails);
         
         if (isUpdate) {
-          const eventId = filteredEvents[currentPage - 1].id;
+          // Prefer an explicitly selected recurring or booked event ID, fallback to the paginated filtered event
+          const eventId = selectedRecurringEvent?.id || selectedBookedEvent?.id || filteredEvents[currentPage - 1]?.id;
+          if (!eventId) throw new Error('No event id found to update');
           await updateEvent(effectiveEntityId, eventId, eventDetails);
         } else {
-          await createEvent(effectiveEntityId, eventDetails);
+          // await createEvent(effectiveEntityId, eventDetails);
         }
 
         console.log(isUpdate ? "Event updated:" : "Event created:", eventDetails);
@@ -458,8 +472,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       }
     };
 
-    if (!selectedMemberId || !selectedResourceId || !eventTitle){
-      validateFields();
+    // Run validation for required and recurring date constraints
+    if (!validateFields()) {
       return;
     }
 
@@ -470,7 +484,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         return;
       }
 
-      if (isEditingEvent && filteredEvents.length > 0) {
+      if (isEditingEvent) {
         handleEventOperation(true);  // Update
       } else {
         handleEventOperation(false); // Add/Create
@@ -528,8 +542,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       // In future, could implement delete single occurrence logic
       await deleteEvent(effectiveEntityId, selectedRecurringEvent.id);
 
-      console.log("Recurring event deleted successfully:", selectedRecurringEvent);
-
       // Show success message
       setEventLoading(false);
       setEventStatus(`Recurring event deleted successfully${deleteRecurringType === 'single' ? ' (this occurrence)' : ' (all occurrences)'}!`);
@@ -551,8 +563,18 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
   const handleCloseEventSlot = () => {
     setOpenEventSlot(false);
-    setSelectedMemberId("");
-    setSelectedResourceId("");
+    // If a filter is active, preserve the prefilled selection; otherwise clear
+    if (selectedFilterType === 'member' && calendarUserId && calendarUserId !== "All") {
+      setSelectedMemberId(calendarUserId);
+    } else {
+      setSelectedMemberId("");
+    }
+    if (selectedFilterType === 'resource' && calendarUserId && calendarUserId !== "All") {
+      setSelectedResourceId(calendarUserId);
+    } else {
+      setSelectedResourceId("");
+    }
+
     setEventTitle("");
     setEventNotes("");
     setTimeSlot("");
@@ -614,7 +636,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   const filterMembers = duplicateData.filter((prev) => 
     prev.customerName.toLowerCase().includes(memberSearchTerm.toLowerCase()) || memberSearchTerm === ""
   );
-  console.log("filterMembers",filterMembers.map(prev => prev.customerName));
 
   const membersMenu = (
   <Menu onClick={handleMembersMenu}>
@@ -646,10 +667,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         parseInt(item.year) === currentDate.getFullYear()
     );
 
-    // Step 2: Get booked resource IDs in that hour from filtered calendar
+    // Step 2: Get booked resource IDs in that hour from filtered calendar and sampleData (so 'All' view is covered)
     const recurringDayOfWeek = openWeekCalendar ? dayjs(weekEventDate).format("dddd") : dayjs(currentDate.getDate()).format('dddd');
-    const recurringEvents = recurringAllCalendar?.AllEvents?.[recurringDayOfWeek]?.[hourKey]?? [];
-    
+    const recurringEvents = recurringAllCalendar?.AllEvents?.[recurringDayOfWeek]?.[hourKey] ?? [];
+
     // Get booked resource IDs from the filtered resourceCalendar data
     const bookedResourceIds = resourceCalendar
       .filter(day => 
@@ -658,32 +679,51 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         (openWeekCalendar ? parseInt(day.date) === weekEventDate : parseInt(day.date) === currentDate.getDate())
       )
       .flatMap(day => 
-        day.events
-          ?.filter(event => event.from <= hour && hour < event.to)
-          .map(event => event.resourceId) || []
+        (day.events || [])
+          .filter(event => event.from <= hour && hour < event.to)
+          .map(event => (event.resourceId != null ? String(event.resourceId) : (event.resourceName != null ? String(event.resourceName) : null)))
+          .filter(Boolean)
       );
 
-    // Get booked resource IDs from recurring events - use resourceId consistently
-    const recurringBookedResourceIds = recurringEvents
-      .filter(event => event.resourceId) // Ensure resourceId exists
-      .map(event => event.resourceId);
+    // Additionally include bookings from the aggregated sampleData (used when viewing 'All')
+    const sampleBookedResourceIds = sampleData
+      .filter(day => 
+        day.month === monthName &&
+        parseInt(day.year) === currentDate.getFullYear() &&
+        parseInt(day.date) === (openWeekCalendar ? weekEventDate : currentDate.getDate())
+      )
+      .flatMap(day => (day.allEvents?.[hourKey] ?? []));
 
-    // Step 3: Filter out booked resources - exclude if resourceId is in bookedResourceIds or recurringBookedResourceIds
-    const filterOutAvailableResource = filterResources
-      .filter(resource => 
-        !bookedResourceIds.includes(resource.resourceId) && 
-        !recurringBookedResourceIds.includes(resource.resourceId)
-      );
-      
-  console.log("filterOutAvailableResource:",filterOutAvailableResource);
+    const combinedBookedResourceIds = [...bookedResourceIds, ...sampleBookedResourceIds, ...recurringEvents];
+
+    // Get booked resource IDs from recurring events - normalize and accept resourceName too
+    const recurringBookedResourceIds = (recurringEvents || [])
+      .map(event => (event.resourceId != null ? String(event.resourceId) : (event.resourceName != null ? String(event.resourceName) : null)))
+      .filter(Boolean);
+
+    const bookedSet = new Set(combinedBookedResourceIds.map(String));
+    const recurringSet = new Set(recurringBookedResourceIds.map(String));
+
+    // Build a resource list and mark booked resources as disabled (don't remove them entirely)
+    const resourcesWithAvailability = filterResources.map(resource => {
+      const idStr = String(resource.resourceId);
+      const isBooked = bookedSet.has(idStr) || recurringSet.has(idStr);
+      return { ...resource, isBooked };
+    });
+
   const resourceMenu = (
-  <Menu onClick={handleResourceMenu}>
-    {filterOutAvailableResource.map((resource) => (
-      <Menu.Item key={resource.resourceId} title={`ID: ${resource.resourceId}`}>
-        {resource.resourceName} <span style={{fontSize: '12px', color: '#999'}}>({resource.resourceId})</span>
-      </Menu.Item>
-    ))}
-  </Menu>);
+    <Menu onClick={handleResourceMenu}>
+      {resourcesWithAvailability.map((resource) => (
+        <Menu.Item key={resource.resourceId} title={`ID: ${resource.resourceId}`} disabled={resource.isBooked}>
+          <span style={{opacity: resource.isBooked ? 0.45 : 1}}>
+            {resource.resourceName}
+            <span style={{fontSize: '12px', color: '#999'}}> ({resource.resourceId})</span>
+            {resource.isBooked && <span style={{fontSize:'12px', color:'#ff4d4f', marginLeft:'6px'}}>(Booked)</span>}
+          </span>
+        </Menu.Item>
+      ))}
+    </Menu>
+  );
 
   const handleUpdateExistingEventDetails = (event) => {
     setOpenAppointment(false);
@@ -699,6 +739,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     setTimeSlot(event.from === 0 ? "12 AM" : event.from < 12 ? `${event.from} AM` : event.from === 12 ? "12 PM" : `${event.from - 12} PM`);
     setRecurringStartDate(event.startDate ? dayjs(event.startDate) : null);
     setRecurringEndDate(event.endDate ? dayjs(event.endDate) : null);
+
+    // Ensure recurring/editor flags are set correctly
+    setRecurring(Boolean(event.isRecurring));
+    setFrequencyOfEvent(event.frequency || "noRecurring");
+    if (event.isRecurring) setSelectedRecurringEvent(event);
     setBookSameSlot(true);
     setIsEditingEvent(true);
   };
@@ -716,11 +761,32 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       const eventHour = event.from;
       const hourKey = `hour_${eventHour}`;
       const bookedInSlot = sampleData.flatMap(day => day.allEvents?.[hourKey] ?? []);
+      const bookedSet = new Set(bookedInSlot.map(b => (b && b.resourceId != null) ? String(b.resourceId) : String(b)));
       const available = resourceData.filter(res => 
-        !bookedInSlot.some(booked => booked === res.resourceName || booked === event.resourceId)
+        !bookedSet.has(String(res.resourceId)) && !bookedSet.has(String(res.resourceName))
       );
       setAvailableResourcesForSlot(available);
     }
+  };
+
+  // Edit handlers for booked and recurring events
+  const editBookedEvent = () => {
+    if (!selectedBookedEvent) return;
+    handleUpdateExistingEventDetails(selectedBookedEvent);
+    // Close booked-event modal and open the slot editor
+    setOpenBookedEventModal(false);
+    openEventSlotModal();
+  };
+
+  const editRecurringEvent = () => {
+    if (!selectedRecurringEvent) return;
+    handleUpdateExistingEventDetails(selectedRecurringEvent);
+    setRecurring(Boolean(selectedRecurringEvent.isRecurring));
+    setFrequencyOfEvent(selectedRecurringEvent.frequency || "noRecurring");
+    setSelectedRecurringEvent(selectedRecurringEvent);
+    setIsEditingEvent(true);
+    setIsRecurringEventModalOpen(false);
+    openEventSlotModal();
   };
 
   // Helper function to check if a date falls within recurring event range
@@ -759,13 +825,27 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       onChange={(e) => {
         const selectedValue = e.target.value;
         setSelectedFilterId(selectedValue);
-        
-        if (resourceDropDown && selectedValue) {
-          // Resource selected - set the resource ID for filtering
+
+        // Track whether the filter represents a member or resource
+        const type = resourceDropDown ? 'resource' : 'member';
+        setSelectedFilterType(type);
+
+        if (selectedValue) {
+          // Apply the filter and also default the booking selection so it's fixed when creating an event
           setCalendarUserId(selectedValue);
-        } else if (memberDropDown && selectedValue) {
-          // Member selected - set the member ID for filtering
-          setCalendarUserId(selectedValue);
+          if (type === 'resource') {
+            setSelectedResourceId(selectedValue);
+            setSelectedMemberId("");
+          } else {
+            setSelectedMemberId(selectedValue);
+            setSelectedResourceId("");
+          }
+        } else {
+          // Clearing the filter
+          setCalendarUserId("All");
+          setSelectedFilterType("");
+          setSelectedMemberId("");
+          setSelectedResourceId("");
         }
       }}
       style={{borderRadius:'5px',padding:'5px',fontSize:'15px',outline:'none'}}>
@@ -795,14 +875,26 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     time = (time === 0 ? "12 AM" : time < 12 ? `${time} AM` : time === 12 ? "12 PM" : `${time - 12} PM`);
       setWeekEventDate(null);
       setMonthlyRecurring(currentDate.getDate());
-     if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
+
+      // If a member/resource filter is active, default that selection for booking so it's fixed
+      if (calendarUserId && calendarUserId !== "All") {
+        if (resourceDropDown) {
+          setSelectedResourceId(calendarUserId);
+        } else {
+          setSelectedMemberId(calendarUserId);
+        }
+      }
+
+     // Set the time slot first so availability can be computed immediately in the modal
+      setTimeSlot(time);
+
+      if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
         openEventSlotModal();
         setOpenAppointment(true);
       } else if (bookedEventsList < resourceData.length) {
         setOpenAppointment(false);
         openEventSlotModal();
     }
-      setTimeSlot(time);
       const dayFormat = dayjs(dayjs().date()).format('dddd');
       setWeeklyDayRecurring(dayFormat);
   }
@@ -821,6 +913,15 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     if (bookedEventsList >= resourceData.length) {
       showErrorMessage("This time slot is not available. All resources are booked. Please select another time.");
       return;
+    }
+
+    // If a member/resource filter is active, default that selection for booking so it's fixed
+    if (calendarUserId && calendarUserId !== "All") {
+      if (resourceDropDown) {
+        setSelectedResourceId(calendarUserId);
+      } else {
+        setSelectedMemberId(calendarUserId);
+      }
     }
 
     if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
@@ -873,8 +974,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       const monthName = currentDate.toLocaleString("default", { month: "long" });
       const yearNumber = currentDate.getFullYear();
       
-      const resourceCalendarData = await getCalendar(effectiveEntityId, calendarUserId, monthName, yearNumber);
-      console.log("Fetched resource calendar for overlap check:", { calendarUserId, resourceCalendarData });
+      // Fetch calendar only for the specific resource being checked (use resourceId param)
+      const resourceCalendarData = await getCalendar(effectiveEntityId, resourceId, monthName, yearNumber);
+      console.log("Fetched resource calendar for overlap check:", { resourceId, resourceCalendarData });
 
       // Check in fetched resourceCalendar for existing bookings
       const overlappingEvents = resourceCalendarData.filter(calendar => {
@@ -888,6 +990,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         return calendar.events?.some(event => {
           // Use resourceId for checking (primary identifier)
           const isSameResource = event.resourceId === resourceId;
+
+          // If we're editing an existing event, ignore the same event to avoid false positive overlap
+          const editingId = selectedBookedEvent?.id || selectedRecurringEvent?.id;
+          if (editingId && event.id === editingId) return false;
           
           // Parse event times as numbers
           const eventFrom = typeof event.from === 'string' ? parseInt(event.from, 10) : event.from;
@@ -920,6 +1026,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
           Array.isArray(hourEvents) && hourEvents.some(event => {
             const isSameResource = event.resourceId === resourceId;
             if (isSameResource) {
+              // If we're editing an event, ignore the same recurring event
+              const editingId = selectedBookedEvent?.id || selectedRecurringEvent?.id;
+              if (editingId && event.id === editingId) return false;
+
               // Check if selected date is within the recurring event date range
               if (event.startDate && event.endDate) {
                 const startDate = dayjs(event.startDate);
@@ -992,6 +1102,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     };
     checkOverlap();
   }, [selectedResourceId, fromTimeSlot, toTimeSlot, weekEventDate])
+
+  // If a member/resource filter is active, inputs should be considered prefilled and non-editable
+  const isPrefilledMember = selectedFilterType === 'member' && calendarUserId && calendarUserId !== "All";
+  const isPrefilledResource = selectedFilterType === 'resource' && calendarUserId && calendarUserId !== "All";
 
   return (
     <div className="calendar-container">
@@ -1483,33 +1597,66 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
          title={timeSlot +" Slot"}
          onCancel={handleCloseEventSlot}
          footer={!openAppointment && <div>
-                      <Button type="primary" onClick={handleCalendarEvent}>{isEditingEvent ? 'Update Event' : 'Create Event'}</Button>
-                      <Button onClick={handleCloseEventSlot} style={{marginLeft:'10px'}}>Cancel</Button>
-                    </div>}
+          <Button
+            type="primary"
+            onClick={handleCalendarEvent}
+            disabled={!!(overlapWarning && !isEditingEvent)}
+            title={overlapWarning && !isEditingEvent ? overlapWarning : ''}
+          >
+            {isEditingEvent ? 'Update Event' : 'Create Event'}
+          </Button>
+          <Button onClick={handleCloseEventSlot} style={{marginLeft:'10px'}}>Cancel</Button>
+        </div>}
          >
           <div>
             {!openAppointment ? 
             <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
               <Row style={{position:'relative'}}>
-                <Dropdown overlay={membersMenu} trigger={["click"]} disabled={isEditingEvent}>
-                  <input
-                    disabled={isEditingEvent}
-                    style={{border: !selectedMemberId ? "2px solid red": "", backgroundColor: isEditingEvent ? '#f5f5f5' : 'white', cursor: isEditingEvent ? 'not-allowed' : 'pointer'}}
-                    className="memberResourceInput"
-                    placeholder="Search for members"
-                    value={getMemberNameById(selectedMemberId)}
-                    onChange={(e)=> handleMembersDropDown(e.target.value)}></input>
-                </Dropdown>
+                <span style={{display:'inline-flex',alignItems:'center',gap:'8px'}}>
+                  <Dropdown overlay={membersMenu} trigger={["click"]} disabled={isEditingEvent || isPrefilledMember}>
+                    <input
+                      disabled={isEditingEvent || isPrefilledMember}
+                      title={isPrefilledMember ? 'Prefilled by active member filter' : ''}
+                      style={{
+                        border: !selectedMemberId ? "2px solid red": "",
+                        backgroundColor: (isEditingEvent || isPrefilledMember) ? '#f5f5f5' : 'white',
+                        cursor: (isEditingEvent || isPrefilledMember) ? 'not-allowed' : 'pointer'
+                      }}
+                      className="memberResourceInput"
+                      placeholder="Search for members"
+                      value={getMemberNameById(selectedMemberId)}
+                      onChange={(e)=> handleMembersDropDown(e.target.value)}></input>
+                  </Dropdown>
+                  {isPrefilledMember && (
+                    <span style={{display:'inline-flex',alignItems:'center',gap:'6px',color:'#666',fontSize:'12px'}} title={'Prefilled by active member filter'}>
+                      <LockOutlined style={{fontSize:12}} />
+                      <span style={{lineHeight:1}}>Prefilled</span>
+                    </span>
+                  )}
+                </span>
                 {newErrors.selectedMemberId && <span className="inputError1">{newErrors.selectedMemberId}</span>}
-                <Dropdown overlay={resourceMenu} trigger={["click"]} disabled={isEditingEvent}>
-                  <input
-                    disabled={isEditingEvent}
-                    style={{border:!selectedResourceId ? '2px solid red':"", backgroundColor: isEditingEvent ? '#f5f5f5' : 'white', cursor: isEditingEvent ? 'not-allowed' : 'pointer'}}
-                    className="memberResourceInput"
-                    placeholder="Search for resource"
-                    value={getResourceNameById(selectedResourceId)}
-                    onChange={(e)=> handleResourceDropDown(e.target.value)}></input>
-                </Dropdown>
+                <span style={{display:'inline-flex',alignItems:'center',gap:'8px'}}>
+                  <Dropdown overlay={resourceMenu} trigger={["click"]} disabled={isEditingEvent || isPrefilledResource}>
+                    <input
+                      disabled={isEditingEvent || isPrefilledResource}
+                      title={isPrefilledResource ? 'Prefilled by active resource filter' : ''}
+                      style={{
+                        border:!selectedResourceId ? '2px solid red':"",
+                        backgroundColor: (isEditingEvent || isPrefilledResource) ? '#f5f5f5' : 'white',
+                        cursor: (isEditingEvent || isPrefilledResource) ? 'not-allowed' : 'pointer'
+                      }}
+                      className="memberResourceInput"
+                      placeholder="Search for resource"
+                      value={getResourceNameById(selectedResourceId)}
+                      onChange={(e)=> handleResourceDropDown(e.target.value)}></input>
+                  </Dropdown>
+                  {isPrefilledResource && (
+                    <span style={{display:'inline-flex',alignItems:'center',gap:'6px',color:'#666',fontSize:'12px'}} title={'Prefilled by active resource filter'}>
+                      <LockOutlined style={{fontSize:12}} />
+                      <span style={{lineHeight:1}}>Prefilled</span>
+                    </span>
+                  )}
+                </span>
                 {newErrors.selectedResourceId && <span className="inputError2">{newErrors.selectedResourceId}</span>}
               </Row>
               <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
@@ -1553,8 +1700,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                           value={recurringStartDate}
                           onChange={(date) => setRecurringStartDate(date)}
                           format="YYYY-MM-DD"
+                          disabledDate={(current) => current && current.isBefore(dayjs().startOf('day'), 'day')}
                           style={{width:'150px'}}
                         />
+                        {newErrors.recurringStartDate && <span style={{color:'red'}}>{newErrors.recurringStartDate}</span>}
                       </div>
                       <div style={{display:'flex',alignItems:'center',gap:'15px',width:'100%'}}>
                         <h3>End Date: {" "}</h3>
@@ -1563,11 +1712,14 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                           onChange={(date) => setRecurringEndDate(date)}
                           format="YYYY-MM-DD"
                           disabledDate={(current) => {
+                            if (!current) return false;
+                            if (current.isBefore(dayjs().startOf('day'), 'day')) return true; // no past end dates
                             if (!recurringStartDate) return false;
-                            return current && current.isBefore(recurringStartDate, 'day');
+                            return current.isBefore(recurringStartDate, 'day');
                           }}
                           style={{width:'150px'}}
                         />
+                        {newErrors.recurringEndDate && <span style={{color:'red'}}>{newErrors.recurringEndDate}</span>}
                       </div>
                     </Row>
                   )}
@@ -1645,8 +1797,21 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                 handleUpdateExistingEventDetails(selectedBookedEvent);
                 openEventSlotModal();
               }}>Edit</Button>,
-              <Button key="delete" danger onClick={() => {
-                handleDeleteEvent();
+              <Button key="delete" danger onClick={async () => {
+                if (!selectedBookedEvent) return;
+                setEventLoading(true);
+                setOpenEventStatusModal(true);
+                try {
+                  await deleteEvent(effectiveEntityId, selectedBookedEvent.id);
+                  setEventStatus("Event deleted successfully!");
+                  setOpenBookedEventModal(false);
+                  setSelectedBookedEvent(null);
+                  setEventLoading(false);
+                  setTimeout(() => refreshCalendarUI(calendarUserId, currentDate), 800);
+                } catch (err) {
+                  setEventLoading(false);
+                  setEventStatus("Error deleting event. Please try again.");
+                }
               }}>Delete</Button>
             ]}
             width={500}
@@ -1733,6 +1898,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
          >
             {selectedRecurringEvent && (
               <div style={{textAlign:'left', display:'flex', flexDirection:'column', gap:'15px'}}>
+                <div>
+                  <strong>Event Id:</strong>
+                  <p style={{margin:'5px 0'}}>{selectedRecurringEvent.id}</p>
+                </div>
                 <div>
                   <strong>Event Title:</strong>
                   <p style={{margin:'5px 0'}}>{selectedRecurringEvent.title}</p>
