@@ -47,3 +47,166 @@
     align-items: center;
     justify-content: center;
 } */
+
+/* --- Inventory header styles (merged from InventoryHeader.css) --- */
+
+.inventory-header{
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  background-color: rgba(0, 21, 41, 0.9);
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;    /* critical: centers all children on one horizontal line */
+  height: 64px;
+  box-sizing: border-box;
+}
+
+/* wrapper to align logo + title together so right-side controls remain aligned */
+.inventory-header-left-wrapper {
+  display: flex;
+  align-items: center;    /* vertical centering for logo + title */
+  gap: 12px;
+  min-width: 0;           /* allow truncation */
+  height: 100%;           /* match header height so baselines align */
+}
+
+/* Title area */
+.inventory-header-left {
+  font-family: Verdana, sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  margin-right: auto;
+  padding-left: 0;
+  display: flex;
+  align-items: center;
+  color: white;
+  line-height: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Desktop menu */
+.app-menu {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  background-color: transparent;
+}
+
+.app-menu .ant-menu-item {
+  margin-left: 20px;
+}
+
+/* Logo: consistent visual baseline with icons */
+.app-logo {
+  display: inline-block;
+  vertical-align: middle;
+  height: 50px;
+  width: 50px;
+  object-fit: cover;
+  margin-right: 8px;
+  border-radius: 50%;
+}
+
+/* Right side controls (desktop) */
+.right-controls {
+  display: flex;
+  align-items: center;
+  margin-left: 12px;
+}
+
+/* Avatar spacing */
+.app-avatar {
+  margin-left: 20px;
+}
+
+/* ---------- Mobile controls (visible when menu hidden) ---------- */
+
+/* container for mobile icon controls (cart + menu) */
+.mobile-controls {
+  display: flex;
+  align-items: center;     /* vertical center relative to logo/title */
+  margin-left: auto;       /* push to the right */
+  gap: 12px;
+  height: 100%;            /* match header height */
+  box-sizing: border-box;
+  padding-right: 8px;
+  justify-content: flex-end;
+}
+
+/* wrapper for the Badge-wrapped cart so Badge layout doesn't shift baseline */
+.mobile-cart-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* make Ant buttons perfect circles with centered icons */
+.mobile-controls .ant-btn,
+.mobile-icon-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px;
+  height: 40px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  line-height: 1 !important;
+  min-width: 40px !important;
+}
+
+/* Slightly larger touch target on very small screens */
+@media (max-width: 420px) {
+  .mobile-controls .ant-btn,
+  .mobile-icon-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px !important;
+  }
+}
+
+/* ---------- Responsive behavior (preserve desktop UX) ---------- */
+
+@media (max-width: 1030px) {
+  .app-menu {
+    display: none;   /* show drawer-based mobile menu instead */
+  }
+
+  .right-controls {
+    display: none;   /* hide desktop avatar/logout */
+  }
+
+  .inventory-header {
+    padding: 0 12px;
+    height: 56px;    /* slightly shorter on mobile */
+  }
+
+  .inventory-header-left {
+    font-size: 18px;
+  }
+
+  .app-logo {
+    height: 40px;
+    width: 40px;
+  }
+}
+
+/* very small screens (fine-tune sizes) */
+@media (max-width: 420px) {
+  .inventory-header-left {
+    font-size: 16px;
+  }
+  .app-logo {
+    height: 36px;
+    width: 36px;
+  }
+}
+
+/* Optional micro-adjustment for pixel-perfect alignment
+   Uncomment and tune if you see a 1-2px offset in specific browsers:
+   .mobile-controls .ant-btn { transform: translateY(1px); }
+*/

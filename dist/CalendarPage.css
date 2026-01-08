@@ -302,3 +302,129 @@
         left: 150px;
     }
 }
+
+/* NewCalendarPage specific styles */
+.nc-time-label {
+  height: 28px;
+  border-bottom: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
+}
+
+.nc-day-slots {
+  background: #fff;
+  border: 1px solid #eee;
+}
+
+.nc-slot-half {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  background: #fff;
+}
+
+.nc-slot-half:hover {
+  background: #fafafa;
+}
+
+.nc-timeline-line {
+  height: 2px;
+  background: #ff4d4f;
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 20;
+}
+
+/* Light gray book button helper */
+.nc-book-btn {
+  background-color: #f5f5f5 !important;
+  border-color: #ddd !important;
+  color: #000 !important;
+}
+
+@media screen and (max-width: 768px) {
+  .nc-time-label { font-size: 11px; }
+  .nc-slot-half { font-size: 12px; }
+}
+
+.nc-slot-half.booked {
+  background: #e6f7ff;
+}
+
+.nc-slot-half.disabled-slot {
+  background: #fafafa;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.nc-slot-half {
+  transition: background-color 0.12s ease;
+  height: 24px; /* slightly thinner rows */
+}
+
+/* hour boundary (every 2 half-hour rows) */
+.nc-slot-half.hour-boundary {
+  border-top: 1px solid #d9d9d9;
+}
+
+.nc-slot-half:hover {
+  background: #f6f6f6;
+}
+
+/* Weekly grid separators: very thin line between 30-min slots and a small gray line at hour boundaries */
+.weekly-grid-wrapper .nc-slot-half {
+  border-top: 1px solid #f3f3f3; /* very thin half-hour separator (top) */
+  border-bottom: none;
+}
+
+.weekly-grid-wrapper .nc-slot-half.hour-boundary {
+  border-top: 1px solid #d9d9d9; /* subtle gray hour boundary */
+}
+
+.weekly-grid-wrapper .nc-time-label {
+  border-top: 1px solid #f3f3f3; /* align time labels with half-hour separators */
+  border-bottom: none;
+}
+
+.weekly-grid-wrapper .nc-time-label.hour-boundary {
+  border-top: 1px solid #d9d9d9; /* hour boundary on the time label */
+}
+
+/* Daily view: use top borders for slot separators so slots render flush with only gray lines */
+.nc-day-slots .nc-slot-half {
+  border-top: 1px solid #f3f3f3;
+  border-bottom: none;
+}
+
+/* Vertical dividers between day columns (use nth-child pattern for grid rows: 8 columns per row -> time + 7 days) */
+/* Apply to day header cells (first row): children 2..8 */
+.weekly-grid-wrapper > div > div:nth-child(2),
+.weekly-grid-wrapper > div > div:nth-child(3),
+.weekly-grid-wrapper > div > div:nth-child(4),
+.weekly-grid-wrapper > div > div:nth-child(5),
+.weekly-grid-wrapper > div > div:nth-child(6),
+.weekly-grid-wrapper > div > div:nth-child(7),
+.weekly-grid-wrapper > div > div:nth-child(8) {
+  border-right: 1px solid #e9e9e9;
+}
+
+/* Apply vertical divider to day cells in each row (pattern repeats every 8 elements): selectors pick n-th-child(8n+2..8n+8) to target the 7 day columns */
+.weekly-grid-wrapper .nc-slot-half:nth-child(8n+2),
+.weekly-grid-wrapper .nc-slot-half:nth-child(8n+3),
+.weekly-grid-wrapper .nc-slot-half:nth-child(8n+4),
+.weekly-grid-wrapper .nc-slot-half:nth-child(8n+5),
+.weekly-grid-wrapper .nc-slot-half:nth-child(8n+6),
+.weekly-grid-wrapper .nc-slot-half:nth-child(8n+7),
+.weekly-grid-wrapper .nc-slot-half:nth-child(8n+8) {
+  border-right: 1px solid #e9e9e9;
+}
+
+/* Remove right border from last day column if desired (optional) */
+.weekly-grid-wrapper > div > div:nth-child(8),
+.weekly-grid-wrapper .nc-slot-half:nth-child(8n+8) {
+  border-right: none;
+}
