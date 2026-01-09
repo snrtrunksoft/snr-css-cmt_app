@@ -11,7 +11,8 @@ import { HEADER_TITLE } from "./properties/properties";
 import image from "./assets/logosnr.png";
 
 const Header = ({
-  tenantConfig,
+  headerTitle,
+  logoPath,
   commentBox,
   membersPage,
   openCalendarPage,
@@ -96,13 +97,13 @@ const Header = ({
   return (
     <header className="inventory-header" role="banner">
       <div className="inventory-header-left-wrapper">
-        <img src={tenantConfig?.logoPath || image} alt="logosnr" className="app-logo" />
+        <img src={logoPath || image} alt="logosnr" className="app-logo" />
         <div
           className="inventory-header-left"
-          title={tenantConfig?.headerTitle || HEADER_TITLE}
+          title={headerTitle || HEADER_TITLE}
           style={{ maxWidth: leftTitleWidth() }}
         >
-          {tenantConfig?.headerTitle || HEADER_TITLE}
+          {headerTitle || HEADER_TITLE}
         </div>
       </div>
 

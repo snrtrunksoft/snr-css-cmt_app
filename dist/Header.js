@@ -11,7 +11,8 @@ import { HEADER_TITLE } from "./properties/properties";
 import image from "./assets/logosnr.png";
 const Header = _ref => {
   let {
-    tenantConfig,
+    headerTitle,
+    logoPath,
     commentBox,
     membersPage,
     openCalendarPage,
@@ -93,16 +94,16 @@ const Header = _ref => {
   }, /*#__PURE__*/React.createElement("div", {
     className: "inventory-header-left-wrapper"
   }, /*#__PURE__*/React.createElement("img", {
-    src: (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.logoPath) || image,
+    src: logoPath || image,
     alt: "logosnr",
     className: "app-logo"
   }), /*#__PURE__*/React.createElement("div", {
     className: "inventory-header-left",
-    title: (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.headerTitle) || HEADER_TITLE,
+    title: headerTitle || HEADER_TITLE,
     style: {
       maxWidth: leftTitleWidth()
     }
-  }, (tenantConfig === null || tenantConfig === void 0 ? void 0 : tenantConfig.headerTitle) || HEADER_TITLE)), isMobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
+  }, headerTitle || HEADER_TITLE)), isMobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Button, {
     icon: /*#__PURE__*/React.createElement(MenuOutlined, null),
     onClick: () => setMenuDrawerVisible(true),
     className: "mobile-icon-btn",

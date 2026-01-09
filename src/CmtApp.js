@@ -26,7 +26,7 @@ const { useBreakpoint } = Grid;
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, Legend, ArcElement);
 
-const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, setGroupMessages }) => {
+const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMessages, setGroupMessages }) => {
   const [entityId, setEntityId] = useState(null);
 
   // Resolve entityId (localStorage -> token claims)
@@ -418,7 +418,8 @@ const CmtApp = ({ tenantConfig, setSelectedApp, selectedGroup, groupMessages, se
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', backgroundColor: "#f0f0f0" }}>
       <div className='home_app'>
         <Header
-          tenantConfig={tenantConfig}
+          headerTitle={headerTitle}
+          logoPath={logoPath}
           commentBox={commentBox}
           membersPage={membersPage}
           openCalendarPage={openCalendarPage}
