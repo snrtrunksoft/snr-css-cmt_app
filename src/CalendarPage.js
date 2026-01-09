@@ -439,7 +439,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       setOpenEventStatusModal(true);
 
       try {
-        console.log("eventDetails:", eventDetails);
         
         if (isUpdate) {
           // Prefer an explicitly selected recurring or booked event ID, fallback to the paginated filtered event
@@ -447,10 +446,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
           if (!eventId) throw new Error('No event id found to update');
           await updateEvent(effectiveEntityId, eventId, eventDetails);
         } else {
-          // await createEvent(effectiveEntityId, eventDetails);
+          await createEvent(effectiveEntityId, eventDetails);
         }
-
-        console.log(isUpdate ? "Event updated:" : "Event created:", eventDetails);
 
         // Show success message
         setEventLoading(false);
@@ -1002,13 +999,13 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
           // Check if time ranges overlap
           const hasOverlap = fromTimeNum < eventTo && eventFrom < toTimeNum;
           
-          console.log("Event check:", { 
-            event: event.title, 
-            isSameResource, 
-            eventFrom, 
-            eventTo, 
-            hasOverlap
-          });
+          // console.log("Event check:", { 
+          //   event: event.title, 
+          //   isSameResource, 
+          //   eventFrom, 
+          //   eventTo, 
+          //   hasOverlap
+          // });
           
           return isSameResource && hasOverlap;
         });
