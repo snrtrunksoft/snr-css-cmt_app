@@ -336,25 +336,24 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   const paginateEvents = filteredEvents.slice(startIndex,startIndex + itemsForPage);
   const { Option } = Select;
 
-  useEffect(() => {
-    if(eventStatus){
-      showStatusModal();
-    }
-  }, [eventStatus])
+  // useEffect(() => {
+  //   if(eventStatus){
+  //     showStatusModal();
+  //   }
+  // }, [eventStatus])
 
-  const showStatusModal = () => {
-    setTimeout(() => {
-      setOpenEventStatusModal(false);
-      setEventStatus("");
-    }, 2000);
-  }
+  // const showStatusModal = () => {
+  //   setTimeout(() => {
+  //     setOpenEventStatusModal(false);
+  //     setEventStatus("");
+  //   }, 2000);
+  // }
 
   // Modal Management Helper Functions
   const closeAllModals = () => {
     setOpenEventSlot(false);
     setOpenBookedEventModal(false);
     setIsRecurringEventModalOpen(false);
-    setOpenEventStatusModal(false);
     // Don't reset selected events here - they'll be reset when modals close
   };
 
@@ -414,7 +413,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   };
 
   const handleCalendarEvent = () => {
-
+    setEventLoading(true);
+    setOpenEventStatusModal(true);
+    setOpenEventSlot(false);
     const eventDetails = {
       memberId:selectedMemberId,
       resourceId:selectedResourceId,
@@ -435,9 +436,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
     // Unified handler for both add and update operations
     const handleEventOperation = async (isUpdate = false) => {
-      setEventLoading(true);
-      setOpenEventStatusModal(true);
-
       try {
         
         if (isUpdate) {
@@ -450,7 +448,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         }
 
         // Show success message
-        setEventLoading(false);
         setEventStatus(isUpdate ? "Event updated successfully!" : "Event created successfully!");
 
         // Close modals
@@ -464,8 +461,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
       } catch (error) {
         console.log(isUpdate ? "Unable to update event:" : "Unable to create event:", error);
-        setEventLoading(false);
         setEventStatus(isUpdate ? "Error updating event. Please try again." : "Error creating event. Please try again.");
+      } finally {
+        setEventLoading(false);
       }
     };
 
@@ -503,8 +501,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     try {
       await deleteEvent(effectiveEntityId, eventToDelete.id);
 
-      console.log("Event deleted successfully:", eventToDelete);
-
       // Show success message
       setEventLoading(false);
       setEventStatus("Event deleted successfully!");
@@ -533,6 +529,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
     setEventLoading(true);
     setOpenEventStatusModal(true);
+    setIsRecurringEventModalOpen(false);
 
     try {
       // For now, we delete the entire recurring event
@@ -540,7 +537,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       await deleteEvent(effectiveEntityId, selectedRecurringEvent.id);
 
       // Show success message
-      setEventLoading(false);
       setEventStatus(`Recurring event deleted successfully${deleteRecurringType === 'single' ? ' (this occurrence)' : ' (all occurrences)'}!`);
 
       // Close modals
@@ -553,8 +549,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
     } catch (error) {
       console.log("Unable to delete recurring event:", error);
-      setEventLoading(false);
       setEventStatus("Error deleting recurring event. Please try again.");
+    } finally {
+      setEventLoading(false);
     }
   };
 
@@ -1797,17 +1794,17 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
               <Button key="delete" danger onClick={async () => {
                 if (!selectedBookedEvent) return;
                 setEventLoading(true);
+                setOpenBookedEventModal(false);
                 setOpenEventStatusModal(true);
                 try {
                   await deleteEvent(effectiveEntityId, selectedBookedEvent.id);
                   setEventStatus("Event deleted successfully!");
-                  setOpenBookedEventModal(false);
                   setSelectedBookedEvent(null);
-                  setEventLoading(false);
                   setTimeout(() => refreshCalendarUI(calendarUserId, currentDate), 800);
                 } catch (err) {
-                  setEventLoading(false);
                   setEventStatus("Error deleting event. Please try again.");
+                } finally {
+                  setEventLoading(false);
                 }
               }}>Delete</Button>
             ]}
