@@ -138,7 +138,7 @@ const AddNewUser = _ref => {
       textAlign: 'center',
       color: '#007bff'
     }
-  }, mode === "resource" ? "Add Resource" : "Registration"), /*#__PURE__*/React.createElement(Form, {
+  }, mode === "resource" ? "Add Resource" : "Add Member"), /*#__PURE__*/React.createElement(Form, {
     form: form,
     layout: "vertical",
     onFinish: handleSubmit,

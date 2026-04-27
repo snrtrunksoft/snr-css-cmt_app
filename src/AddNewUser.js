@@ -124,7 +124,7 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
   return (
     <div style={{ margin: '0 auto', padding: '0px 40px', borderRadius: '10px' }}>
       <Title level={2} style={{ textAlign: 'center', color: '#007bff' }}>
-        {mode === "resource" ? "Add Resource" : "Registration"}
+        {mode === "resource" ? "Add Resource" : "Add Member"}
       </Title>
 
       <Form
