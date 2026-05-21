@@ -22,9 +22,6 @@ const validateName = (_, value) => {
   if (!NAME_PATTERN.test(trimmedValue)) {
     return Promise.reject(new Error("Name must start with a letter and can contain letters, numbers, spaces, underscores, and dots"));
   }
-  if (trimmedValue.length < 7) {
-    return Promise.reject(new Error("Name should have at least 7 characters"));
-  }
   return Promise.resolve();
 };
 
