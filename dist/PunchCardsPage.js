@@ -3,15 +3,21 @@ function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t =
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button, Checkbox, message } from "antd";
-import { createSubscription, updateSubscription, updateMember, deleteSubscription } from "./api/APIUtil";
+import { createSubscription, updateSubscription, getMemberById } from "./api/APIUtil";
 import { SwapOutlined } from "@ant-design/icons";
+const getSubscriptionId = card => (card === null || card === void 0 ? void 0 : card.subscriptionId) || (card === null || card === void 0 ? void 0 : card.id);
+const getSubscriptionKey = function (card) {
+  let index = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  return getSubscriptionId(card) || [card === null || card === void 0 ? void 0 : card.memberId, card === null || card === void 0 ? void 0 : card.status, card === null || card === void 0 ? void 0 : card.purchasedDate, card === null || card === void 0 ? void 0 : card.completedDate, card === null || card === void 0 ? void 0 : card.totalNumberOfServices, card === null || card === void 0 ? void 0 : card.noOfServicesCompleted, card === null || card === void 0 ? void 0 : card.noOfServicesLeft, index].filter(Boolean).join("-");
+};
 const PunchCardsPage = _ref => {
   let {
     data,
     customerId,
     customerName,
+    subscriptions: memberSubscriptions = [],
     setNewComment,
     handleSend,
     setData,
@@ -24,11 +30,14 @@ const PunchCardsPage = _ref => {
   const [subscriptionStatus, setSubscriptionStatus] = useState("ACTIVE");
   const [isLoading, setIsLoading] = useState(false);
   const [effectiveEntityId, setEffectiveEntityId] = useState(null);
-  const prevSubscriptionIdsRef = useRef(new Set());
 
   // ==================== EFFECTS ====================
   // Initialize entityId from localStorage
   useEffect(() => {
+    if (entityId) {
+      setEffectiveEntityId(entityId);
+      return;
+    }
     if (!effectiveEntityId && typeof window !== "undefined") {
       try {
         const storedId = localStorage.getItem("entityId");
@@ -40,37 +49,52 @@ const PunchCardsPage = _ref => {
         console.error("❌ Unable to read entityId from localStorage:", e);
       }
     }
-  }, [effectiveEntityId]);
+  }, [effectiveEntityId, entityId]);
 
   // ==================== HELPER FUNCTIONS ====================
   // Get current member's subscriptions from parent data
   const getCurrentSubscriptions = useCallback(() => {
+    if (Array.isArray(memberSubscriptions) && memberSubscriptions.length > 0) {
+      return memberSubscriptions.map(subscription => _objectSpread(_objectSpread({}, subscription), {}, {
+        subscriptionId: getSubscriptionId(subscription)
+      }));
+    }
     if (!data || data.length === 0 || !customerId) return [];
     const memberData = data.find(member => member.id === customerId);
-    return (memberData === null || memberData === void 0 ? void 0 : memberData.subscriptions) || [];
-  }, [data, customerId]);
+    return ((memberData === null || memberData === void 0 ? void 0 : memberData.subscriptions) || []).map(subscription => _objectSpread(_objectSpread({}, subscription), {}, {
+      subscriptionId: getSubscriptionId(subscription)
+    }));
+  }, [data, customerId, memberSubscriptions]);
 
   // Get filtered subscriptions based on status
   const punchCards = useMemo(() => {
     const subscriptions = getCurrentSubscriptions();
     return subscriptions.filter(card => card.status === subscriptionStatus);
   }, [getCurrentSubscriptions, subscriptionStatus]);
+  const refreshMember = useCallback(async () => {
+    const resolvedEntityId = entityId || effectiveEntityId;
+    if (!resolvedEntityId || !customerId) return null;
+    const refreshedMember = await getMemberById(resolvedEntityId, customerId);
+    setData(prevMembers => prevMembers.map(member => member.id === customerId ? _objectSpread(_objectSpread({}, member), refreshedMember) : member));
+    return refreshedMember;
+  }, [customerId, effectiveEntityId, entityId, setData]);
 
   // ==================== CHECKBOX HANDLING ====================
-  const handleCheckboxChange = useCallback((e, card, index) => {
-    const cardId = card.id;
+  const handleCheckboxChange = useCallback((e, card, serviceIndex, cardIndex) => {
+    const cardKey = getSubscriptionKey(card, cardIndex);
     const isChecked = e.target.checked;
     setCheckedServices(prev => {
-      const currentSet = prev[cardId] ? new Set(prev[cardId]) : new Set();
+      const currentSet = prev[cardKey] ? new Set(prev[cardKey]) : new Set();
       if (isChecked) {
-        currentSet.add(index);
+        currentSet.add(serviceIndex);
       } else {
-        currentSet.delete(index);
+        currentSet.delete(serviceIndex);
       }
       const count = currentSet.size;
-      setNewComment(count > 0 ? "Subscription ID: ".concat(cardId, ", Selected Cards: ").concat(count) : "");
+      const subscriptionId = getSubscriptionId(card);
+      setNewComment(count > 0 ? "Subscription ID: ".concat(subscriptionId || "pending", ", Selected Cards: ").concat(count) : "");
       return _objectSpread(_objectSpread({}, prev), {}, {
-        [cardId]: currentSet
+        [cardKey]: currentSet
       });
     });
   }, [setNewComment]);
@@ -84,7 +108,8 @@ const PunchCardsPage = _ref => {
 
   // ==================== SUBSCRIPTION OPERATIONS ====================
   const addNewSubscription = useCallback(async () => {
-    if (!customerId || !effectiveEntityId) {
+    const resolvedEntityId = entityId || effectiveEntityId;
+    if (!customerId || !resolvedEntityId) {
       message.error("Missing required information");
       return;
     }
@@ -103,9 +128,9 @@ const PunchCardsPage = _ref => {
         completedDate: "june-09-2026",
         memberId: customerId
       };
-      const postData = await createSubscription(effectiveEntityId, newSub);
+      const postData = await createSubscription(resolvedEntityId, newSub);
       const newSubscriptionWithId = _objectSpread(_objectSpread({}, newSub), {}, {
-        id: postData.subscriptionId
+        subscriptionId: postData.subscriptionId || postData.id
       });
       console.log("✅ New subscription created:", newSubscriptionWithId);
       message.success("Subscription added successfully");
@@ -120,49 +145,12 @@ const PunchCardsPage = _ref => {
         return member;
       }));
 
-      // Also persist the updated member (with new subscriptions) to the server
+      // Refresh member so embedded subscriptions stay in sync with the subscription API.
       try {
-        // Build a payload similar to NameCard's shape and snapshot previous subscriptions
-        const member = (data || []).find(m => m.id === customerId) || {};
-        const prevSubscriptions = member.subscriptions ? [...member.subscriptions] : [];
-        const updatedSubscriptions = [...prevSubscriptions, newSubscriptionWithId];
-        const recordToUpload = _objectSpread(_objectSpread({}, member.customerName ? {
-          customerName: member.customerName
-        } : {}), {}, {
-          status: member.status,
-          address: member.address,
-          email: member.email,
-          subscriptions: updatedSubscriptions,
-          groupId: Array.isArray(member.groupId) ? member.groupId.filter(Boolean).flat() : member.groupId ? [member.groupId] : [],
-          // groupId: Array.isArray(member.groupId) ? (member.groupId.length > 0 ? member.groupId : "") : (member.groupId || ""),
-          phoneNumber: member.phoneNumber,
-          comments: member.comments || []
-        });
-
-        // Remove server-only fields from subscriptions
-        recordToUpload.subscriptions.forEach(sub => {
-          delete sub.entityId;
-          // delete sub.id;
-        });
-        await updateMember(effectiveEntityId, customerId, recordToUpload);
-        message.success("Member updated with new subscription");
+        await refreshMember();
         console.log("✅ Member updated with new subscription");
       } catch (err) {
-        console.error("❌ Failed to update member with new subscription:", err);
-
-        // Rollback local UI state
-        setData(prev => prev.map(member => member.id === customerId ? _objectSpread(_objectSpread({}, member), {}, {
-          subscriptions: (member.subscriptions || []).filter(sub => sub.id !== newSubscriptionWithId.id)
-        }) : member));
-
-        // Try to delete the created subscription on the server
-        try {
-          await deleteSubscription(effectiveEntityId, newSubscriptionWithId.id);
-          console.log("🗑️ Deleted subscription on server due to member update failure");
-        } catch (delErr) {
-          console.error("❌ Failed to delete subscription after rollback:", delErr);
-        }
-        message.error("Failed to save member. New subscription was rolled back.");
+        message.warning("Subscription was saved, but member refresh failed.");
       }
     } catch (error) {
       console.error("❌ Error creating subscription:", error);
@@ -170,17 +158,28 @@ const PunchCardsPage = _ref => {
     } finally {
       setIsLoading(false);
     }
-  }, [customerId, effectiveEntityId, setData]);
-  const handleSave = useCallback(async card => {
+  }, [customerId, effectiveEntityId, entityId, refreshMember, setData]);
+  const handleSave = useCallback(async (card, cardIndex) => {
     var _checkedServices$card;
-    const cardId = card.id;
-    const checkedCount = ((_checkedServices$card = checkedServices[cardId]) === null || _checkedServices$card === void 0 ? void 0 : _checkedServices$card.size) || 0;
+    const cardKey = getSubscriptionKey(card, cardIndex);
+    const checkedCount = ((_checkedServices$card = checkedServices[cardKey]) === null || _checkedServices$card === void 0 ? void 0 : _checkedServices$card.size) || 0;
+    const resolvedEntityId = entityId || effectiveEntityId;
+    if (!resolvedEntityId) {
+      message.error("Missing required information");
+      return;
+    }
     if (checkedCount === 0) {
       message.warning("Please select at least one service");
       return;
     }
     setIsLoading(true);
     try {
+      const cardId = getSubscriptionId(card);
+      if (!cardId) {
+        message.error("Missing subscription id in member data. Please refresh and try again.");
+        return;
+      }
+
       // Calculate updated values
       const newCompleted = parseInt(card.noOfServicesCompleted) + checkedCount;
       const newLeft = Math.max(0, parseInt(card.noOfServicesLeft) - checkedCount);
@@ -192,35 +191,50 @@ const PunchCardsPage = _ref => {
         purchasedDate: card.purchasedDate,
         completedDate: card.completedDate,
         status: newStatus,
-        memberId: card.memberId
+        memberId: card.memberId || customerId
       };
       console.log("💾 Sending update:", updatedSubscriptionDetails);
-      await updateSubscription(effectiveEntityId, cardId, updatedSubscriptionDetails);
+      await updateSubscription(resolvedEntityId, cardId, updatedSubscriptionDetails);
       console.log("✅ Subscription updated from API");
 
       // Create updated card object
       const updatedCard = _objectSpread(_objectSpread({}, card), {}, {
+        subscriptionId: cardId,
         noOfServicesCompleted: newCompleted,
         noOfServicesLeft: newLeft,
         status: newStatus
       });
-
-      // Update parent data first
-      setData(prevMembers => prevMembers.map(member => {
-        if (member.id === customerId) {
-          return _objectSpread(_objectSpread({}, member), {}, {
-            subscriptions: (member.subscriptions || []).map(sub => sub.id === cardId ? updatedCard : sub)
-          });
-        }
-        return member;
-      }));
+      const updatedSubscriptions = getCurrentSubscriptions().map(subscription => getSubscriptionId(subscription) === cardId ? updatedCard : subscription);
+      const subscriptionComment = "".concat(cardId, ": ").concat(checkedCount > 1 ? "".concat(checkedCount, " service(s)") : '1 service', " completed. ").concat(newLeft, " remaining.");
+      try {
+        await refreshMember();
+      } catch (refreshError) {
+        console.error("Failed to refresh member after subscription update:", refreshError);
+        setData(prevMembers => prevMembers.map(member => {
+          if (member.id === customerId) {
+            return _objectSpread(_objectSpread({}, member), {}, {
+              subscriptions: (member.subscriptions || []).map(sub => getSubscriptionId(sub) === cardId ? updatedCard : sub)
+            });
+          }
+          return member;
+        }));
+      }
+      try {
+        await handleSend(subscriptionComment, {
+          showStatus: false,
+          subscriptionsOverride: updatedSubscriptions
+        });
+      } catch (commentError) {
+        console.error("Subscription saved, but automatic comment failed:", commentError);
+        message.warning("Subscription saved, but comment was not posted.");
+      }
 
       // Clear checked services
       setCheckedServices(prev => _objectSpread(_objectSpread({}, prev), {}, {
-        [cardId]: new Set()
+        [cardKey]: new Set()
       }));
       setNewComment("");
-      message.success("Successfully saved ".concat(checkedCount, " service(s)"));
+      message.success("Subscription saved. ".concat(checkedCount, " service(s) recorded."));
       console.log("📝 UI updated with new card state:", updatedCard);
     } catch (error) {
       console.error("❌ Error saving subscription:", error);
@@ -229,7 +243,7 @@ const PunchCardsPage = _ref => {
       setIsLoading(false);
       // handleSend();
     }
-  }, [checkedServices, customerId, effectiveEntityId, setData, setNewComment, handleSend]);
+  }, [checkedServices, customerId, effectiveEntityId, entityId, getCurrentSubscriptions, refreshMember, setData, setNewComment, handleSend]);
 
   // ==================== UI INTERACTION ====================
   const toggleFlip = useCallback(cardId => {
@@ -239,13 +253,14 @@ const PunchCardsPage = _ref => {
   }, []);
 
   // ==================== RENDER ====================
-  const renderCardContent = card => {
+  const renderCardContent = (card, cardIndex) => {
+    const cardKey = getSubscriptionKey(card, cardIndex);
     const completedCount = Number(card.noOfServicesCompleted);
     const leftCount = Number(card.noOfServicesLeft);
     return /*#__PURE__*/React.createElement(React.Fragment, null, Array.from({
       length: completedCount
     }, (_, index) => /*#__PURE__*/React.createElement("div", {
-      key: "completed-".concat(card.id, "-").concat(index),
+      key: "completed-".concat(cardKey, "-").concat(index),
       className: "individualCards completed-card"
     }, /*#__PURE__*/React.createElement("span", {
       className: "card-label"
@@ -253,20 +268,21 @@ const PunchCardsPage = _ref => {
       length: leftCount
     }, (_, index) => {
       var _checkedServices$card2;
-      const isChecked = ((_checkedServices$card2 = checkedServices[card.id]) === null || _checkedServices$card2 === void 0 ? void 0 : _checkedServices$card2.has(index)) || false;
+      const isChecked = ((_checkedServices$card2 = checkedServices[cardKey]) === null || _checkedServices$card2 === void 0 ? void 0 : _checkedServices$card2.has(index)) || false;
       return /*#__PURE__*/React.createElement("div", {
-        key: "remaining-".concat(card.id, "-").concat(index),
+        key: "remaining-".concat(cardKey, "-").concat(index),
         className: "individualCards uncompleted-card ".concat(isChecked ? 'checked-service' : '')
       }, /*#__PURE__*/React.createElement(Checkbox, {
         checked: isChecked,
-        onChange: e => handleCheckboxChange(e, card, index),
+        onChange: e => handleCheckboxChange(e, card, index, cardIndex),
         disabled: isLoading
       }));
     }));
   };
-  const renderActionButtons = card => {
+  const renderActionButtons = (card, cardIndex) => {
     var _checkedServices$card3;
-    const checkedCount = ((_checkedServices$card3 = checkedServices[card.id]) === null || _checkedServices$card3 === void 0 ? void 0 : _checkedServices$card3.size) || 0;
+    const cardKey = getSubscriptionKey(card, cardIndex);
+    const checkedCount = ((_checkedServices$card3 = checkedServices[cardKey]) === null || _checkedServices$card3 === void 0 ? void 0 : _checkedServices$card3.size) || 0;
     return /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
@@ -281,7 +297,7 @@ const PunchCardsPage = _ref => {
     }, /*#__PURE__*/React.createElement(Button, {
       type: "primary",
       size: "small",
-      onClick: () => handleSave(card),
+      onClick: () => handleSave(card, cardIndex),
       loading: isLoading,
       style: {
         backgroundColor: color,
@@ -289,11 +305,11 @@ const PunchCardsPage = _ref => {
       }
     }, "Save (", checkedCount, ")"), /*#__PURE__*/React.createElement(Button, {
       size: "small",
-      onClick: () => handleClearSelection(card.id),
+      onClick: () => handleClearSelection(cardKey),
       disabled: isLoading
     }, "Clear")) : /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement(Button, {
       className: "flip-btn",
-      onClick: () => toggleFlip(card.id),
+      onClick: () => toggleFlip(cardKey),
       icon: /*#__PURE__*/React.createElement(SwapOutlined, null),
       disabled: isLoading,
       title: "View details"
@@ -321,83 +337,86 @@ const PunchCardsPage = _ref => {
     size: "middle"
   }, "Completed")), punchCards.length > 0 ? /*#__PURE__*/React.createElement("div", {
     className: "punch-cards-grid"
-  }, punchCards.map(card => /*#__PURE__*/React.createElement("div", {
-    key: card.id,
-    className: "punch-card ".concat(flippedCards[card.id] ? "flipped" : "")
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "punch-card-inner"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "punch-card-front",
-    style: {
-      backgroundColor: color,
-      borderColor: color
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "punch-card-header",
-    style: {
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 600,
-      lineHeight: "18px"
-    }
-  }, "Subscription Services"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      opacity: 0.85,
-      marginTop: 2
-    }
-  }, card.noOfServicesCompleted, "/", card.totalNumberOfServices, " completed")), /*#__PURE__*/React.createElement("div", {
-    className: "status-badge",
-    style: {
-      fontSize: 11,
-      padding: "2px 8px",
-      borderRadius: 12,
-      backgroundColor: card.status === "COMPLETED" ? "#52c41a" : "#faad14",
-      color: "#fff"
-    }
-  }, card.status)), /*#__PURE__*/React.createElement("div", {
-    className: "punchCards"
-  }, renderCardContent(card)), renderActionButtons(card)), /*#__PURE__*/React.createElement("div", {
-    className: "punch-card-back"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flipped-content",
-    style: {
-      fontSize: 12,
-      lineHeight: "18px"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "detail-item",
-    style: {
-      fontWeight: 600
-    }
-  }, customerName), /*#__PURE__*/React.createElement("div", {
-    className: "detail-item"
-  }, "Purchased: ", card.purchasedDate), /*#__PURE__*/React.createElement("div", {
-    className: "detail-item"
-  }, "Expires: ", card.completedDate), /*#__PURE__*/React.createElement("div", {
-    className: "detail-item"
-  }, "Total: ", card.totalNumberOfServices), /*#__PURE__*/React.createElement("div", {
-    className: "detail-item"
-  }, "Completed: ", card.noOfServicesCompleted), /*#__PURE__*/React.createElement("div", {
-    className: "detail-item",
-    style: {
-      color: "#ffd700",
-      fontWeight: 600
-    }
-  }, "Remaining: ", card.noOfServicesLeft)), /*#__PURE__*/React.createElement(Button, {
-    className: "flip-btn",
-    onClick: () => toggleFlip(card.id),
-    icon: /*#__PURE__*/React.createElement(SwapOutlined, null),
-    size: "small",
-    style: {
-      background: "rgba(255,255,255,0.2)",
-      color: "#fff"
-    },
-    title: "View punch card"
-  })))))) : /*#__PURE__*/React.createElement("div", {
+  }, punchCards.map((card, cardIndex) => {
+    const cardKey = getSubscriptionKey(card, cardIndex);
+    return /*#__PURE__*/React.createElement("div", {
+      key: cardKey,
+      className: "punch-card ".concat(flippedCards[cardKey] ? "flipped" : "")
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "punch-card-inner"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "punch-card-front",
+      style: {
+        backgroundColor: color,
+        borderColor: color
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "punch-card-header",
+      style: {
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 600,
+        lineHeight: "18px"
+      }
+    }, "Subscription Services"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        opacity: 0.85,
+        marginTop: 2
+      }
+    }, card.noOfServicesCompleted, "/", card.totalNumberOfServices, " completed")), /*#__PURE__*/React.createElement("div", {
+      className: "status-badge",
+      style: {
+        fontSize: 11,
+        padding: "2px 8px",
+        borderRadius: 12,
+        backgroundColor: card.status === "COMPLETED" ? "#52c41a" : "#faad14",
+        color: "#fff"
+      }
+    }, card.status)), /*#__PURE__*/React.createElement("div", {
+      className: "punchCards"
+    }, renderCardContent(card, cardIndex)), renderActionButtons(card, cardIndex)), /*#__PURE__*/React.createElement("div", {
+      className: "punch-card-back"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flipped-content",
+      style: {
+        fontSize: 12,
+        lineHeight: "18px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "detail-item",
+      style: {
+        fontWeight: 600
+      }
+    }, customerName), /*#__PURE__*/React.createElement("div", {
+      className: "detail-item"
+    }, "Purchased: ", card.purchasedDate), /*#__PURE__*/React.createElement("div", {
+      className: "detail-item"
+    }, "Expires: ", card.completedDate), /*#__PURE__*/React.createElement("div", {
+      className: "detail-item"
+    }, "Total: ", card.totalNumberOfServices), /*#__PURE__*/React.createElement("div", {
+      className: "detail-item"
+    }, "Completed: ", card.noOfServicesCompleted), /*#__PURE__*/React.createElement("div", {
+      className: "detail-item",
+      style: {
+        color: "#ffd700",
+        fontWeight: 600
+      }
+    }, "Remaining: ", card.noOfServicesLeft)), /*#__PURE__*/React.createElement(Button, {
+      className: "flip-btn",
+      onClick: () => toggleFlip(cardKey),
+      icon: /*#__PURE__*/React.createElement(SwapOutlined, null),
+      size: "small",
+      style: {
+        background: "rgba(255,255,255,0.2)",
+        color: "#fff"
+      },
+      title: "View punch card"
+    }))));
+  })) : /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "24px 12px",
