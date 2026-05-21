@@ -97,7 +97,6 @@ const ResourcePage = _ref => {
   useEffect(() => {
     setIsLoading(false);
   }, []);
-  console.log("Resource:", resourceData);
   return /*#__PURE__*/React.createElement("div", {
     className: "resource-app"
   }, isLoading ? /*#__PURE__*/React.createElement("h3", null, /*#__PURE__*/React.createElement(LoadingOutlined, null), " Loading....") : /*#__PURE__*/React.createElement(React.Fragment, null, dataView === "table" ? /*#__PURE__*/React.createElement("div", {
@@ -170,6 +169,7 @@ const ResourcePage = _ref => {
     status: item.status,
     groupId: item.groupId,
     comments: item.comments,
+    email: item.email,
     subscriptions: "",
     commentBox: commentBox,
     setCommentBox: setCommentBox,
