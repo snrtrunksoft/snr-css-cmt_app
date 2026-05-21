@@ -38,29 +38,36 @@ const ResourcePage = _ref => {
       firstName,
       lastName,
       phone,
-      address,
+      email,
+      houseNo,
+      street1,
+      street2,
       city,
       state,
       country,
       pincode,
-      status = "ACTIVE",
-      groupId = "undefined"
+      status = "Active",
+      groupId = "1"
     } = values;
+    const trimmedFirstName = (firstName === null || firstName === void 0 ? void 0 : firstName.trim()) || "";
+    const trimmedLastName = (lastName === null || lastName === void 0 ? void 0 : lastName.trim()) || "";
     const newRecord = {
-      resourceName: (firstName || "") + (lastName || ""),
+      firstName: trimmedFirstName,
+      lastName: trimmedLastName,
       phoneNumber: phone,
       address: [{
         country: country || "",
         city: city || "",
-        houseNo: "NA",
-        street1: address || "NA",
-        street2: "NA",
-        pincode: pincode || "NA",
+        houseNo: houseNo || "",
+        street1: street1 || "",
+        street2: street2 || "",
+        pincode: pincode || "",
         state: state || ""
       }],
-      status: status,
-      groupId: groupId ? [groupId] : ["undefined"],
-      comments: []
+      comments: [],
+      status: status === "ACTIVE" ? "Active" : status,
+      email: email || "",
+      groupId: []
     };
     const addNewResource = async () => {
       try {
@@ -68,7 +75,8 @@ const ResourcePage = _ref => {
         console.log("new resource data:", newRecord);
         console.log("post New Resource Data:", postData);
         const updatedRecord = _objectSpread(_objectSpread({}, newRecord), {}, {
-          resourceId: (firstName || "").slice(0, 3) + (postData.resourceId || "")
+          resourceName: "".concat(trimmedFirstName).concat(trimmedLastName),
+          resourceId: trimmedFirstName.slice(0, 3) + (postData.resourceId || "")
         });
         setResourceData1(prev => [...prev, updatedRecord]);
         setResourceData(prev => [...prev, updatedRecord]);

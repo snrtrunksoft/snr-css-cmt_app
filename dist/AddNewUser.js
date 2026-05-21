@@ -1,13 +1,32 @@
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useState, useEffect } from "react";
 import "./AddNewUser.css";
 import { Row, Col, Input, Select, Button, Form, Typography, Spin } from 'antd';
-import { getSubscriptionPlans, getCountries, getCountryStates } from "./api/APIUtil";
+import { getSubscriptionPlans } from "./api/APIUtil";
 const {
   Option
 } = Select;
 const {
   Title
 } = Typography;
+const NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9._]*(?: +[a-zA-Z0-9._]+)*$/;
+const validateName = (_, value) => {
+  const trimmedValue = (value || "").trim();
+  if (!trimmedValue) {
+    return Promise.reject(new Error("Name is required"));
+  }
+  if (!NAME_PATTERN.test(trimmedValue)) {
+    return Promise.reject(new Error("Name must start with a letter and can contain letters, numbers, spaces, underscores, and dots"));
+  }
+  if (trimmedValue.length < 7) {
+    return Promise.reject(new Error("Name should have at least 7 characters"));
+  }
+  return Promise.resolve();
+};
 
 /**
  * Self-contained form:
@@ -24,31 +43,7 @@ const AddNewUser = _ref => {
   } = _ref;
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
-  const [countries, setCountries] = useState([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-  const [states, setStates] = useState([]);
-  const [loadingStates, setLoadingStates] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(null);
-  const [countryCode, setCountryCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Fetch countries on component mount
-  useEffect(() => {
-    fetchCountries();
-  }, []);
-  const fetchCountries = async () => {
-    if (countries.length > 0) return; // already loaded
-    setLoadingCountries(true);
-    try {
-      const sortedCountries = await getCountries();
-      setCountries(sortedCountries);
-      console.log("Countries loaded:", sortedCountries);
-    } catch (error) {
-      console.error("Error fetching countries:", error);
-    } finally {
-      setLoadingCountries(false);
-    }
-  };
   useEffect(() => {
     const fetchSubscriptionPlans = async () => {
       setLoadingPlans(true);
@@ -66,34 +61,6 @@ const AddNewUser = _ref => {
       fetchSubscriptionPlans();
     }
   }, [mode, entityId]);
-  const handleCountryChange = value => {
-    const selected = countries.find(c => c.name === value);
-    if (selected) {
-      setSelectedCountry(selected);
-      setCountryCode(selected.dialCode || "");
-
-      // Fetch states for selected country
-      fetchStates(selected.name);
-
-      // Reset state field
-      form.setFieldsValue({
-        state: undefined
-      });
-    }
-  };
-  const fetchStates = async countryName => {
-    setLoadingStates(true);
-    try {
-      const statesList = await getCountryStates(countryName);
-      console.log("Parsed states:", statesList);
-      setStates(statesList);
-    } catch (error) {
-      console.error("Error fetching states:", error);
-      setStates([]);
-    } finally {
-      setLoadingStates(false);
-    }
-  };
 
   // useEffect(() => {
   //   if (mode === "member") {
@@ -111,7 +78,12 @@ const AddNewUser = _ref => {
     if (!onSubmit) return;
     setIsSubmitting(true);
     try {
-      const result = onSubmit(values);
+      var _values$firstName, _values$lastName;
+      const sanitizedValues = _objectSpread(_objectSpread({}, values), {}, {
+        firstName: ((_values$firstName = values.firstName) === null || _values$firstName === void 0 ? void 0 : _values$firstName.trim()) || "",
+        lastName: ((_values$lastName = values.lastName) === null || _values$lastName === void 0 ? void 0 : _values$lastName.trim()) || ""
+      });
+      const result = onSubmit(sanitizedValues);
       // Await if the result is a promise
       if (result && typeof result.then === 'function') {
         await result;
@@ -156,17 +128,10 @@ const AddNewUser = _ref => {
     name: "firstName",
     label: "Name",
     rules: [{
-      required: true,
-      message: 'Name is required'
-    }, {
-      pattern: /^[a-zA-Z][a-zA-Z0-9._]*$/,
-      message: 'Name must start with a letter and can contain letters, numbers, underscores, and dots'
-    }, {
-      min: 7,
-      message: 'Name should have at least 7 characters'
+      validator: validateName
     }]
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter name (start with letter, min 7 chars)"
+    placeholder: "Enter name (spaces allowed, min 7 chars)"
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
@@ -179,7 +144,7 @@ const AddNewUser = _ref => {
     // ]}
   }, /*#__PURE__*/React.createElement(Input, {
     placeholder: "Enter last name (letters only, min 2 chars)"
-  })))), mode === "member" && /*#__PURE__*/React.createElement(Form.Item, {
+  })))), /*#__PURE__*/React.createElement(Form.Item, {
     name: "email",
     label: "Email",
     rules: [{
@@ -203,20 +168,8 @@ const AddNewUser = _ref => {
       required: true,
       message: 'Country is required'
     }]
-  }, /*#__PURE__*/React.createElement(Select, {
-    placeholder: "Select a country",
-    onChange: handleCountryChange,
-    allowClear: true,
-    showSearch: true,
-    loading: loadingCountries,
-    filterOption: (input, option) => {
-      var _option$label;
-      return ((_option$label = option === null || option === void 0 ? void 0 : option.label) !== null && _option$label !== void 0 ? _option$label : '').toLowerCase().includes(input.toLowerCase());
-    },
-    options: countries.map(country => ({
-      label: country.name,
-      value: country.name
-    }))
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Enter country"
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
@@ -231,9 +184,8 @@ const AddNewUser = _ref => {
     }]
   }, /*#__PURE__*/React.createElement(Input, {
     type: "tel",
-    placeholder: countryCode ? "".concat(countryCode, " - 10-digit number") : "Select country first",
-    maxLength: 10,
-    prefix: countryCode ? countryCode : undefined
+    placeholder: "Enter 10-digit phone number",
+    maxLength: 10
   })))), /*#__PURE__*/React.createElement(Row, {
     gutter: 16
   }, /*#__PURE__*/React.createElement(Col, {
@@ -245,35 +197,19 @@ const AddNewUser = _ref => {
       required: true,
       message: 'State is required'
     }]
-  }, /*#__PURE__*/React.createElement(Select, {
-    placeholder: !selectedCountry ? "Select a country first" : "Select a state/province",
-    allowClear: true,
-    disabled: !selectedCountry || states.length === 0,
-    loading: loadingStates,
-    showSearch: true,
-    filterOption: (input, option) => {
-      var _option$label2;
-      return ((_option$label2 = option === null || option === void 0 ? void 0 : option.label) !== null && _option$label2 !== void 0 ? _option$label2 : '').toLowerCase().includes(input.toLowerCase());
-    },
-    options: states.map(state => ({
-      label: state.name,
-      value: state.name
-    })),
-    onChange: () => form.validateFields(['state'])
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Enter state/province"
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
-    name: "address",
-    label: "Address",
+    name: "houseNo",
+    label: "House No.",
     rules: [{
       required: true,
-      message: 'Address is required'
-    }, {
-      min: 5,
-      message: 'Address should have at least 5 characters'
+      message: 'House number is required'
     }]
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "houseNo./street 1/street 2 (min 5 chars)"
+    placeholder: "Enter house/building number"
   })))), /*#__PURE__*/React.createElement(Row, {
     gutter: 16
   }, /*#__PURE__*/React.createElement(Col, {
@@ -308,6 +244,29 @@ const AddNewUser = _ref => {
   }, /*#__PURE__*/React.createElement(Input, {
     placeholder: "Enter 5-6 digit pincode",
     maxLength: 6
+  })))), /*#__PURE__*/React.createElement(Row, {
+    gutter: 16
+  }, /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: "street1",
+    label: "Street 1",
+    rules: [{
+      required: true,
+      message: 'Street 1 is required'
+    }, {
+      min: 2,
+      message: 'Street 1 should have at least 2 characters'
+    }]
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Enter street 1"
+  }))), /*#__PURE__*/React.createElement(Col, {
+    span: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: "street2",
+    label: "Street 2"
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Enter street 2"
   })))), /*#__PURE__*/React.createElement(Form.Item, {
     name: "status",
     label: "Status",

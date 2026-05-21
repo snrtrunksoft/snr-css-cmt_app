@@ -5,6 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { LoadingOutlined } from '@ant-design/icons';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession } from 'aws-amplify/auth';
+import awsExports from './aws-exports-dev.local';
 
 // Local component imports
 import Header from './Header';
@@ -22,6 +23,13 @@ import { getMembers, getResources, getCalendar, createMember, getAvailableGroups
 import dayjs from 'dayjs';
 
 const { useBreakpoint } = Grid;
+
+const createUserName = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
 
 // Registering necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, Legend, ArcElement);
@@ -135,7 +143,7 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
         } 
         try {
           const res = await getAvailableGroups(entityId);
-          const groups = res.map(group => group.groupName);
+          const groups = Array.isArray(res) ? res.map(group => group.groupName || group.name || group) : [];
           setUniqueGroups(groups);
         } catch (error) {
           console.log("Error fetching available groups:", error);
@@ -251,32 +259,41 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
       lastName,
       phone,
       email,
-      address,
+      houseNo,
+      street1,
+      street2,
       city,
       state,
       country,
       pincode,
       status = "ACTIVE",
-      groupId = "undefined",
+      groupId,
     } = values;
+    const trimmedFirstName = firstName?.trim() || "";
+    const trimmedLastName = lastName?.trim() || "";
 
     const newRecord = {
-      customerName: (firstName || "") + (lastName || ""),
+      subscriptions: [],
+      comments: [],
+      groupId: groupId ? [groupId] : [],
+      userName: values.userName || createUserName(),
+      firstName: trimmedFirstName,
+      lastName: trimmedLastName,
       phoneNumber: phone,
       email: email,
+      orderIds: [],
+      rewardPoints: 0,
+      userPoolId: awsExports?.Auth?.Cognito?.userPoolId || "",
+      status: status,
       address: [{
         country: country || "",
         city: city || "",
-        houseNo: "NA",
-        street1: address || "NA",
-        street2: "NA",
-        pincode: pincode || "NA",
+        houseNo: houseNo || "",
+        street1: street1 || "",
+        street2: street2 || "",
+        pincode: pincode || "",
         state: state || ""
-      }],
-      comments: [],
-      status: status,
-      groupId: [groupId],
-      subscriptions: [],
+      }]
     };
 
     const addNewMember = async () => {
@@ -284,7 +301,11 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
         const postData = await createMember(entityId, newRecord);
         console.log("new customer data:", newRecord);
         console.log("post New Member Data:", postData);
-        const updatedRecord = { ...newRecord, id: postData.userId };
+        const updatedRecord = {
+          ...newRecord,
+          id: postData.userId,
+          customerName: `${trimmedFirstName}${trimmedLastName}`,
+        };
         // Update BOTH data and duplicateData to keep them in sync
         setData(prevData => [...prevData, updatedRecord]);
         setDuplicateData(prevData => [...prevData, updatedRecord]);
@@ -295,7 +316,7 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
           visible: true,
           type: "success",
           title: "User Added Successfully",
-          message: `New user "${newRecord.customerName}" has been added successfully!`,
+          message: `New user "${updatedRecord.customerName}" has been added successfully!`,
           entityType: "user"
         });
         return { success: true, record: updatedRecord };
@@ -404,9 +425,9 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
       onChange={(e) => handleGroupSelection(e.target.value)}
     >
       <option value="All">Select Group</option>
-      {uniqueGroups.map((groupId, index) => (
-        <option key={index} value={groupId}>
-          {groupId}
+      {uniqueGroups.map((groupName, index) => (
+        <option key={index} value={groupName}>
+          {groupName}
         </option>
       ))}
     </select>

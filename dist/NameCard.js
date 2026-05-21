@@ -1,28 +1,79 @@
-const _excluded = ["id", "entityId"],
-  _excluded2 = ["subscriptions"],
-  _excluded3 = ["subscriptions"];
-function _objectWithoutProperties(e, t) { if (null == e) return {}; var o, r, i = _objectWithoutPropertiesLoose(e, t); if (Object.getOwnPropertySymbols) { var n = Object.getOwnPropertySymbols(e); for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]); } return i; }
-function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t = {}; for (var n in r) if ({}.hasOwnProperty.call(r, n)) { if (-1 !== e.indexOf(n)) continue; t[n] = r[n]; } return t; }
+const _excluded = ["entityId", "id"],
+  _excluded2 = ["id", "entityId"],
+  _excluded3 = ["subscriptions"],
+  _excluded4 = ["subscriptions"];
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-import React, { useEffect, useState } from "react";
+function _objectWithoutProperties(e, t) { if (null == e) return {}; var o, r, i = _objectWithoutPropertiesLoose(e, t); if (Object.getOwnPropertySymbols) { var n = Object.getOwnPropertySymbols(e); for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]); } return i; }
+function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t = {}; for (var n in r) if ({}.hasOwnProperty.call(r, n)) { if (-1 !== e.indexOf(n)) continue; t[n] = r[n]; } return t; }
+import React, { useEffect, useMemo, useState } from "react";
 import "./NameCard.css";
 import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar, Tag } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import StatusModal from "./StatusModal";
-import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource, getCountries, getCountryStates } from "./api/APIUtil";
+import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource } from "./api/APIUtil";
 import PunchCardsPage from "./PunchCardsPage";
 import dayjs from "dayjs";
 const {
   Option
 } = Select;
-const NameCard = _ref => {
-  var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7, _address$8, _groupMessages, _groupMessages2, _groupMessages3, _address$9, _address$0, _address$1, _address$10;
+const NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9._]*(?: +[a-zA-Z0-9._]+)*$/;
+const validateName = (_, value) => {
+  const trimmedValue = (value || "").trim();
+  if (!trimmedValue) {
+    return Promise.reject(new Error("Name is required"));
+  }
+  if (!NAME_PATTERN.test(trimmedValue)) {
+    return Promise.reject(new Error("Name must start with a letter and can contain letters, numbers, spaces, underscores, and dots"));
+  }
+  if (trimmedValue.length < 7) {
+    return Promise.reject(new Error("Name should have at least 7 characters"));
+  }
+  return Promise.resolve();
+};
+const STATUS_COLORS = {
+  ACTIVE: "pink",
+  COMPLETED: "lightgreen",
+  IN_PROGRESS: "lightblue",
+  CANCELLED: "red"
+};
+const EMPTY_STATUS_MODAL = {
+  visible: false,
+  type: "",
+  title: "",
+  message: ""
+};
+const normalizeGroupId = value => {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return [];
+    return Array.isArray(value[0]) ? value[0] : value;
+  }
+  return value ? [value] : [];
+};
+const getNextCommentId = function () {
+  var _comments;
+  let comments = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return parseInt(((_comments = comments[comments.length - 1]) === null || _comments === void 0 ? void 0 : _comments.commentId) || 0, 10) + 1;
+};
+const getRecordKey = isMember => isMember ? "id" : "resourceId";
+const sanitizeSubscriptionsForMemberUpdate = function () {
+  let subscriptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return Array.isArray(subscriptions) ? subscriptions.map(_ref => {
+    let {
+        entityId,
+        id
+      } = _ref,
+      subscription = _objectWithoutProperties(_ref, _excluded);
+    return subscription;
+  }) : subscriptions;
+};
+const NameCard = _ref2 => {
+  var _groupMessages, _groupMessages2, _groupMessages3, _address$8, _address$9, _address$0, _address$1;
   let {
     membersPage,
     data,
@@ -39,69 +90,49 @@ const NameCard = _ref => {
     groupId,
     comments,
     subscriptions,
-    commentBox,
+    commentBox = [],
     setCommentBox,
     selectedGroup,
     groupMessages,
     setGroupMessages,
     uniqueGroups = []
-  } = _ref;
+  } = _ref2;
   const [isHovered, setIsHovered] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [nameCardDrawer, setNameCardDrawer] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-  const [statusModal, setStatusModal] = useState({
-    visible: false,
-    type: "",
-    title: "",
-    message: ""
-  });
+  const [statusModal, setStatusModal] = useState(EMPTY_STATUS_MODAL);
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAddingComment, setIsAddingComment] = useState(false);
   // Track which comment index is currently being deleted (null = none)
   const [deletingCommentIndex, setDeletingCommentIndex] = useState(null);
-
-  // Country/State data for address edit (copied behavior from AddNewUser)
-  const [countries, setCountries] = useState([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-  const [states, setStates] = useState([]);
-  const [loadingStates, setLoadingStates] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(null);
-  const [countryCode, setCountryCode] = useState("");
   const {
     useBreakpoint
   } = Grid;
   const [form] = Form.useForm();
   const screens = useBreakpoint();
-
-  // Helper to ensure groupId is an array of strings
-  const getGroupArrayValue = () => {
-    if (Array.isArray(groupId)) {
-      if (groupId.length === 0) return [];
-      if (Array.isArray(groupId[0])) return groupId[0];
-      return groupId;
-    }
-    return groupId ? [groupId] : [];
-  };
-  const [defaultValues] = useState({
-    customerId: customerId || "",
-    customerName: customerName || "",
-    phoneNumber: phoneNumber || "",
-    email: email || "",
-    status: status || "",
-    groupId: getGroupArrayValue(),
-    address: {
-      houseNo: (address === null || address === void 0 || (_address$ = address[0]) === null || _address$ === void 0 ? void 0 : _address$.houseNo) || "",
-      street1: (address === null || address === void 0 || (_address$2 = address[0]) === null || _address$2 === void 0 ? void 0 : _address$2.street1) || "",
-      street2: (address === null || address === void 0 || (_address$3 = address[0]) === null || _address$3 === void 0 ? void 0 : _address$3.street2) || "",
-      city: (address === null || address === void 0 || (_address$4 = address[0]) === null || _address$4 === void 0 ? void 0 : _address$4.city) || "",
-      state: (address === null || address === void 0 || (_address$5 = address[0]) === null || _address$5 === void 0 ? void 0 : _address$5.state) || "",
-      country: (address === null || address === void 0 || (_address$6 = address[0]) === null || _address$6 === void 0 ? void 0 : _address$6.country) || "",
-      pincode: (address === null || address === void 0 || (_address$7 = address[0]) === null || _address$7 === void 0 ? void 0 : _address$7.pincode) || ""
-    }
-  });
+  const defaultValues = useMemo(() => {
+    var _address$, _address$2, _address$3, _address$4, _address$5, _address$6, _address$7;
+    return {
+      customerId: customerId || "",
+      customerName: customerName || "",
+      phoneNumber: phoneNumber || "",
+      email: email || "",
+      status: status || "",
+      groupId: normalizeGroupId(groupId),
+      address: {
+        houseNo: (address === null || address === void 0 || (_address$ = address[0]) === null || _address$ === void 0 ? void 0 : _address$.houseNo) || "",
+        street1: (address === null || address === void 0 || (_address$2 = address[0]) === null || _address$2 === void 0 ? void 0 : _address$2.street1) || "",
+        street2: (address === null || address === void 0 || (_address$3 = address[0]) === null || _address$3 === void 0 ? void 0 : _address$3.street2) || "",
+        city: (address === null || address === void 0 || (_address$4 = address[0]) === null || _address$4 === void 0 ? void 0 : _address$4.city) || "",
+        state: (address === null || address === void 0 || (_address$5 = address[0]) === null || _address$5 === void 0 ? void 0 : _address$5.state) || "",
+        country: (address === null || address === void 0 || (_address$6 = address[0]) === null || _address$6 === void 0 ? void 0 : _address$6.country) || "",
+        pincode: (address === null || address === void 0 || (_address$7 = address[0]) === null || _address$7 === void 0 ? void 0 : _address$7.pincode) || ""
+      }
+    };
+  }, [address, customerId, customerName, email, groupId, phoneNumber, status]);
   useEffect(() => {
     form.setFieldsValue(defaultValues);
   }, [form, defaultValues]);
@@ -122,81 +153,7 @@ const NameCard = _ref => {
       };
       fetchSubscriptionPlans();
     }
-
-    // Fetch country/state data when drawer opens (also used for phone country code)
-    if (nameCardDrawer) {
-      fetchCountries();
-    }
-  }, [nameCardDrawer, membersPage]);
-
-  // Fetch countries using shared helper
-  const fetchCountries = async () => {
-    if (countries.length > 0) return; // already loaded
-    setLoadingCountries(true);
-    try {
-      var _defaultValues$addres;
-      const sortedCountries = await getCountries();
-      setCountries(sortedCountries);
-      console.log("Countries loaded:", sortedCountries);
-
-      // If this record already had a country selected, set it
-      const initCountry = (_defaultValues$addres = defaultValues.address) === null || _defaultValues$addres === void 0 ? void 0 : _defaultValues$addres.country;
-      if (initCountry) {
-        const found = sortedCountries.find(c => c.name === initCountry);
-        if (found) {
-          setSelectedCountry(found);
-          setCountryCode(found.dialCode || "");
-          fetchStates(found.name);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching countries:", error);
-    } finally {
-      setLoadingCountries(false);
-    }
-  };
-  const fetchStates = async countryName => {
-    setLoadingStates(true);
-    try {
-      const statesList = await getCountryStates(countryName);
-      console.log("Parsed states:", statesList);
-      setStates(statesList);
-    } catch (error) {
-      console.error("Error fetching states:", error);
-      setStates([]);
-    } finally {
-      setLoadingStates(false);
-    }
-  };
-  const handleCountryChange = value => {
-    const selected = countries.find(c => c.name === value);
-    if (selected) {
-      setSelectedCountry(selected);
-      setCountryCode(selected.dialCode || "");
-      fetchStates(selected.name);
-      // Reset nested state field
-      form.setFieldsValue({
-        address: {
-          state: undefined
-        }
-      });
-    }
-  };
-  useEffect(() => {
-    // If countries are already loaded and drawer just opened, ensure state is synced
-    if (nameCardDrawer && countries.length > 0) {
-      var _defaultValues$addres2;
-      const initCountry = (_defaultValues$addres2 = defaultValues.address) === null || _defaultValues$addres2 === void 0 ? void 0 : _defaultValues$addres2.country;
-      if (initCountry) {
-        const found = countries.find(c => c.name === initCountry);
-        if (found) {
-          setSelectedCountry(found);
-          setCountryCode(found.dialCode || "");
-          fetchStates(found.name);
-        }
-      }
-    }
-  }, [nameCardDrawer, countries]);
+  }, [entityId, nameCardDrawer, membersPage]);
   const getDrawerWidth = () => {
     if (screens.xl) return 600;
     if (screens.lg) return 550;
@@ -204,24 +161,35 @@ const NameCard = _ref => {
     if (screens.sm) return 300;
     return '100%';
   };
-  const onFinish = values => {
-    console.log("form values:", values);
+  const onFinish = async values => {
+    var _values$customerName;
+    const trimmedCustomerName = ((_values$customerName = values.customerName) === null || _values$customerName === void 0 ? void 0 : _values$customerName.trim()) || "";
 
     // ---------- STEP 1: Find the correct data source ----------
     const filterData = membersPage ? data.find(prev => prev.id === values.customerId) : resourceData.find(prev => prev.resourceId === values.customerId);
+    if (!filterData) {
+      setStatusModal({
+        visible: true,
+        type: "error",
+        title: "Update Error",
+        message: "".concat(membersPage ? "User" : "Resource", " was not found. Please refresh and try again.")
+      });
+      return;
+    }
 
     // ---------- STEP 2: Prepare updated record ----------
     const buildUpdatedRecord = isMember => {
       var _filterData$address, _values$address, _filterData$address2, _values$address2, _filterData$address3, _values$address3, _filterData$address4, _values$address4, _filterData$address5;
       return _objectSpread(_objectSpread(_objectSpread(_objectSpread({}, filterData), isMember ? {
-        customerName: values.customerName,
+        customerName: trimmedCustomerName,
         email: values.email
       } : {
-        resourceName: values.customerName
+        resourceName: trimmedCustomerName,
+        email: values.email
       }), {}, {
         phoneNumber: values.phoneNumber,
         status: values.status,
-        groupId: Array.isArray(values.groupId) ? values.groupId : values.groupId ? [values.groupId] : []
+        groupId: normalizeGroupId(values.groupId)
       }, isMember && values.subscriptionPlanId && {
         subscriptionPlanId: values.subscriptionPlanId
       }), {}, {
@@ -240,21 +208,16 @@ const NameCard = _ref => {
         id,
         entityId: recordEntityId
       } = updatedRecord,
-      cleanCustomer = _objectWithoutProperties(updatedRecord, _excluded);
-    console.log("Clean customer data:", cleanCustomer);
-    console.log("entityId from props:", entityId);
+      cleanCustomer = _objectWithoutProperties(updatedRecord, _excluded2);
 
     // ---------- STEP 3: API update ----------
     const updateNameCard = async () => {
       setIsUpdating(true);
-      console.log("Using entityId:", entityId);
       try {
-        const membersPage_local = membersPage;
-        const customerId_local = values.customerId;
-        if (membersPage_local) {
-          await updateMember(entityId, customerId_local, cleanCustomer);
+        if (membersPage) {
+          await updateMember(entityId, values.customerId, cleanCustomer);
         } else {
-          await updateResource(entityId, customerId_local, cleanCustomer);
+          await updateResource(entityId, values.customerId, cleanCustomer);
         }
         if (membersPage) {
           setData(updateLocalState);
@@ -282,17 +245,18 @@ const NameCard = _ref => {
     };
     // ---------- STEP 4: Local state update ----------
     const updateLocalState = prev => prev.map(customer => {
-      const matchKey = membersPage ? "id" : "resourceId";
+      const matchKey = getRecordKey(membersPage);
       if (customer[matchKey] === values.customerId) {
         var _customer$address;
         return _objectSpread(_objectSpread(_objectSpread({}, customer), membersPage ? {
-          customerName: values.customerName
+          customerName: trimmedCustomerName
         } : {
-          resourceName: values.customerName
+          resourceName: trimmedCustomerName
         }), {}, {
+          email: values.email,
           phoneNumber: values.phoneNumber,
           status: values.status,
-          groupId: Array.isArray(values.groupId) ? values.groupId : values.groupId ? [values.groupId] : [],
+          groupId: normalizeGroupId(values.groupId),
           address: [_objectSpread(_objectSpread({}, (_customer$address = customer.address) === null || _customer$address === void 0 ? void 0 : _customer$address[0]), {}, {
             city: values.address.city,
             state: values.address.state,
@@ -302,33 +266,26 @@ const NameCard = _ref => {
       }
       return customer;
     });
-    updateNameCard();
+    await updateNameCard();
   };
-  const addressKeys = Object.keys((_address$8 = address === null || address === void 0 ? void 0 : address[0]) !== null && _address$8 !== void 0 ? _address$8 : {});
-
-  // Determine color based on status (moved before handleSend)
-  let color = "red";
-  if (status === "COMPLETED") {
-    color = "lightgreen";
-  }
-  if (status === "ACTIVE") {
-    color = "pink";
-  }
-  if (status === "IN_PROGRESS") {
-    color = "lightblue";
-  }
-  if (status === "CANCELLED") {
-    color = "red";
-  }
-  const handleSend = () => {
+  const color = STATUS_COLORS[status] || "red";
+  const visibleComments = Array.isArray(comments) ? comments : [];
+  const handleSend = async function (commentOverride) {
+    let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    const commentText = typeof commentOverride === "string" ? commentOverride : newComment;
+    const {
+      showStatus = true,
+      subscriptionsOverride
+    } = options;
     const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
-    // console.log(addTimeForComment);
-    if (newComment) {
-      var _comments;
-      const commentBody = [...comments, {
-        "commentId": parseInt(((_comments = comments[comments.length - 1]) === null || _comments === void 0 ? void 0 : _comments.commentId) || 0) + 1,
+    const existingComments = visibleComments;
+    const nextCommentId = getNextCommentId(existingComments);
+    const trimmedComment = commentText.trim();
+    if (trimmedComment) {
+      const commentBody = [...existingComments, {
+        "commentId": nextCommentId,
         "author": customerName,
-        "message": newComment,
+        "message": trimmedComment,
         "date": addTimeForComment
       }];
       const updatedRecord = _objectSpread(_objectSpread({}, membersPage ? {
@@ -339,20 +296,14 @@ const NameCard = _ref => {
         "status": status,
         "address": address,
         "email": email,
-        "subscriptions": subscriptions,
-        "groupId": Array.isArray(groupId) ? groupId.flat().filter(Boolean) : groupId ? [groupId] : [],
+        "subscriptions": sanitizeSubscriptionsForMemberUpdate(subscriptionsOverride || subscriptions),
+        "groupId": normalizeGroupId(groupId).flat().filter(Boolean),
         "phoneNumber": phoneNumber,
         "comments": commentBody
       });
-      Object.values(updatedRecord.subscriptions).forEach(sub => {
-        delete sub.entityId;
-        delete sub.id;
-      });
-      console.log("updatedRecord:", updatedRecord);
       const uploadComment = async () => {
         setIsAddingComment(true);
         try {
-          // Create a clean copy before modifying
           let recordToUpload = _objectSpread({}, updatedRecord);
 
           // 🔹 Remove subscriptions if calling RESOURCES_API
@@ -360,10 +311,9 @@ const NameCard = _ref => {
             const {
                 subscriptions
               } = recordToUpload,
-              rest = _objectWithoutProperties(recordToUpload, _excluded2);
+              rest = _objectWithoutProperties(recordToUpload, _excluded3);
             recordToUpload = rest;
           }
-          console.log("Record:", recordToUpload);
           if (membersPage) {
             await updateMember(entityId, customerId, recordToUpload);
           } else {
@@ -371,77 +321,70 @@ const NameCard = _ref => {
           }
           console.log("✅ successfully added the comment");
           if (membersPage) {
-            setData(prevData => prevData.map(prev => {
-              var _comments2;
-              return prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
-                comments: [...prev.comments, {
-                  commentId: parseInt(((_comments2 = comments[comments.length - 1]) === null || _comments2 === void 0 ? void 0 : _comments2.commentId) || 0) + 1,
-                  message: newComment,
-                  author: customerName,
-                  date: addTimeForComment
-                }]
-              }) : prev;
-            }));
+            setData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+              comments: [...(prev.comments || []), {
+                commentId: nextCommentId,
+                message: trimmedComment,
+                author: customerName,
+                date: addTimeForComment
+              }]
+            }) : prev));
           } else {
-            setResourceData(prevData => prevData.map(prev => {
-              var _comments3;
-              return prev.resourceId === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
-                comments: [...prev.comments, {
-                  commentId: parseInt(((_comments3 = comments[comments.length - 1]) === null || _comments3 === void 0 ? void 0 : _comments3.commentId) || 0) + 1,
-                  message: newComment,
-                  author: customerName,
-                  date: addTimeForComment
-                }]
-              }) : prev;
-            }));
+            setResourceData(prevData => prevData.map(prev => prev.resourceId === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+              comments: [...(prev.comments || []), {
+                commentId: nextCommentId,
+                message: trimmedComment,
+                author: customerName,
+                date: addTimeForComment
+              }]
+            }) : prev));
           }
           const existingData = commentBox.findIndex(person => (membersPage ? person.customerName : person.resourceName) === customerName);
           if (existingData !== -1) {
-            setCommentBox(prevComments => prevComments.map((prev, index) => {
-              var _comments4;
-              return index === existingData ? _objectSpread(_objectSpread({}, prev), {}, {
-                comment: [...prev.comment, {
-                  commentId: parseInt(((_comments4 = comments[comments.length - 1]) === null || _comments4 === void 0 ? void 0 : _comments4.commentId) || 0) + 1,
-                  message: newComment,
-                  author: customerName,
-                  date: addTimeForComment
-                }]
-              }) : prev;
-            }));
+            setCommentBox(prevComments => prevComments.map((prev, index) => index === existingData ? _objectSpread(_objectSpread({}, prev), {}, {
+              comment: [...prev.comment, {
+                commentId: nextCommentId,
+                message: trimmedComment,
+                author: customerName,
+                date: addTimeForComment
+              }]
+            }) : prev));
           } else {
-            setCommentBox(prevComments => {
-              var _comments5;
-              return [...prevComments, {
-                customerName,
-                color,
-                comment: [{
-                  commentId: parseInt(((_comments5 = comments[comments.length - 1]) === null || _comments5 === void 0 ? void 0 : _comments5.commentId) || 0) + 1,
-                  message: newComment,
-                  author: customerName,
-                  date: addTimeForComment
-                }]
-              }];
+            setCommentBox(prevComments => [...prevComments, {
+              customerName,
+              color,
+              comment: [{
+                commentId: nextCommentId,
+                message: trimmedComment,
+                author: customerName,
+                date: addTimeForComment
+              }]
+            }]);
+          }
+          if (showStatus) {
+            setStatusModal({
+              visible: true,
+              type: "success",
+              title: "Comment Posted",
+              message: "Your comment has been posted successfully!"
             });
           }
-          setStatusModal({
-            visible: true,
-            type: "success",
-            title: "Comment Posted",
-            message: "Your comment has been posted successfully!"
-          });
         } catch (error) {
-          console.log("❌ unable to add Comment:", error);
-          setStatusModal({
-            visible: true,
-            type: "error",
-            title: "Comment Error",
-            message: "Failed to post comment. Please try again."
-          });
+          console.log("Unable to add comment:", error);
+          if (showStatus) {
+            setStatusModal({
+              visible: true,
+              type: "error",
+              title: "Comment Error",
+              message: "Failed to post comment. Please try again."
+            });
+          }
+          throw error;
         } finally {
           setIsAddingComment(false);
         }
       };
-      uploadComment();
+      await uploadComment();
     }
     setNewComment("");
   };
@@ -476,12 +419,7 @@ const NameCard = _ref => {
       }
       setTimeout(() => {
         setNameCardDrawer(false);
-        setStatusModal({
-          visible: false,
-          type: "",
-          title: "",
-          message: ""
-        });
+        setStatusModal(EMPTY_STATUS_MODAL);
       }, 1500);
     } catch (error) {
       console.error("Delete failed:", error);
@@ -494,7 +432,7 @@ const NameCard = _ref => {
     }
   };
   const handleDeleteComment = commentId => {
-    const updatedComments = comments.filter((_, idx) => idx !== commentId);
+    const updatedComments = visibleComments.filter((_, idx) => idx !== commentId);
     const updatedRecord = _objectSpread(_objectSpread({}, membersPage ? {
       customerName: customerName
     } : {
@@ -503,14 +441,10 @@ const NameCard = _ref => {
       "status": status,
       "address": address,
       "email": email,
-      "subscriptions": subscriptions,
-      "groupId": Array.isArray(groupId) ? groupId.flat().filter(Boolean) : groupId ? [groupId] : [],
+      "subscriptions": sanitizeSubscriptionsForMemberUpdate(subscriptions),
+      "groupId": normalizeGroupId(groupId).flat().filter(Boolean),
       "phoneNumber": phoneNumber,
       "comments": updatedComments
-    });
-    Object.values(updatedRecord.subscriptions).forEach(sub => {
-      delete sub.entityId;
-      // delete sub.id;
     });
     const deleteCommentAPI = async () => {
       // Indicate which comment index is being deleted so only that button shows loading
@@ -521,7 +455,7 @@ const NameCard = _ref => {
           const {
               subscriptions
             } = recordToUpload,
-            rest = _objectWithoutProperties(recordToUpload, _excluded3);
+            rest = _objectWithoutProperties(recordToUpload, _excluded4);
           recordToUpload = rest;
         }
         if (membersPage) {
@@ -538,12 +472,7 @@ const NameCard = _ref => {
           title: "Comment Deleted",
           message: "Comment has been deleted successfully."
         });
-        setTimeout(() => setStatusModal({
-          visible: false,
-          type: "",
-          title: "",
-          message: ""
-        }), 1500);
+        setTimeout(() => setStatusModal(EMPTY_STATUS_MODAL), 1500);
 
         // Update local state
         if (membersPage) {
@@ -564,12 +493,7 @@ const NameCard = _ref => {
           title: "Delete Error",
           message: "Failed to delete comment. Please try again."
         });
-        setTimeout(() => setStatusModal({
-          visible: false,
-          type: "",
-          title: "",
-          message: ""
-        }), 2000);
+        setTimeout(() => setStatusModal(EMPTY_STATUS_MODAL), 2000);
       } finally {
         setDeletingCommentIndex(null);
       }
@@ -619,7 +543,7 @@ const NameCard = _ref => {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap'
     }
-  }, "Phone : ", phoneNumber), Array.isArray(address) && address.length > 0 && /*#__PURE__*/React.createElement("p", {
+  }, "Phone : ", phoneNumber), /*#__PURE__*/React.createElement("p", {
     style: {
       width: "100%",
       overflow: "hidden",
@@ -627,7 +551,7 @@ const NameCard = _ref => {
       whiteSpace: "nowrap",
       margin: 0
     }
-  }, "Address:\xA0", address.map(a => [a.city, a.state, a.country].filter(Boolean).join(", ")).join(" | ")), /*#__PURE__*/React.createElement("p", {
+  }, "Address:\xA0", Array.isArray(address) && address.length > 0 ? address.map(a => [a.city, a.state, a.country].filter(Boolean).join(", ")).join(" | ") : "Not Available"), /*#__PURE__*/React.createElement("p", {
     style: {
       width: '100%',
       overflow: 'hidden',
@@ -641,11 +565,13 @@ const NameCard = _ref => {
       setNameCardDrawer(false);
       setNewComment("");
       const currentGroupKey = Array.isArray(groupId) ? groupId[0] : groupId;
-      setGroupMessages(prev => _objectSpread(_objectSpread({}, prev), {}, {
-        [currentGroupKey]: _objectSpread(_objectSpread({}, prev[currentGroupKey]), {}, {
-          hasUnread: false
-        })
-      }));
+      if (currentGroupKey) {
+        setGroupMessages(prev => _objectSpread(_objectSpread({}, prev), {}, {
+          [currentGroupKey]: _objectSpread(_objectSpread({}, (prev === null || prev === void 0 ? void 0 : prev[currentGroupKey]) || {}), {}, {
+            hasUnread: false
+          })
+        }));
+      }
     },
     bodyStyle: {
       background: "#f5f7fa",
@@ -666,13 +592,13 @@ const NameCard = _ref => {
     style: {
       display: "grid",
       gridTemplateColumns: "80px 1fr 120px",
-      gridTemplateRows: "22px 18px 36px",
+      gridTemplateRows: "22px 18px 18px 36px",
       columnGap: 16,
       alignItems: "center"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      gridRow: "1 / span 3"
+      gridRow: "1 / span 4"
     }
   }, /*#__PURE__*/React.createElement(Avatar, {
     src: maleAvatar,
@@ -693,7 +619,7 @@ const NameCard = _ref => {
   }, customerName), /*#__PURE__*/React.createElement("div", {
     style: {
       gridColumn: 3,
-      gridRow: "1 / span 3",
+      gridRow: "1 / span 4",
       display: "flex",
       flexDirection: "column",
       gap: 6,
@@ -726,10 +652,20 @@ const NameCard = _ref => {
       overflow: "hidden",
       textOverflow: "ellipsis"
     }
-  }, phoneNumber), /*#__PURE__*/React.createElement("div", {
+  }, phoneNumber), /*#__PURE__*/React.createElement(Typography.Text, {
+    type: "secondary",
     style: {
       gridColumn: 2,
       gridRow: 3,
+      fontSize: 13,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, email || "No email"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      gridColumn: 2,
+      gridRow: 4,
       fontSize: 13,
       color: "#6b7280",
       lineHeight: "18px",
@@ -738,7 +674,7 @@ const NameCard = _ref => {
       WebkitLineClamp: 2,
       WebkitBoxOrient: "vertical"
     }
-  }, [address === null || address === void 0 || (_address$9 = address[0]) === null || _address$9 === void 0 ? void 0 : _address$9.street1, address === null || address === void 0 || (_address$0 = address[0]) === null || _address$0 === void 0 ? void 0 : _address$0.city, address === null || address === void 0 || (_address$1 = address[0]) === null || _address$1 === void 0 ? void 0 : _address$1.state, address === null || address === void 0 || (_address$10 = address[0]) === null || _address$10 === void 0 ? void 0 : _address$10.country].filter(Boolean).join(", ")))), /*#__PURE__*/React.createElement(Form, {
+  }, [address === null || address === void 0 || (_address$8 = address[0]) === null || _address$8 === void 0 ? void 0 : _address$8.street1, address === null || address === void 0 || (_address$9 = address[0]) === null || _address$9 === void 0 ? void 0 : _address$9.city, address === null || address === void 0 || (_address$0 = address[0]) === null || _address$0 === void 0 ? void 0 : _address$0.state, address === null || address === void 0 || (_address$1 = address[0]) === null || _address$1 === void 0 ? void 0 : _address$1.country].filter(Boolean).join(", ")))), /*#__PURE__*/React.createElement(Form, {
     hidden: !isEditable,
     form: form,
     layout: "vertical",
@@ -764,18 +700,11 @@ const NameCard = _ref => {
     name: "customerName",
     label: "Name",
     rules: [{
-      required: true,
-      message: 'Name is required'
-    }, {
-      pattern: /^[a-zA-Z][a-zA-Z0-9._]*$/,
-      message: 'Name must start with a letter and can contain letters, numbers, underscores, and dots'
-    }, {
-      min: 7,
-      message: 'Name should have at least 7 characters'
+      validator: validateName
     }]
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter name (start with letter, min 7 chars)"
-  }))), membersPage && /*#__PURE__*/React.createElement(Col, {
+    placeholder: "Enter name (spaces allowed, min 7 chars)"
+  }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "email",
@@ -801,8 +730,7 @@ const NameCard = _ref => {
     }]
   }, /*#__PURE__*/React.createElement(Input, {
     maxLength: 10,
-    placeholder: countryCode ? "".concat(countryCode, " - 10-digit number") : "Select country first",
-    prefix: countryCode ? countryCode : undefined
+    placeholder: "Enter 10-digit phone number"
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
@@ -874,21 +802,8 @@ const NameCard = _ref => {
       required: true,
       message: 'State is required'
     }]
-  }, /*#__PURE__*/React.createElement(Select, {
-    placeholder: !selectedCountry ? "Select a country first" : "Select a state/province",
-    allowClear: true,
-    disabled: !selectedCountry || states.length === 0,
-    loading: loadingStates,
-    showSearch: true,
-    filterOption: (input, option) => {
-      var _option$label;
-      return ((_option$label = option === null || option === void 0 ? void 0 : option.label) !== null && _option$label !== void 0 ? _option$label : '').toLowerCase().includes(input.toLowerCase());
-    },
-    options: states.map(state => ({
-      label: state.name,
-      value: state.name
-    })),
-    onChange: () => form.validateFields([['address', 'state']])
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Enter state/province"
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
@@ -898,20 +813,8 @@ const NameCard = _ref => {
       required: true,
       message: 'Country is required'
     }]
-  }, /*#__PURE__*/React.createElement(Select, {
-    placeholder: "Select a country",
-    onChange: value => handleCountryChange(value),
-    allowClear: true,
-    showSearch: true,
-    loading: loadingCountries,
-    filterOption: (input, option) => {
-      var _option$label2;
-      return ((_option$label2 = option === null || option === void 0 ? void 0 : option.label) !== null && _option$label2 !== void 0 ? _option$label2 : '').toLowerCase().includes(input.toLowerCase());
-    },
-    options: countries.map(country => ({
-      label: country.name,
-      value: country.name
-    }))
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Enter country"
   }))), /*#__PURE__*/React.createElement(Col, {
     span: 24
   }, /*#__PURE__*/React.createElement(Form.Item, {
@@ -943,6 +846,7 @@ const NameCard = _ref => {
     data: data,
     customerId: customerId,
     customerName: customerName,
+    subscriptions: subscriptions,
     setNewComment: setNewComment,
     handleSend: handleSend,
     setData: setData,
@@ -954,7 +858,7 @@ const NameCard = _ref => {
       margin: 16,
       borderRadius: 8
     }
-  }, comments.length > 0 ? comments.map((comment, index) => /*#__PURE__*/React.createElement(Badge.Ribbon, {
+  }, visibleComments.length > 0 ? visibleComments.map((comment, index) => /*#__PURE__*/React.createElement(Badge.Ribbon, {
     key: index,
     text: comment.author,
     color: color
@@ -1010,7 +914,7 @@ const NameCard = _ref => {
     disabled: isAddingComment
   }, "Clear"), /*#__PURE__*/React.createElement(Button, {
     type: "primary",
-    onClick: handleSend,
+    onClick: () => handleSend(),
     loading: isAddingComment,
     disabled: isAddingComment
   }, "Send"))))), /*#__PURE__*/React.createElement(StatusModal, {
@@ -1019,12 +923,7 @@ const NameCard = _ref => {
     title: statusModal.title,
     message: statusModal.message,
     onClose: () => {
-      setStatusModal({
-        visible: false,
-        type: "",
-        title: "",
-        message: ""
-      });
+      setStatusModal(EMPTY_STATUS_MODAL);
       if (statusModal.type === "success" && isEditable) {
         setIsEditable(false);
         setNameCardDrawer(false);

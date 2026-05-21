@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from "react";
 import "./AddNewUser.css";
 import { Row, Col, Input, Select, Button, Form, Typography, Spin } from 'antd';
-import { getSubscriptionPlans, getCountries, getCountryStates } from "./api/APIUtil";
+import { getSubscriptionPlans } from "./api/APIUtil";
 
 const { Option } = Select;
 const { Title } = Typography;
+const NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9._]*(?: +[a-zA-Z0-9._]+)*$/;
+const validateName = (_, value) => {
+  const trimmedValue = (value || "").trim();
+  if (!trimmedValue) {
+    return Promise.reject(new Error("Name is required"));
+  }
+  if (!NAME_PATTERN.test(trimmedValue)) {
+    return Promise.reject(new Error("Name must start with a letter and can contain letters, numbers, spaces, underscores, and dots"));
+  }
+  return Promise.resolve();
+};
 
 /**
  * Self-contained form:
@@ -15,32 +26,7 @@ const { Title } = Typography;
 const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
-  const [countries, setCountries] = useState([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-  const [states, setStates] = useState([]);
-  const [loadingStates, setLoadingStates] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(null);
-  const [countryCode, setCountryCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Fetch countries on component mount
-  useEffect(() => {
-    fetchCountries();
-  }, []);
-
-  const fetchCountries = async () => {
-    if (countries.length > 0) return; // already loaded
-    setLoadingCountries(true);
-    try {
-      const sortedCountries = await getCountries();
-      setCountries(sortedCountries);
-      console.log("Countries loaded:", sortedCountries);
-    } catch (error) {
-      console.error("Error fetching countries:", error);
-    } finally {
-      setLoadingCountries(false);
-    }
-  };
 
   useEffect(() => {
     const fetchSubscriptionPlans = async () => {
@@ -61,34 +47,6 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
     }
   }, [mode, entityId]);
 
-  const handleCountryChange = (value) => {
-    const selected = countries.find((c) => c.name === value);
-    if (selected) {
-      setSelectedCountry(selected);
-      setCountryCode(selected.dialCode || "");
-      
-      // Fetch states for selected country
-      fetchStates(selected.name);
-      
-      // Reset state field
-      form.setFieldsValue({ state: undefined });
-    }
-  };
-
-  const fetchStates = async (countryName) => {
-    setLoadingStates(true);
-    try {
-      const statesList = await getCountryStates(countryName);
-      console.log("Parsed states:", statesList);
-      setStates(statesList);
-    } catch (error) {
-      console.error("Error fetching states:", error);
-      setStates([]);
-    } finally {
-      setLoadingStates(false);
-    }
-  };
-
   // useEffect(() => {
   //   if (mode === "member") {
   //     setLoadingPlans(true);
@@ -105,7 +63,12 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
     if (!onSubmit) return;
     setIsSubmitting(true);
     try {
-      const result = onSubmit(values);
+      const sanitizedValues = {
+        ...values,
+        firstName: values.firstName?.trim() || "",
+        lastName: values.lastName?.trim() || "",
+      };
+      const result = onSubmit(sanitizedValues);
       // Await if the result is a promise
       if (result && typeof result.then === 'function') {
         await result;
@@ -141,12 +104,10 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
               name="firstName" 
               label="Name" 
               rules={[
-                { required: true, message: 'Name is required' },
-                { pattern: /^[a-zA-Z][a-zA-Z0-9._]*$/, message: 'Name must start with a letter and can contain letters, numbers, underscores, and dots' },
-                { min: 7, message: 'Name should have at least 7 characters' }
+                { validator: validateName }
               ]}
             >
-              <Input placeholder="Enter name (start with letter, min 7 chars)" />
+              <Input placeholder="Enter name (spaces allowed, min 7 chars)" />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -164,7 +125,6 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
           </Col>
         </Row>
 
-        {mode === "member" &&
         <Form.Item 
           name="email" 
           label="Email" 
@@ -174,7 +134,7 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
           ]}
         >
           <Input type="email" placeholder="Enter valid email address"/>
-        </Form.Item>}
+        </Form.Item>
 
         {/* Contact Information Section */}
         <Row gutter={16}>
@@ -186,20 +146,7 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
                 { required: true, message: 'Country is required' }
               ]}
             >
-              <Select 
-                placeholder="Select a country" 
-                onChange={handleCountryChange}
-                allowClear
-                showSearch
-                loading={loadingCountries}
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                options={countries.map((country) => ({
-                  label: country.name,
-                  value: country.name
-                }))}
-              />
+              <Input placeholder="Enter country" />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -213,9 +160,8 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
             >
               <Input 
                 type="tel" 
-                placeholder={countryCode ? `${countryCode} - 10-digit number` : "Select country first"} 
+                placeholder="Enter 10-digit phone number" 
                 maxLength={10}
-                prefix={countryCode ? countryCode : undefined}
               />
             </Form.Item>
           </Col>
@@ -230,33 +176,18 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
                 { required: true, message: 'State is required' }
               ]}
             >
-              <Select 
-                placeholder={!selectedCountry ? "Select a country first" : "Select a state/province"}
-                allowClear
-                disabled={!selectedCountry || states.length === 0}
-                loading={loadingStates}
-                showSearch
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                options={states.map((state) => ({
-                  label: state.name,
-                  value: state.name
-                }))}
-                onChange={() => form.validateFields(['state'])}
-              />
+              <Input placeholder="Enter state/province" />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item 
-              name="address" 
-              label="Address"
+              name="houseNo" 
+              label="House No."
               rules={[
-                { required: true, message: 'Address is required' },
-                { min: 5, message: 'Address should have at least 5 characters' }
+                { required: true, message: 'House number is required' }
               ]}
             >
-              <Input placeholder="houseNo./street 1/street 2 (min 5 chars)" />
+              <Input placeholder="Enter house/building number" />
             </Form.Item>
           </Col>
         </Row>
@@ -285,6 +216,29 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
               ]}
             >
               <Input placeholder="Enter 5-6 digit pincode" maxLength={6} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item 
+              name="street1" 
+              label="Street 1"
+              rules={[
+                { required: true, message: 'Street 1 is required' },
+                { min: 2, message: 'Street 1 should have at least 2 characters' }
+              ]}
+            >
+              <Input placeholder="Enter street 1" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item 
+              name="street2" 
+              label="Street 2"
+            >
+              <Input placeholder="Enter street 2" />
             </Form.Item>
           </Col>
         </Row>

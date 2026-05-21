@@ -1,20 +1,39 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button, Checkbox, message } from "antd";
-import { createSubscription, updateSubscription, updateMember, deleteSubscription } from "./api/APIUtil";
+import { createSubscription, updateSubscription, getMemberById } from "./api/APIUtil";
 import { SwapOutlined } from "@ant-design/icons";
 
-const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSend, setData, entityId, color}) => {
+const getSubscriptionId = (card) => card?.subscriptionId || card?.id;
+
+const getSubscriptionKey = (card, index = 0) =>
+    getSubscriptionId(card)
+    || [
+        card?.memberId,
+        card?.status,
+        card?.purchasedDate,
+        card?.completedDate,
+        card?.totalNumberOfServices,
+        card?.noOfServicesCompleted,
+        card?.noOfServicesLeft,
+        index
+    ].filter(Boolean).join("-");
+
+const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSubscriptions = [], setNewComment, handleSend, setData, entityId, color}) => {
     // ==================== STATE MANAGEMENT ====================
     const [flippedCards, setFlippedCards] = useState({});
     const [checkedServices, setCheckedServices] = useState({});
     const [subscriptionStatus, setSubscriptionStatus] = useState("ACTIVE");
     const [isLoading, setIsLoading] = useState(false);
     const [effectiveEntityId, setEffectiveEntityId] = useState(null);
-    const prevSubscriptionIdsRef = useRef(new Set());
 
     // ==================== EFFECTS ====================
     // Initialize entityId from localStorage
     useEffect(() => {
+        if (entityId) {
+            setEffectiveEntityId(entityId);
+            return;
+        }
+
         if (!effectiveEntityId && typeof window !== "undefined") {
             try {
                 const storedId = localStorage.getItem("entityId");
@@ -26,15 +45,24 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 console.error("❌ Unable to read entityId from localStorage:", e);
             }
         }
-    }, [effectiveEntityId]);
+    }, [effectiveEntityId, entityId]);
 
     // ==================== HELPER FUNCTIONS ====================
     // Get current member's subscriptions from parent data
     const getCurrentSubscriptions = useCallback(() => {
+        if (Array.isArray(memberSubscriptions) && memberSubscriptions.length > 0) {
+            return memberSubscriptions.map((subscription) => ({
+                ...subscription,
+                subscriptionId: getSubscriptionId(subscription)
+            }));
+        }
         if (!data || data.length === 0 || !customerId) return [];
         const memberData = data.find(member => member.id === customerId);
-        return memberData?.subscriptions || [];
-    }, [data, customerId]);
+        return (memberData?.subscriptions || []).map((subscription) => ({
+            ...subscription,
+            subscriptionId: getSubscriptionId(subscription)
+        }));
+    }, [data, customerId, memberSubscriptions]);
 
     // Get filtered subscriptions based on status
     const punchCards = useMemo(() => {
@@ -42,26 +70,40 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
         return subscriptions.filter((card) => card.status === subscriptionStatus);
     }, [getCurrentSubscriptions, subscriptionStatus]);
 
+    const refreshMember = useCallback(async () => {
+        const resolvedEntityId = entityId || effectiveEntityId;
+        if (!resolvedEntityId || !customerId) return null;
+
+        const refreshedMember = await getMemberById(resolvedEntityId, customerId);
+        setData(prevMembers =>
+            prevMembers.map(member =>
+                member.id === customerId ? { ...member, ...refreshedMember } : member
+            )
+        );
+        return refreshedMember;
+    }, [customerId, effectiveEntityId, entityId, setData]);
+
     // ==================== CHECKBOX HANDLING ====================
-    const handleCheckboxChange = useCallback((e, card, index) => {
-        const cardId = card.id;
+    const handleCheckboxChange = useCallback((e, card, serviceIndex, cardIndex) => {
+        const cardKey = getSubscriptionKey(card, cardIndex);
         const isChecked = e.target.checked;
         
         setCheckedServices(prev => {
-            const currentSet = prev[cardId] ? new Set(prev[cardId]) : new Set();
+            const currentSet = prev[cardKey] ? new Set(prev[cardKey]) : new Set();
             
             if (isChecked) {
-                currentSet.add(index);
+                currentSet.add(serviceIndex);
             } else {
-                currentSet.delete(index);
+                currentSet.delete(serviceIndex);
             }
             
             const count = currentSet.size;
-            setNewComment(count > 0 ? `Subscription ID: ${cardId}, Selected Cards: ${count}` : "");
+            const subscriptionId = getSubscriptionId(card);
+            setNewComment(count > 0 ? `Subscription ID: ${subscriptionId || "pending"}, Selected Cards: ${count}` : "");
             
             return {
                 ...prev,
-                [cardId]: currentSet
+                [cardKey]: currentSet
             };
         });
     }, [setNewComment]);
@@ -77,7 +119,9 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
 
     // ==================== SUBSCRIPTION OPERATIONS ====================
     const addNewSubscription = useCallback(async () => {
-        if (!customerId || !effectiveEntityId) {
+        const resolvedEntityId = entityId || effectiveEntityId;
+
+        if (!customerId || !resolvedEntityId) {
             message.error("Missing required information");
             return;
         }
@@ -94,11 +138,11 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 memberId: customerId
             };
 
-            const postData = await createSubscription(effectiveEntityId, newSub);
+            const postData = await createSubscription(resolvedEntityId, newSub);
             
             const newSubscriptionWithId = {
                 ...newSub,
-                id: postData.subscriptionId
+                subscriptionId: postData.subscriptionId || postData.id
             };
 
             console.log("✅ New subscription created:", newSubscriptionWithId);
@@ -117,55 +161,12 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 })
             );
 
-            // Also persist the updated member (with new subscriptions) to the server
+            // Refresh member so embedded subscriptions stay in sync with the subscription API.
             try {
-                // Build a payload similar to NameCard's shape and snapshot previous subscriptions
-                const member = (data || []).find(m => m.id === customerId) || {};
-                const prevSubscriptions = member.subscriptions ? [...member.subscriptions] : [];
-                const updatedSubscriptions = [...prevSubscriptions, newSubscriptionWithId];
-
-                const recordToUpload = {
-                    ...(member.customerName ? { customerName: member.customerName } : {}),
-                    status: member.status,
-                    address: member.address,
-                    email: member.email,
-                    subscriptions: updatedSubscriptions,
-                    groupId: Array.isArray(member.groupId) ? member.groupId.filter(Boolean).flat() : member.groupId ? [member.groupId] : [],
-                    // groupId: Array.isArray(member.groupId) ? (member.groupId.length > 0 ? member.groupId : "") : (member.groupId || ""),
-                    phoneNumber: member.phoneNumber,
-                    comments: member.comments || []
-                };
-
-                // Remove server-only fields from subscriptions
-                recordToUpload.subscriptions.forEach(sub => {
-                    delete sub.entityId;
-                    // delete sub.id;
-                });
-
-                await updateMember(effectiveEntityId, customerId, recordToUpload);
-                message.success("Member updated with new subscription");
+                await refreshMember();
                 console.log("✅ Member updated with new subscription");
             } catch (err) {
-                console.error("❌ Failed to update member with new subscription:", err);
-
-                // Rollback local UI state
-                setData(prev =>
-                    prev.map(member =>
-                        member.id === customerId
-                            ? { ...member, subscriptions: (member.subscriptions || []).filter(sub => sub.id !== newSubscriptionWithId.id) }
-                            : member
-                    )
-                );
-
-                // Try to delete the created subscription on the server
-                try {
-                    await deleteSubscription(effectiveEntityId, newSubscriptionWithId.id);
-                    console.log("🗑️ Deleted subscription on server due to member update failure");
-                } catch (delErr) {
-                    console.error("❌ Failed to delete subscription after rollback:", delErr);
-                }
-
-                message.error("Failed to save member. New subscription was rolled back.");
+                message.warning("Subscription was saved, but member refresh failed.");
             }
         } catch (error) {
             console.error("❌ Error creating subscription:", error);
@@ -173,11 +174,17 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
         } finally {
             setIsLoading(false);
         }
-    }, [customerId, effectiveEntityId, setData]);
+    }, [customerId, effectiveEntityId, entityId, refreshMember, setData]);
 
-    const handleSave = useCallback(async (card) => {
-        const cardId = card.id;
-        const checkedCount = checkedServices[cardId]?.size || 0;
+    const handleSave = useCallback(async (card, cardIndex) => {
+        const cardKey = getSubscriptionKey(card, cardIndex);
+        const checkedCount = checkedServices[cardKey]?.size || 0;
+
+        const resolvedEntityId = entityId || effectiveEntityId;
+        if (!resolvedEntityId) {
+            message.error("Missing required information");
+            return;
+        }
 
         if (checkedCount === 0) {
             message.warning("Please select at least one service");
@@ -187,6 +194,13 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
         setIsLoading(true);
 
         try {
+            const cardId = getSubscriptionId(card);
+
+            if (!cardId) {
+                message.error("Missing subscription id in member data. Please refresh and try again.");
+                return;
+            }
+
             // Calculate updated values
             const newCompleted = parseInt(card.noOfServicesCompleted) + checkedCount;
             const newLeft = Math.max(0, parseInt(card.noOfServicesLeft) - checkedCount);
@@ -199,46 +213,65 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 purchasedDate: card.purchasedDate,
                 completedDate: card.completedDate,
                 status: newStatus,
-                memberId: card.memberId
+                memberId: card.memberId || customerId
             };
 
             console.log("💾 Sending update:", updatedSubscriptionDetails);
 
-            await updateSubscription(effectiveEntityId, cardId, updatedSubscriptionDetails);
+            await updateSubscription(resolvedEntityId, cardId, updatedSubscriptionDetails);
             
             console.log("✅ Subscription updated from API");
 
             // Create updated card object
             const updatedCard = {
                 ...card,
+                subscriptionId: cardId,
                 noOfServicesCompleted: newCompleted,
                 noOfServicesLeft: newLeft,
                 status: newStatus
             };
-
-            // Update parent data first
-            setData(prevMembers =>
-                prevMembers.map(member => {
-                    if (member.id === customerId) {
-                        return {
-                            ...member,
-                            subscriptions: (member.subscriptions || []).map(sub =>
-                                sub.id === cardId ? updatedCard : sub
-                            )
-                        };
-                    }
-                    return member;
-                })
+            const updatedSubscriptions = getCurrentSubscriptions().map((subscription) =>
+                getSubscriptionId(subscription) === cardId ? updatedCard : subscription
             );
+            const subscriptionComment = `${cardId}: ${checkedCount > 1 ? `${checkedCount} service(s)` : '1 service'} completed. ${newLeft} remaining.`;
+
+            try {
+                await refreshMember();
+            } catch (refreshError) {
+                console.error("Failed to refresh member after subscription update:", refreshError);
+                setData(prevMembers =>
+                    prevMembers.map(member => {
+                        if (member.id === customerId) {
+                            return {
+                                ...member,
+                                subscriptions: (member.subscriptions || []).map(sub =>
+                                    getSubscriptionId(sub) === cardId ? updatedCard : sub
+                                )
+                            };
+                        }
+                        return member;
+                    })
+                );
+            }
+
+            try {
+                await handleSend(subscriptionComment, {
+                    showStatus: false,
+                    subscriptionsOverride: updatedSubscriptions
+                });
+            } catch (commentError) {
+                console.error("Subscription saved, but automatic comment failed:", commentError);
+                message.warning("Subscription saved, but comment was not posted.");
+            }
 
             // Clear checked services
             setCheckedServices(prev => ({
                 ...prev,
-                [cardId]: new Set()
+                [cardKey]: new Set()
             }));
 
             setNewComment("");
-            message.success(`Successfully saved ${checkedCount} service(s)`);
+            message.success(`Subscription saved. ${checkedCount} service(s) recorded.`);
             console.log("📝 UI updated with new card state:", updatedCard);
 
         } catch (error) {
@@ -248,7 +281,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
             setIsLoading(false);
             // handleSend();
         }
-    }, [checkedServices, customerId, effectiveEntityId, setData, setNewComment, handleSend]);
+    }, [checkedServices, customerId, effectiveEntityId, entityId, getCurrentSubscriptions, refreshMember, setData, setNewComment, handleSend]);
 
     // ==================== UI INTERACTION ====================
     const toggleFlip = useCallback((cardId) => {
@@ -259,7 +292,8 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
     }, []);
 
     // ==================== RENDER ====================
-    const renderCardContent = (card) => {
+    const renderCardContent = (card, cardIndex) => {
+        const cardKey = getSubscriptionKey(card, cardIndex);
         const completedCount = Number(card.noOfServicesCompleted);
         const leftCount = Number(card.noOfServicesLeft);
 
@@ -268,7 +302,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 {/* Completed Services */}
                 {Array.from({ length: completedCount }, (_, index) => (
                     <div 
-                        key={`completed-${card.id}-${index}`} 
+                        key={`completed-${cardKey}-${index}`} 
                         className="individualCards completed-card"
                     >
                         {/* <Checkbox checked disabled /> */}
@@ -278,15 +312,15 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
 
                 {/* Remaining Services */}
                 {Array.from({ length: leftCount }, (_, index) => {
-                    const isChecked = checkedServices[card.id]?.has(index) || false;
+                    const isChecked = checkedServices[cardKey]?.has(index) || false;
                     return (
                         <div 
-                            key={`remaining-${card.id}-${index}`}
+                            key={`remaining-${cardKey}-${index}`}
                             className={`individualCards uncompleted-card ${isChecked ? 'checked-service' : ''}`}
                         >
                             <Checkbox
                                 checked={isChecked}
-                                onChange={(e) => handleCheckboxChange(e, card, index)}
+                                onChange={(e) => handleCheckboxChange(e, card, index, cardIndex)}
                                 disabled={isLoading}
                             />
                         </div>
@@ -296,8 +330,9 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
         );
     };
 
-    const renderActionButtons = (card) => {
-        const checkedCount = checkedServices[card.id]?.size || 0;
+    const renderActionButtons = (card, cardIndex) => {
+        const cardKey = getSubscriptionKey(card, cardIndex);
+        const checkedCount = checkedServices[cardKey]?.size || 0;
 
         return (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -306,7 +341,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                         <Button
                             type="primary"
                             size="small"
-                            onClick={() => handleSave(card)}
+                            onClick={() => handleSave(card, cardIndex)}
                             loading={isLoading}
                             style={{ backgroundColor: color, borderColor: color }}
                         >
@@ -314,7 +349,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                         </Button>
                         <Button
                             size="small"
-                            onClick={() => handleClearSelection(card.id)}
+                            onClick={() => handleClearSelection(cardKey)}
                             disabled={isLoading}
                         >
                             Clear
@@ -325,7 +360,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
                 )}
                 <Button
                     className="flip-btn"
-                    onClick={() => toggleFlip(card.id)}
+                    onClick={() => toggleFlip(cardKey)}
                     icon={<SwapOutlined />}
                     disabled={isLoading}
                     title="View details"
@@ -366,10 +401,12 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
   {/* ================= CARDS GRID ================= */}
   {punchCards.length > 0 ? (
     <div className="punch-cards-grid">
-      {punchCards.map((card) => (
+      {punchCards.map((card, cardIndex) => {
+        const cardKey = getSubscriptionKey(card, cardIndex);
+        return (
         <div
-          key={card.id}
-          className={`punch-card ${flippedCards[card.id] ? "flipped" : ""}`}
+          key={cardKey}
+          className={`punch-card ${flippedCards[cardKey] ? "flipped" : ""}`}
         >
           <div className="punch-card-inner">
 
@@ -422,11 +459,11 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
 
               {/* Punch grid */}
               <div className="punchCards">
-                {renderCardContent(card)}
+                {renderCardContent(card, cardIndex)}
               </div>
 
               {/* Actions */}
-              {renderActionButtons(card)}
+              {renderActionButtons(card, cardIndex)}
             </div>
 
             {/* ========== BACK ========== */}
@@ -465,7 +502,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
 
               <Button
                 className="flip-btn"
-                onClick={() => toggleFlip(card.id)}
+                onClick={() => toggleFlip(cardKey)}
                 icon={<SwapOutlined />}
                 size="small"
                 style={{
@@ -478,7 +515,7 @@ const PunchCardsPage = ({data, customerId, customerName, setNewComment, handleSe
 
           </div>
         </div>
-      ))}
+      )})}
     </div>
   ) : (
     <div

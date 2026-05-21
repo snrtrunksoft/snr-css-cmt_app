@@ -1,15 +1,56 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./NameCard.css";
 import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar, Tag } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import StatusModal from "./StatusModal";
-import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource, getCountries, getCountryStates } from "./api/APIUtil";
+import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource } from "./api/APIUtil";
 import PunchCardsPage  from "./PunchCardsPage";
 import dayjs from "dayjs";
 
 const { Option } = Select;
+
+const NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9._]*(?: +[a-zA-Z0-9._]+)*$/;
+const validateName = (_, value) => {
+    const trimmedValue = (value || "").trim();
+    if (!trimmedValue) {
+        return Promise.reject(new Error("Name is required"));
+    }
+    if (!NAME_PATTERN.test(trimmedValue)) {
+        return Promise.reject(new Error("Name must start with a letter and can contain letters, numbers, spaces, underscores, and dots"));
+    }
+    if (trimmedValue.length < 7) {
+        return Promise.reject(new Error("Name should have at least 7 characters"));
+    }
+    return Promise.resolve();
+};
+const STATUS_COLORS = {
+    ACTIVE: "pink",
+    COMPLETED: "lightgreen",
+    IN_PROGRESS: "lightblue",
+    CANCELLED: "red",
+};
+
+const EMPTY_STATUS_MODAL = { visible: false, type: "", title: "", message: "" };
+
+const normalizeGroupId = (value) => {
+    if (Array.isArray(value)) {
+        if (value.length === 0) return [];
+        return Array.isArray(value[0]) ? value[0] : value;
+    }
+    return value ? [value] : [];
+};
+
+const getNextCommentId = (comments = []) =>
+    parseInt(comments[comments.length - 1]?.commentId || 0, 10) + 1;
+
+const getRecordKey = (isMember) => (isMember ? "id" : "resourceId");
+
+const sanitizeSubscriptionsForMemberUpdate = (subscriptions = []) =>
+    Array.isArray(subscriptions)
+        ? subscriptions.map(({ entityId, id, ...subscription }) => subscription)
+        : subscriptions;
 
 const NameCard = ({ 
     membersPage,
@@ -27,7 +68,7 @@ const NameCard = ({
     groupId,
     comments,
     subscriptions,
-    commentBox, 
+    commentBox = [], 
     setCommentBox,
     selectedGroup,
     groupMessages,
@@ -38,7 +79,7 @@ const NameCard = ({
     const [ newComment, setNewComment ] = useState("");
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
     const [ isEditable, setIsEditable] = useState(false);
-    const [ statusModal, setStatusModal ] = useState({ visible: false, type: "", title: "", message: "" });
+    const [ statusModal, setStatusModal ] = useState(EMPTY_STATUS_MODAL);
     const [ subscriptionPlans, setSubscriptionPlans ] = useState([]);
     const [ loadingPlans, setLoadingPlans ] = useState(false);
     const [ isUpdating, setIsUpdating ] = useState(false);
@@ -46,35 +87,17 @@ const NameCard = ({
     // Track which comment index is currently being deleted (null = none)
     const [ deletingCommentIndex, setDeletingCommentIndex ] = useState(null);
 
-    // Country/State data for address edit (copied behavior from AddNewUser)
-    const [countries, setCountries] = useState([]);
-    const [loadingCountries, setLoadingCountries] = useState(false);
-    const [states, setStates] = useState([]);
-    const [loadingStates, setLoadingStates] = useState(false);
-    const [selectedCountry, setSelectedCountry] = useState(null);
-    const [countryCode, setCountryCode] = useState("");
-
     const { useBreakpoint } = Grid;
     const [ form ] = Form.useForm();
     const screens = useBreakpoint();
 
-    // Helper to ensure groupId is an array of strings
-    const getGroupArrayValue = () => {
-      if (Array.isArray(groupId)) {
-        if (groupId.length === 0) return [];
-        if (Array.isArray(groupId[0])) return groupId[0];
-        return groupId;
-      }
-      return groupId ? [groupId] : [];
-    };
-
-    const [defaultValues] = useState({
+    const defaultValues = useMemo(() => ({
         customerId: customerId || "",
         customerName: customerName || "",
         phoneNumber: phoneNumber || "",
         email: email || "",
         status: status || "",
-        groupId: getGroupArrayValue(),
+        groupId: normalizeGroupId(groupId),
         address: {
             houseNo: address?.[0]?.houseNo || "",
             street1: address?.[0]?.street1 || "",
@@ -84,7 +107,7 @@ const NameCard = ({
             country: address?.[0]?.country || "",
             pincode: address?.[0]?.pincode || "",
         },
-    });
+    }), [address, customerId, customerName, email, groupId, phoneNumber, status]);
 
     useEffect(() => {
         form.setFieldsValue(defaultValues);
@@ -108,77 +131,7 @@ const NameCard = ({
             fetchSubscriptionPlans();
         }
 
-        // Fetch country/state data when drawer opens (also used for phone country code)
-        if (nameCardDrawer) {
-            fetchCountries();
-        }
-    }, [nameCardDrawer, membersPage]);
-
-    // Fetch countries using shared helper
-    const fetchCountries = async () => {
-      if (countries.length > 0) return; // already loaded
-      setLoadingCountries(true);
-      try {
-        const sortedCountries = await getCountries();
-        setCountries(sortedCountries);
-        console.log("Countries loaded:", sortedCountries);
-
-        // If this record already had a country selected, set it
-        const initCountry = defaultValues.address?.country;
-        if (initCountry) {
-          const found = sortedCountries.find(c => c.name === initCountry);
-          if (found) {
-            setSelectedCountry(found);
-            setCountryCode(found.dialCode || "");
-            fetchStates(found.name);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching countries:", error);
-      } finally {
-        setLoadingCountries(false);
-      }
-    };
-
-    const fetchStates = async (countryName) => {
-      setLoadingStates(true);
-      try {
-        const statesList = await getCountryStates(countryName);
-        console.log("Parsed states:", statesList);
-        setStates(statesList);
-      } catch (error) {
-        console.error("Error fetching states:", error);
-        setStates([]);
-      } finally {
-        setLoadingStates(false);
-      }
-    };
-
-    const handleCountryChange = (value) => {
-      const selected = countries.find((c) => c.name === value);
-      if (selected) {
-        setSelectedCountry(selected);
-        setCountryCode(selected.dialCode || "");
-        fetchStates(selected.name);
-        // Reset nested state field
-        form.setFieldsValue({ address: { state: undefined } });
-      }
-    };
-
-    useEffect(() => {
-      // If countries are already loaded and drawer just opened, ensure state is synced
-      if (nameCardDrawer && countries.length > 0) {
-        const initCountry = defaultValues.address?.country;
-        if (initCountry) {
-          const found = countries.find(c => c.name === initCountry);
-          if (found) {
-            setSelectedCountry(found);
-            setCountryCode(found.dialCode || "");
-            fetchStates(found.name);
-          }
-        }
-      }
-    }, [nameCardDrawer, countries]);
+    }, [entityId, nameCardDrawer, membersPage]);
 
     const getDrawerWidth = () => {
         if (screens.xl) return 600;
@@ -187,23 +140,33 @@ const NameCard = ({
         if (screens.sm) return 300;
         return '100%';
     };
-    const onFinish = (values) => {
-        console.log("form values:", values);
+    const onFinish = async (values) => {
+        const trimmedCustomerName = values.customerName?.trim() || "";
 
         // ---------- STEP 1: Find the correct data source ----------
         const filterData = membersPage
             ? data.find((prev) => prev.id === values.customerId)
             : resourceData.find((prev) => prev.resourceId === values.customerId);
 
+        if (!filterData) {
+            setStatusModal({
+                visible: true,
+                type: "error",
+                title: "Update Error",
+                message: `${membersPage ? "User" : "Resource"} was not found. Please refresh and try again.`
+            });
+            return;
+        }
+
         // ---------- STEP 2: Prepare updated record ----------
         const buildUpdatedRecord = (isMember) => ({
             ...filterData,
             ...(isMember
-            ? { customerName: values.customerName, email: values.email }
-            : { resourceName: values.customerName }),
+            ? { customerName: trimmedCustomerName, email: values.email }
+            : { resourceName: trimmedCustomerName, email: values.email }),
             phoneNumber: values.phoneNumber,
             status: values.status,
-            groupId: Array.isArray(values.groupId) ? values.groupId : (values.groupId ? [values.groupId] : []),
+            groupId: normalizeGroupId(values.groupId),
             ...(isMember && values.subscriptionPlanId && { subscriptionPlanId: values.subscriptionPlanId }),
             address: [
             {
@@ -220,21 +183,15 @@ const NameCard = ({
 
         // Remove unneeded keys before API call
         const { id, entityId: recordEntityId, ...cleanCustomer } = updatedRecord;
-        console.log("Clean customer data:", cleanCustomer);
-        console.log("entityId from props:", entityId);
 
         // ---------- STEP 3: API update ----------
         const updateNameCard = async () => {
             setIsUpdating(true);
-            console.log("Using entityId:", entityId)
             try {
-                const membersPage_local = membersPage;
-                const customerId_local = values.customerId;
-                
-                if (membersPage_local) {
-                    await updateMember(entityId, customerId_local, cleanCustomer);
+                if (membersPage) {
+                    await updateMember(entityId, values.customerId, cleanCustomer);
                 } else {
-                    await updateResource(entityId, customerId_local, cleanCustomer);
+                    await updateResource(entityId, values.customerId, cleanCustomer);
                 }
 
                 if (membersPage) {
@@ -264,16 +221,17 @@ const NameCard = ({
         // ---------- STEP 4: Local state update ----------
         const updateLocalState = (prev) =>
             prev.map((customer) => {
-            const matchKey = membersPage ? "id" : "resourceId";
+            const matchKey = getRecordKey(membersPage);
             if (customer[matchKey] === values.customerId) {
                 return {
                 ...customer,
                 ...(membersPage
-                    ? { customerName: values.customerName }
-                    : { resourceName: values.customerName }),
+                    ? { customerName: trimmedCustomerName }
+                    : { resourceName: trimmedCustomerName }),
+                email: values.email,
                 phoneNumber: values.phoneNumber,
                 status: values.status,
-                groupId: Array.isArray(values.groupId) ? values.groupId : (values.groupId ? [values.groupId] : []),
+                groupId: normalizeGroupId(values.groupId),
                 address: [
                     {
                     ...customer.address?.[0],
@@ -287,34 +245,25 @@ const NameCard = ({
             return customer;
         });
 
-        updateNameCard();
+        await updateNameCard();
         };
     
-    const addressKeys = Object.keys(address?.[0] ?? {});
-    
-    // Determine color based on status (moved before handleSend)
-    let color = "red";
-    if(status === "COMPLETED"){
-        color = "lightgreen";
-    }
-    if(status === "ACTIVE"){
-        color = "pink";
-    }
-    if(status === "IN_PROGRESS"){
-        color = "lightblue";
-    }
-    if(status === "CANCELLED"){
-        color = "red";
-    }
+    const color = STATUS_COLORS[status] || "red";
+    const visibleComments = Array.isArray(comments) ? comments : [];
 
-    const handleSend = () => {
+    const handleSend = async (commentOverride, options = {}) => {
+        const commentText = typeof commentOverride === "string" ? commentOverride : newComment;
+        const { showStatus = true, subscriptionsOverride } = options;
         const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
-        // console.log(addTimeForComment);
-        if(newComment){
-            const commentBody = [...comments, {
-                "commentId" : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
+        const existingComments = visibleComments;
+        const nextCommentId = getNextCommentId(existingComments);
+        const trimmedComment = commentText.trim();
+
+        if(trimmedComment){
+            const commentBody = [...existingComments, {
+                "commentId" : nextCommentId,
                 "author" : customerName,
-                "message" : newComment,
+                "message" : trimmedComment,
                 "date" : addTimeForComment
             }]
             const updatedRecord = {
@@ -324,21 +273,14 @@ const NameCard = ({
                 "status" : status,
                 "address" : address,
                 "email" : email,
-                "subscriptions" : subscriptions,
-                "groupId": Array.isArray(groupId)? groupId.flat().filter(Boolean): groupId? [groupId]: [],
+                "subscriptions" : sanitizeSubscriptionsForMemberUpdate(subscriptionsOverride || subscriptions),
+                "groupId": normalizeGroupId(groupId).flat().filter(Boolean),
                 "phoneNumber" : phoneNumber,
                 "comments" : commentBody
             }
-            Object.values(updatedRecord.subscriptions).forEach(sub => {
-                delete sub.entityId;
-                delete sub.id;
-            });
-            console.log("updatedRecord:", updatedRecord);
-
             const uploadComment = async () => {
             setIsAddingComment(true);
             try {
-                // Create a clean copy before modifying
                 let recordToUpload = { ...updatedRecord };
 
                 // 🔹 Remove subscriptions if calling RESOURCES_API
@@ -346,7 +288,6 @@ const NameCard = ({
                 const { subscriptions, ...rest } = recordToUpload;
                 recordToUpload = rest;
                 }
-                console.log("Record:", recordToUpload);
 
                 if (membersPage) {
                     await updateMember(entityId, customerId, recordToUpload);
@@ -360,9 +301,9 @@ const NameCard = ({
                         prevData.map(prev =>
                             prev.id === customerId ? {
                                 ...prev,
-                                comments: [...prev.comments, {
-                                    commentId : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
-                                    message: newComment,
+                                comments: [...(prev.comments || []), {
+                                    commentId : nextCommentId,
+                                    message: trimmedComment,
                                     author: customerName,
                                     date: addTimeForComment
                                 }]
@@ -373,9 +314,9 @@ const NameCard = ({
                             prevData.map(prev =>
                                 prev.resourceId === customerId ? {
                                     ...prev,
-                                    comments: [...prev.comments, {
-                                        commentId : parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
-                                        message: newComment,
+                                    comments: [...(prev.comments || []), {
+                                        commentId : nextCommentId,
+                                        message: trimmedComment,
                                         author: customerName,
                                         date: addTimeForComment
                                     }]
@@ -389,8 +330,8 @@ const NameCard = ({
                         prevComments.map((prev, index) =>
                             index === existingData
                                 ? { ...prev, comment: [...prev.comment, {
-                                    commentId: parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
-                                    message: newComment,
+                                    commentId: nextCommentId,
+                                    message: trimmedComment,
                                     author: customerName,
                                     date: addTimeForComment
                                 }] }
@@ -401,33 +342,38 @@ const NameCard = ({
                     setCommentBox(prevComments => [
                         ...prevComments,
                         { customerName,color, comment: [{
-                            commentId: parseInt(comments[comments.length - 1]?.commentId || 0) + 1,
-                            message:newComment,
+                            commentId: nextCommentId,
+                            message:trimmedComment,
                             author:customerName,
                             date: addTimeForComment
                         }] }
                     ]);
                 }
-                setStatusModal({
-                    visible: true,
-                    type: "success",
-                    title: "Comment Posted",
-                    message: "Your comment has been posted successfully!"
-                });
+                if (showStatus) {
+                    setStatusModal({
+                        visible: true,
+                        type: "success",
+                        title: "Comment Posted",
+                        message: "Your comment has been posted successfully!"
+                    });
+                }
             } catch (error) {
-                console.log("❌ unable to add Comment:", error);
-                setStatusModal({
-                    visible: true,
-                    type: "error",
-                    title: "Comment Error",
-                    message: "Failed to post comment. Please try again."
-                });
+                console.log("Unable to add comment:", error);
+                if (showStatus) {
+                    setStatusModal({
+                        visible: true,
+                        type: "error",
+                        title: "Comment Error",
+                        message: "Failed to post comment. Please try again."
+                    });
+                }
+                throw error;
             } finally {
                 setIsAddingComment(false);
             }
             };
 
-            uploadComment();
+            await uploadComment();
             
         }
         setNewComment("");
@@ -456,7 +402,7 @@ const NameCard = ({
             
             setTimeout(() => {
                 setNameCardDrawer(false);
-                setStatusModal({ visible: false, type: "", title: "", message: "" });
+                setStatusModal(EMPTY_STATUS_MODAL);
             }, 1500);
         } catch (error) {
             console.error("Delete failed:", error);
@@ -465,7 +411,7 @@ const NameCard = ({
     }
 
     const handleDeleteComment = (commentId) => {
-        const updatedComments = comments.filter((_, idx) => idx !== commentId);
+        const updatedComments = visibleComments.filter((_, idx) => idx !== commentId);
         
         const updatedRecord = {
             ...(membersPage
@@ -474,17 +420,12 @@ const NameCard = ({
             "status": status,
             "address": address,
             "email": email,
-            "subscriptions": subscriptions,
-            "groupId": Array.isArray(groupId)? groupId.flat().filter(Boolean): groupId? [groupId]: [],
+            "subscriptions": sanitizeSubscriptionsForMemberUpdate(subscriptions),
+            "groupId": normalizeGroupId(groupId).flat().filter(Boolean),
             "phoneNumber": phoneNumber,
             "comments": updatedComments
         }
         
-        Object.values(updatedRecord.subscriptions).forEach(sub => {
-            delete sub.entityId;
-            // delete sub.id;
-        });
-
         const deleteCommentAPI = async () => {
             // Indicate which comment index is being deleted so only that button shows loading
             setDeletingCommentIndex(commentId);
@@ -504,7 +445,7 @@ const NameCard = ({
                 // Show both quick message and StatusModal for consistent UX
                 message.success("Comment deleted successfully");
                 setStatusModal({ visible: true, type: "success", title: "Comment Deleted", message: "Comment has been deleted successfully." });
-                setTimeout(() => setStatusModal({ visible: false, type: "", title: "", message: "" }), 1500);
+                setTimeout(() => setStatusModal(EMPTY_STATUS_MODAL), 1500);
 
                 // Update local state
                 if (membersPage) {
@@ -528,7 +469,7 @@ const NameCard = ({
                 console.error("Failed to delete comment:", error);
                 message.error("Failed to delete comment");
                 setStatusModal({ visible: true, type: "error", title: "Delete Error", message: "Failed to delete comment. Please try again." });
-                setTimeout(() => setStatusModal({ visible: false, type: "", title: "", message: "" }), 2000);
+                setTimeout(() => setStatusModal(EMPTY_STATUS_MODAL), 2000);
             } finally {
                 setDeletingCommentIndex(null);
             }
@@ -573,26 +514,26 @@ const NameCard = ({
                     width: '100%',overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
-                    }}>Phone : { phoneNumber }</p>
-                {Array.isArray(address) && address.length > 0 && (
-                    <p
-                        style={{
-                        width: "100%",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        margin: 0,
-                        }}
-                    >
-                        Address:&nbsp;
-                        {address
-                        .map(
-                            (a) =>
-                            [a.city, a.state, a.country].filter(Boolean).join(", ")
-                        )
-                        .join(" | ")}
-                    </p>
-                    )}
+                    }}>Phone : { phoneNumber }</p> 
+                <p
+                    style={{
+                    width: "100%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    margin: 0,
+                    }}
+                >
+                    Address:&nbsp;
+                    {Array.isArray(address) && address.length > 0
+                        ? address
+                            .map(
+                                (a) =>
+                                [a.city, a.state, a.country].filter(Boolean).join(", ")
+                            )
+                            .join(" | ")
+                        : "Not Available"}
+                </p>
                 <p style={{
                         width: '100%',
                         overflow: 'hidden',
@@ -607,10 +548,12 @@ const NameCard = ({
                 setNameCardDrawer(false);
                 setNewComment("");
                 const currentGroupKey = Array.isArray(groupId) ? groupId[0] : groupId;
-                setGroupMessages(prev => ({
-                ...prev,
-                [currentGroupKey]: { ...prev[currentGroupKey], hasUnread: false }
-                }));
+                if (currentGroupKey) {
+                    setGroupMessages(prev => ({
+                    ...prev,
+                    [currentGroupKey]: { ...(prev?.[currentGroupKey] || {}), hasUnread: false }
+                    }));
+                }
             }}
             bodyStyle={{ background: "#f5f7fa", padding: 0 }}
             >
@@ -629,13 +572,13 @@ const NameCard = ({
                 style={{
                 display: "grid",
                 gridTemplateColumns: "80px 1fr 120px",
-                gridTemplateRows: "22px 18px 36px",
+                gridTemplateRows: "22px 18px 18px 36px",
                 columnGap: 16,
                 alignItems: "center",
                 }}
             >
                 {/* Avatar */}
-                <div style={{ gridRow: "1 / span 3" }}>
+                <div style={{ gridRow: "1 / span 4" }}>
                 <Avatar
                     src={maleAvatar}
                     size={64}
@@ -662,7 +605,7 @@ const NameCard = ({
                 <div
                 style={{
                     gridColumn: 3,
-                    gridRow: "1 / span 3",
+                    gridRow: "1 / span 4",
                     display: "flex",
                     flexDirection: "column",
                     gap: 6,
@@ -704,11 +647,26 @@ const NameCard = ({
                 {phoneNumber}
                 </Typography.Text>
 
+                {/* Email */}
+                <Typography.Text
+                type="secondary"
+                style={{
+                    gridColumn: 2,
+                    gridRow: 3,
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                }}
+                >
+                {email || "No email"}
+                </Typography.Text>
+
                 {/* Address */}
                 <div
                 style={{
                     gridColumn: 2,
-                    gridRow: 3,
+                    gridRow: 4,
                     fontSize: 13,
                     color: "#6b7280",
                     lineHeight: "18px",
@@ -747,15 +705,12 @@ const NameCard = ({
 
                     <Col span={12}>
                     <Form.Item name="customerName" label="Name" rules={[
-                        { required: true, message: 'Name is required' },
-                        { pattern: /^[a-zA-Z][a-zA-Z0-9._]*$/, message: 'Name must start with a letter and can contain letters, numbers, underscores, and dots' },
-                        { min: 7, message: 'Name should have at least 7 characters' }
+                        { validator: validateName }
                     ]}>
-                        <Input placeholder="Enter name (start with letter, min 7 chars)" />
+                        <Input placeholder="Enter name (spaces allowed, min 7 chars)" />
                     </Form.Item>
                     </Col>
 
-                    {membersPage && (
                     <Col span={12}>
                         <Form.Item name="email" label="Email" rules={[
                           { required: true, message: 'Email is required' },
@@ -764,7 +719,6 @@ const NameCard = ({
                         <Input />
                         </Form.Item>
                     </Col>
-                    )}
 
                     <Col span={12}>
                     <Form.Item name="phoneNumber" label="Phone" rules={[
@@ -773,8 +727,7 @@ const NameCard = ({
                     ]}>
                         <Input
                           maxLength={10}
-                          placeholder={countryCode ? `${countryCode} - 10-digit number` : "Select country first"}
-                          prefix={countryCode ? countryCode : undefined}
+                          placeholder="Enter 10-digit phone number"
                         />
                     </Form.Item>
                     </Col>
@@ -830,30 +783,13 @@ const NameCard = ({
 
                     <Col span={12}>
                     <Form.Item name={["address", "state"]} label="State/Province" rules={[{ required: true, message: 'State is required' }]}>
-                        <Select
-                          placeholder={!selectedCountry ? "Select a country first" : "Select a state/province"}
-                          allowClear
-                          disabled={!selectedCountry || states.length === 0}
-                          loading={loadingStates}
-                          showSearch
-                          filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-                          options={states.map((state) => ({ label: state.name, value: state.name }))}
-                          onChange={() => form.validateFields([['address','state']])}
-                        />
+                        <Input placeholder="Enter state/province" />
                     </Form.Item>
                     </Col>
 
                     <Col span={12}>
                     <Form.Item name={["address", "country"]} label="Country" rules={[{ required: true, message: 'Country is required' }]}>
-                        <Select
-                          placeholder="Select a country"
-                          onChange={(value) => handleCountryChange(value)}
-                          allowClear
-                          showSearch
-                          loading={loadingCountries}
-                          filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-                          options={countries.map((country) => ({ label: country.name, value: country.name }))}
-                        />
+                        <Input placeholder="Enter country" />
                     </Form.Item>
                     </Col>
 
@@ -887,6 +823,7 @@ const NameCard = ({
                     data={data}
                     customerId={customerId}
                     customerName={customerName}
+                    subscriptions={subscriptions}
                     setNewComment={setNewComment}
                     handleSend={handleSend}
                     setData={setData}
@@ -925,7 +862,7 @@ const NameCard = ({
 
             {/* ================= COMMENTS ================= */}
             <Card title="Comments" style={{ margin: 16, borderRadius: 8 }}>
-                {comments.length > 0 ? comments.map((comment, index) => (
+                {visibleComments.length > 0 ? visibleComments.map((comment, index) => (
                 <Badge.Ribbon
                     key={index}
                     text={comment.author}
@@ -983,7 +920,7 @@ const NameCard = ({
                 <Row justify="end" style={{ marginTop: 12 }}>
                 <Space>
                     <Button onClick={handleClear} disabled={isAddingComment}>Clear</Button>
-                    <Button type="primary" onClick={handleSend} loading={isAddingComment} disabled={isAddingComment}>
+                    <Button type="primary" onClick={() => handleSend()} loading={isAddingComment} disabled={isAddingComment}>
                     Send
                     </Button>
                 </Space>
@@ -998,7 +935,7 @@ const NameCard = ({
                 title={statusModal.title}
                 message={statusModal.message}
                 onClose={() => {
-                    setStatusModal({ visible: false, type: "", title: "", message: "" });
+                    setStatusModal(EMPTY_STATUS_MODAL);
                     if (statusModal.type === "success" && isEditable) {
                         setIsEditable(false);
                         setNameCardDrawer(false);
