@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, Tooltip, Form } from 'antd';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip as ChartTooltip, Legend, ArcElement } from 'chart.js';
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined, TeamOutlined, EnvironmentOutlined, ApartmentOutlined, PhoneOutlined, MailOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import awsExports from './aws-exports-dev.local';
@@ -19,8 +19,7 @@ import CalendarPage from './CalendarPage';
 import './CmtApp.css';
 
 // APIUtil imports
-import { getMembers, getResources, getCalendar, createMember, getAvailableGroups } from "./api/APIUtil";
-import dayjs from 'dayjs';
+import { getMembers, getResources, createMember, getAvailableGroups } from "./api/APIUtil";
 
 const { useBreakpoint } = Grid;
 
@@ -93,20 +92,18 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
 
 
   const [data, setData] = useState([]);
-  const [sampleData, setSampleData] = useState([]);
+  const [sampleData] = useState([]);
   // Cache flags to avoid repeat backend calls when re-entering tabs
   const [hasLoadedMembers, setHasLoadedMembers] = useState(false);
-  const [hasLoadedCalendar, setHasLoadedCalendar] = useState(false);
   const [uniqueGroups, setUniqueGroups] = useState([]);
 
   // Reset caches when tenant changes
   useEffect(() => {
     if (!entityId) return;
     setHasLoadedMembers(false);
-    setHasLoadedCalendar(false);
   }, [entityId]);
 
-  // Data fetches (members/resources or calendar) with cache flags.
+  // Data fetches for member/resource tabs. Calendar data is owned by CalendarPage.
   useEffect(() => {
     if (!entityId) return;
     // Members tab
@@ -151,35 +148,10 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
       };
       fetchingData();
     }
-    // Calendar tab
-    else if (openCalendarPage) {
-      if (hasLoadedCalendar) {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      const fetchCalendar = async () => {
-        try {
-          const fetchedCalendarData = await getCalendar(
-            entityId,
-            dayjs().format("MMM"),
-            dayjs().year()
-          );
-          setSampleData(fetchedCalendarData);
-        } catch (error) {
-          console.error("Error while fetching Calendar Data", error);
-        } finally {
-          setHasLoadedCalendar(true);
-          setIsLoading(false);
-        }
-      };
-      fetchCalendar();
-    }
-    // Other tabs (Resources/Todos) do not fetch here
     else {
       setIsLoading(false);
     }
-  }, [membersPage, openCalendarPage, entityId, hasLoadedMembers, hasLoadedCalendar]);
+  }, [membersPage, entityId, hasLoadedMembers]);
 
   // Mirror fetched resources into the view list
   useEffect(() => {
@@ -193,14 +165,82 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
     setDuplicateData(data);
   }, [data]);
 
-  // Build status/city counts safely
-  const statusCount = data.reduce((acc, item) => {
+  // Build city and group counts safely from the member data already loaded.
+  const cityCount = data.reduce((acc, item) => {
     const city = item.address?.[0]?.city;
     if (city) {
       acc[city] = (acc[city] || 0) + 1;
     }
     return acc;
   }, {});
+
+  const filteredCityCount = duplicateData.reduce((acc, item) => {
+    const city = item.address?.[0]?.city || "Unknown";
+    acc[city] = (acc[city] || 0) + 1;
+    return acc;
+  }, {});
+
+  const flattenGroups = (groupId) => {
+    if (!Array.isArray(groupId)) return [];
+    return groupId.flat().filter(Boolean);
+  };
+
+  const groupCount = data.reduce((acc, item) => {
+    const groups = flattenGroups(item.groupId);
+    if (groups.length === 0) {
+      acc.Ungrouped = (acc.Ungrouped || 0) + 1;
+      return acc;
+    }
+    groups.forEach((group) => {
+      acc[group] = (acc[group] || 0) + 1;
+    });
+    return acc;
+  }, {});
+
+  const activeMembers = data.filter((item) => String(item.status || "").toLowerCase() === "active").length;
+  const withPhone = data.filter((item) => Boolean(item.phoneNumber)).length;
+  const withEmail = data.filter((item) => Boolean(item.email)).length;
+  const totalComments = data.reduce((total, item) => total + (Array.isArray(item.comments) ? item.comments.length : 0), 0);
+  const totalSubscriptions = data.reduce((total, item) => total + (Array.isArray(item.subscriptions) ? item.subscriptions.length : 0), 0);
+  const topCities = Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topGroups = Object.entries(groupCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+  const resourceCityCount = resourceData1.reduce((acc, item) => {
+    const city = item.address?.[0]?.city || "Unknown";
+    acc[city] = (acc[city] || 0) + 1;
+    return acc;
+  }, {});
+
+  const filteredResourceCityCount = resourceData.reduce((acc, item) => {
+    const city = item.address?.[0]?.city || "Unknown";
+    acc[city] = (acc[city] || 0) + 1;
+    return acc;
+  }, {});
+
+  const resourceStatusCount = resourceData1.reduce((acc, item) => {
+    const status = item.status || "Unknown";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const resourceGroupCount = resourceData1.reduce((acc, item) => {
+    const groups = flattenGroups(item.groupId);
+    if (groups.length === 0) {
+      acc.Ungrouped = (acc.Ungrouped || 0) + 1;
+      return acc;
+    }
+    groups.forEach((group) => {
+      acc[group] = (acc[group] || 0) + 1;
+    });
+    return acc;
+  }, {});
+
+  const availableResources = resourceData1.filter((item) => String(item.status || "").toLowerCase() === "active").length;
+  const resourcesWithPhone = resourceData1.filter((item) => Boolean(item.phoneNumber)).length;
+  const resourcesWithEmail = resourceData1.filter((item) => Boolean(item.email)).length;
+  const resourceComments = resourceData1.reduce((total, item) => total + (Array.isArray(item.comments) ? item.comments.length : 0), 0);
+  const topResourceCities = Object.entries(resourceCityCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topResourceGroups = Object.entries(resourceGroupCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
   // Unique city list for dropdown
   const uniqueCities = Array.from(
@@ -214,42 +254,96 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
   );
 
 
-  // Legend labels mirror labels by default; customize here if needed
-  const legendLabels = uniqueCities.reduce((acc, city) => {
-    acc[city] = city;
-    return acc;
-  }, {});
+  const dashboardColors = ['#1677ff', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#64748b'];
 
-  const graphData = {
-    labels: Object.keys(statusCount),
+  const cityGraphData = {
+    labels: Object.keys(filteredCityCount),
     datasets: [
       {
-        label: 'Status Count',
-        data: Object.values(statusCount),
-        backgroundColor: ['brown', '#00B0FF', '#4CAF50', 'pink'],
-        borderColor: ['brown', '#00B0FF', '#4CAF50', 'pink'],
+        label: 'Members',
+        data: Object.values(filteredCityCount),
+        backgroundColor: Object.keys(filteredCityCount).map((_, index) => dashboardColors[index % dashboardColors.length]),
+        borderColor: '#ffffff',
+        borderWidth: 2,
       }
     ]
   };
 
-  const options = {
-    responsive: true,
-    plugins: {
-      title: { display: true, text: 'Status Distribution' },
-      legend: {
-        position: 'top',
-        labels: {
-          generateLabels: (chart) => {
-            return chart.data.labels.map((label, index) => ({
-              text: legendLabels[label] || label,
-              fillStyle: chart.data.datasets[0].backgroundColor[index],
-              strokeStyle: chart.data.datasets[0].borderColor[index],
-              lineWidth: 1
-            }));
-          }
-        },
-        onClick: null,
+  const groupGraphData = {
+    labels: topGroups.map(([group]) => group),
+    datasets: [
+      {
+        label: 'Members',
+        data: topGroups.map(([, count]) => count),
+        backgroundColor: '#1677ff',
+        borderRadius: 8,
+        maxBarThickness: 42,
       }
+    ]
+  };
+
+  const resourceCityGraphData = {
+    labels: Object.keys(filteredResourceCityCount),
+    datasets: [
+      {
+        label: 'Resources',
+        data: Object.values(filteredResourceCityCount),
+        backgroundColor: Object.keys(filteredResourceCityCount).map((_, index) => dashboardColors[index % dashboardColors.length]),
+        borderColor: '#ffffff',
+        borderWidth: 2,
+      }
+    ]
+  };
+
+  const resourceStatusGraphData = {
+    labels: Object.keys(resourceStatusCount),
+    datasets: [
+      {
+        label: 'Resources',
+        data: Object.values(resourceStatusCount),
+        backgroundColor: Object.keys(resourceStatusCount).map((_, index) => dashboardColors[index % dashboardColors.length]),
+        borderRadius: 8,
+        maxBarThickness: 42,
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: { display: false },
+      legend: {
+        position: 'bottom',
+        labels: {
+          boxHeight: 10,
+          boxWidth: 10,
+          usePointStyle: true,
+        },
+      }
+    },
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: { display: false },
+      legend: { display: false },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#64748b' },
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: '#eef2f7' },
+        ticks: {
+          precision: 0,
+          color: '#64748b',
+        },
+      },
     },
   };
 
@@ -577,28 +671,141 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
                     </Col>
                   </Row>)}
               <Divider type='horizontal' />
-              {showDashboard && <div style={{ width: "100%" }}>
-                <Row className="status-track-icons">
-                  {Object.entries(statusCount).map(([city, count], index) => {
-                    const colors = ['#FFB6C1', '#ADD8E6', '#90EE90', '#FFD580', '#D8BFD8', '#98FB98'];
-                    const bgColor = colors[index % colors.length];
-                    return (
-                      <Col key={city} className="status-icons">
-                        <span style={{ backgroundColor: bgColor }}>{count}</span>
-                        <h3>{city}</h3>
-                      </Col>
-                    );
-                  })}
-                </Row>
-                <Col style={{ paddingTop: '0px' }}>
-                  <Divider type='horizontal' ></Divider>
-                </Col>
-                <Row className="graph" justify={'center'}>
-                  <Col xs={24} sm={22} md={20} lg={16} xl={12}>
-                    <Bar data={graphData} options={options} />
-                  </Col>
-                </Row>
-              </div>}
+              {showDashboard && (
+                <section className="dashboard-panel">
+                  <div className="dashboard-heading">
+                    <div>
+                      <p>Member dashboard</p>
+                      <h2>{statusSelection === "All" ? "All member activity" : `${statusSelection} member activity`}</h2>
+                    </div>
+                    <span>{duplicateData.length} showing of {data.length}</span>
+                  </div>
+
+                  <div className="dashboard-metrics">
+                    <div className="dashboard-stat primary">
+                      <TeamOutlined />
+                      <div>
+                        <span>Total members</span>
+                        <strong>{data.length}</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <CheckCircleOutlined />
+                      <div>
+                        <span>Active</span>
+                        <strong>{activeMembers}</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <EnvironmentOutlined />
+                      <div>
+                        <span>Cities</span>
+                        <strong>{uniqueCities.length}</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <ApartmentOutlined />
+                      <div>
+                        <span>Groups</span>
+                        <strong>{Object.keys(groupCount).length}</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <PhoneOutlined />
+                      <div>
+                        <span>Phone coverage</span>
+                        <strong>{data.length ? Math.round((withPhone / data.length) * 100) : 0}%</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <MailOutlined />
+                      <div>
+                        <span>Email coverage</span>
+                        <strong>{data.length ? Math.round((withEmail / data.length) * 100) : 0}%</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Row gutter={[16, 16]} className="dashboard-content">
+                    <Col xs={24} lg={10}>
+                      <div className="dashboard-card chart-card">
+                        <div className="dashboard-card-title">
+                          <h3>City distribution</h3>
+                          <span>{Object.keys(filteredCityCount).length} locations</span>
+                        </div>
+                        <div className="dashboard-chart">
+                          {Object.keys(filteredCityCount).length ? (
+                            <Pie data={cityGraphData} options={chartOptions} />
+                          ) : (
+                            <div className="dashboard-empty">No city data available</div>
+                          )}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24} lg={14}>
+                      <div className="dashboard-card chart-card">
+                        <div className="dashboard-card-title">
+                          <h3>Top groups</h3>
+                          <span>{topGroups.length} tracked</span>
+                        </div>
+                        <div className="dashboard-chart">
+                          {topGroups.length ? (
+                            <Bar data={groupGraphData} options={barOptions} />
+                          ) : (
+                            <div className="dashboard-empty">No group data available</div>
+                          )}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                      <div className="dashboard-card">
+                        <div className="dashboard-card-title">
+                          <h3>Top cities</h3>
+                          <span>Members by location</span>
+                        </div>
+                        <div className="rank-list">
+                          {topCities.length ? topCities.map(([city, count], index) => (
+                            <div className="rank-item" key={city}>
+                              <span>{index + 1}</span>
+                              <div>
+                                <strong>{city}</strong>
+                                <em>{count} member{count === 1 ? "" : "s"}</em>
+                              </div>
+                              <b style={{ width: `${data.length ? (count / data.length) * 100 : 0}%` }} />
+                            </div>
+                          )) : <div className="dashboard-empty compact">No city data available</div>}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                      <div className="dashboard-card insight-card">
+                        <div className="dashboard-card-title">
+                          <h3>Engagement snapshot</h3>
+                          <span>From member records</span>
+                        </div>
+                        <div className="insight-grid">
+                          <div>
+                            <span>Comments</span>
+                            <strong>{totalComments}</strong>
+                          </div>
+                          <div>
+                            <span>Subscriptions</span>
+                            <strong>{totalSubscriptions}</strong>
+                          </div>
+                          <div>
+                            <span>Filtered members</span>
+                            <strong>{duplicateData.length}</strong>
+                          </div>
+                          <div>
+                            <span>Without email</span>
+                            <strong>{Math.max(data.length - withEmail, 0)}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+                </section>
+              )}
               {/* Floating Add Button (quick access) */}
               {/* <Tooltip title="Add New Member">
                 <Button aria-label="Add New Member" className="floating-add-btn" type="primary" shape="circle" size="large" onClick={() => setIsAddNewNameCardModalOpen(true)}>+</Button>
@@ -633,22 +840,157 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
               />
             </>
           ) : (resourcePage ?
-            <ResourcePage
-              resourceData={resourceData}
-              setResourceData1={setResourceData1}
-              setResourceData={setResourceData}
-              dataView={dataView}
-              entityId={entityId}
-              commentBox={commentBox}
-              setCommentBox={setCommentBox}
-              groupMessages={groupMessages}
-              setGroupMessages={setGroupMessages}
-              selectedGroup={selectedGroup}
-              uniqueGroups={uniqueGroups}
-            /> : openCalendarPage ?
+            <>
+              <ResourcePage
+                resourceData={resourceData}
+                setResourceData1={setResourceData1}
+                setResourceData={setResourceData}
+                dataView={dataView}
+                entityId={entityId}
+                commentBox={commentBox}
+                setCommentBox={setCommentBox}
+                groupMessages={groupMessages}
+                setGroupMessages={setGroupMessages}
+                selectedGroup={selectedGroup}
+                uniqueGroups={uniqueGroups}
+              />
+              {showDashboard && (
+                <section className="dashboard-panel resource-dashboard-panel">
+                  <div className="dashboard-heading">
+                    <div>
+                      <p>Resource dashboard</p>
+                      <h2>Resource availability and coverage</h2>
+                    </div>
+                    <span>{resourceData.length} showing of {resourceData1.length}</span>
+                  </div>
+
+                  <div className="dashboard-metrics">
+                    <div className="dashboard-stat primary">
+                      <ApartmentOutlined />
+                      <div>
+                        <span>Total resources</span>
+                        <strong>{resourceData1.length}</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <CheckCircleOutlined />
+                      <div>
+                        <span>Active</span>
+                        <strong>{availableResources}</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <EnvironmentOutlined />
+                      <div>
+                        <span>Locations</span>
+                        <strong>{Object.keys(resourceCityCount).length}</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <TeamOutlined />
+                      <div>
+                        <span>Groups</span>
+                        <strong>{Object.keys(resourceGroupCount).length}</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <PhoneOutlined />
+                      <div>
+                        <span>Phone coverage</span>
+                        <strong>{resourceData1.length ? Math.round((resourcesWithPhone / resourceData1.length) * 100) : 0}%</strong>
+                      </div>
+                    </div>
+                    <div className="dashboard-stat">
+                      <MailOutlined />
+                      <div>
+                        <span>Email coverage</span>
+                        <strong>{resourceData1.length ? Math.round((resourcesWithEmail / resourceData1.length) * 100) : 0}%</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Row gutter={[16, 16]} className="dashboard-content">
+                    <Col xs={24} lg={10}>
+                      <div className="dashboard-card chart-card">
+                        <div className="dashboard-card-title">
+                          <h3>Location distribution</h3>
+                          <span>{Object.keys(filteredResourceCityCount).length} locations</span>
+                        </div>
+                        <div className="dashboard-chart">
+                          {Object.keys(filteredResourceCityCount).length ? (
+                            <Pie data={resourceCityGraphData} options={chartOptions} />
+                          ) : (
+                            <div className="dashboard-empty">No location data available</div>
+                          )}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24} lg={14}>
+                      <div className="dashboard-card chart-card">
+                        <div className="dashboard-card-title">
+                          <h3>Status overview</h3>
+                          <span>{Object.keys(resourceStatusCount).length} statuses</span>
+                        </div>
+                        <div className="dashboard-chart">
+                          {Object.keys(resourceStatusCount).length ? (
+                            <Bar data={resourceStatusGraphData} options={barOptions} />
+                          ) : (
+                            <div className="dashboard-empty">No status data available</div>
+                          )}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                      <div className="dashboard-card">
+                        <div className="dashboard-card-title">
+                          <h3>Top resource cities</h3>
+                          <span>Resources by location</span>
+                        </div>
+                        <div className="rank-list">
+                          {topResourceCities.length ? topResourceCities.map(([city, count], index) => (
+                            <div className="rank-item" key={city}>
+                              <span>{index + 1}</span>
+                              <div>
+                                <strong>{city}</strong>
+                                <em>{count} resource{count === 1 ? "" : "s"}</em>
+                              </div>
+                              <b style={{ width: `${resourceData1.length ? (count / resourceData1.length) * 100 : 0}%` }} />
+                            </div>
+                          )) : <div className="dashboard-empty compact">No location data available</div>}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                      <div className="dashboard-card insight-card">
+                        <div className="dashboard-card-title">
+                          <h3>Resource snapshot</h3>
+                          <span>From resource records</span>
+                        </div>
+                        <div className="insight-grid">
+                          <div>
+                            <span>Comments</span>
+                            <strong>{resourceComments}</strong>
+                          </div>
+                          <div>
+                            <span>Tracked groups</span>
+                            <strong>{topResourceGroups.length}</strong>
+                          </div>
+                          <div>
+                            <span>Filtered resources</span>
+                            <strong>{resourceData.length}</strong>
+                          </div>
+                          <div>
+                            <span>Without email</span>
+                            <strong>{Math.max(resourceData1.length - resourcesWithEmail, 0)}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+                </section>
+              )}
+            </> : openCalendarPage ?
               <CalendarPage
-                sampleData={sampleData}
-                setSampleData={setSampleData}
                 entityId={entityId}
                 duplicateData={duplicateData}
                 resourceData={resourceData}

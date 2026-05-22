@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Col, Divider, Grid, Input, Modal, Row, Switch, Table, Tooltip, Form } from 'antd';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip as ChartTooltip, Legend, ArcElement } from 'chart.js';
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined, TeamOutlined, EnvironmentOutlined, ApartmentOutlined, PhoneOutlined, MailOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Amplify } from 'aws-amplify';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import awsExports from './aws-exports-dev.local';
@@ -24,8 +24,7 @@ import CalendarPage from './CalendarPage';
 import './CmtApp.css';
 
 // APIUtil imports
-import { getMembers, getResources, getCalendar, createMember, getAvailableGroups } from "./api/APIUtil";
-import dayjs from 'dayjs';
+import { getMembers, getResources, createMember, getAvailableGroups } from "./api/APIUtil";
 const {
   useBreakpoint
 } = Grid;
@@ -104,20 +103,18 @@ const CmtApp = _ref => {
 
   const screens = useBreakpoint();
   const [data, setData] = useState([]);
-  const [sampleData, setSampleData] = useState([]);
+  const [sampleData] = useState([]);
   // Cache flags to avoid repeat backend calls when re-entering tabs
   const [hasLoadedMembers, setHasLoadedMembers] = useState(false);
-  const [hasLoadedCalendar, setHasLoadedCalendar] = useState(false);
   const [uniqueGroups, setUniqueGroups] = useState([]);
 
   // Reset caches when tenant changes
   useEffect(() => {
     if (!entityId) return;
     setHasLoadedMembers(false);
-    setHasLoadedCalendar(false);
   }, [entityId]);
 
-  // Data fetches (members/resources or calendar) with cache flags.
+  // Data fetches for member/resource tabs. Calendar data is owned by CalendarPage.
   useEffect(() => {
     if (!entityId) return;
     // Members tab
@@ -162,32 +159,10 @@ const CmtApp = _ref => {
         }
       };
       fetchingData();
-    }
-    // Calendar tab
-    else if (openCalendarPage) {
-      if (hasLoadedCalendar) {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      const fetchCalendar = async () => {
-        try {
-          const fetchedCalendarData = await getCalendar(entityId, dayjs().format("MMM"), dayjs().year());
-          setSampleData(fetchedCalendarData);
-        } catch (error) {
-          console.error("Error while fetching Calendar Data", error);
-        } finally {
-          setHasLoadedCalendar(true);
-          setIsLoading(false);
-        }
-      };
-      fetchCalendar();
-    }
-    // Other tabs (Resources/Todos) do not fetch here
-    else {
+    } else {
       setIsLoading(false);
     }
-  }, [membersPage, openCalendarPage, entityId, hasLoadedMembers, hasLoadedCalendar]);
+  }, [membersPage, entityId, hasLoadedMembers]);
 
   // Mirror fetched resources into the view list
   useEffect(() => {
@@ -199,8 +174,8 @@ const CmtApp = _ref => {
     setDuplicateData(data);
   }, [data]);
 
-  // Build status/city counts safely
-  const statusCount = data.reduce((acc, item) => {
+  // Build city and group counts safely from the member data already loaded.
+  const cityCount = data.reduce((acc, item) => {
     var _item$address;
     const city = (_item$address = item.address) === null || _item$address === void 0 || (_item$address = _item$address[0]) === null || _item$address === void 0 ? void 0 : _item$address.city;
     if (city) {
@@ -208,47 +183,167 @@ const CmtApp = _ref => {
     }
     return acc;
   }, {});
+  const filteredCityCount = duplicateData.reduce((acc, item) => {
+    var _item$address2;
+    const city = ((_item$address2 = item.address) === null || _item$address2 === void 0 || (_item$address2 = _item$address2[0]) === null || _item$address2 === void 0 ? void 0 : _item$address2.city) || "Unknown";
+    acc[city] = (acc[city] || 0) + 1;
+    return acc;
+  }, {});
+  const flattenGroups = groupId => {
+    if (!Array.isArray(groupId)) return [];
+    return groupId.flat().filter(Boolean);
+  };
+  const groupCount = data.reduce((acc, item) => {
+    const groups = flattenGroups(item.groupId);
+    if (groups.length === 0) {
+      acc.Ungrouped = (acc.Ungrouped || 0) + 1;
+      return acc;
+    }
+    groups.forEach(group => {
+      acc[group] = (acc[group] || 0) + 1;
+    });
+    return acc;
+  }, {});
+  const activeMembers = data.filter(item => String(item.status || "").toLowerCase() === "active").length;
+  const withPhone = data.filter(item => Boolean(item.phoneNumber)).length;
+  const withEmail = data.filter(item => Boolean(item.email)).length;
+  const totalComments = data.reduce((total, item) => total + (Array.isArray(item.comments) ? item.comments.length : 0), 0);
+  const totalSubscriptions = data.reduce((total, item) => total + (Array.isArray(item.subscriptions) ? item.subscriptions.length : 0), 0);
+  const topCities = Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topGroups = Object.entries(groupCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const resourceCityCount = resourceData1.reduce((acc, item) => {
+    var _item$address3;
+    const city = ((_item$address3 = item.address) === null || _item$address3 === void 0 || (_item$address3 = _item$address3[0]) === null || _item$address3 === void 0 ? void 0 : _item$address3.city) || "Unknown";
+    acc[city] = (acc[city] || 0) + 1;
+    return acc;
+  }, {});
+  const filteredResourceCityCount = resourceData.reduce((acc, item) => {
+    var _item$address4;
+    const city = ((_item$address4 = item.address) === null || _item$address4 === void 0 || (_item$address4 = _item$address4[0]) === null || _item$address4 === void 0 ? void 0 : _item$address4.city) || "Unknown";
+    acc[city] = (acc[city] || 0) + 1;
+    return acc;
+  }, {});
+  const resourceStatusCount = resourceData1.reduce((acc, item) => {
+    const status = item.status || "Unknown";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+  const resourceGroupCount = resourceData1.reduce((acc, item) => {
+    const groups = flattenGroups(item.groupId);
+    if (groups.length === 0) {
+      acc.Ungrouped = (acc.Ungrouped || 0) + 1;
+      return acc;
+    }
+    groups.forEach(group => {
+      acc[group] = (acc[group] || 0) + 1;
+    });
+    return acc;
+  }, {});
+  const availableResources = resourceData1.filter(item => String(item.status || "").toLowerCase() === "active").length;
+  const resourcesWithPhone = resourceData1.filter(item => Boolean(item.phoneNumber)).length;
+  const resourcesWithEmail = resourceData1.filter(item => Boolean(item.email)).length;
+  const resourceComments = resourceData1.reduce((total, item) => total + (Array.isArray(item.comments) ? item.comments.length : 0), 0);
+  const topResourceCities = Object.entries(resourceCityCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topResourceGroups = Object.entries(resourceGroupCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
   // Unique city list for dropdown
   const uniqueCities = Array.from(new Set(data.flatMap(item => (item.address || []).map(addr => {
     var _addr$city;
     return addr === null || addr === void 0 || (_addr$city = addr.city) === null || _addr$city === void 0 ? void 0 : _addr$city.trim();
   }).filter(Boolean))));
-
-  // Legend labels mirror labels by default; customize here if needed
-  const legendLabels = uniqueCities.reduce((acc, city) => {
-    acc[city] = city;
-    return acc;
-  }, {});
-  const graphData = {
-    labels: Object.keys(statusCount),
+  const dashboardColors = ['#1677ff', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#64748b'];
+  const cityGraphData = {
+    labels: Object.keys(filteredCityCount),
     datasets: [{
-      label: 'Status Count',
-      data: Object.values(statusCount),
-      backgroundColor: ['brown', '#00B0FF', '#4CAF50', 'pink'],
-      borderColor: ['brown', '#00B0FF', '#4CAF50', 'pink']
+      label: 'Members',
+      data: Object.values(filteredCityCount),
+      backgroundColor: Object.keys(filteredCityCount).map((_, index) => dashboardColors[index % dashboardColors.length]),
+      borderColor: '#ffffff',
+      borderWidth: 2
     }]
   };
-  const options = {
+  const groupGraphData = {
+    labels: topGroups.map(_ref2 => {
+      let [group] = _ref2;
+      return group;
+    }),
+    datasets: [{
+      label: 'Members',
+      data: topGroups.map(_ref3 => {
+        let [, count] = _ref3;
+        return count;
+      }),
+      backgroundColor: '#1677ff',
+      borderRadius: 8,
+      maxBarThickness: 42
+    }]
+  };
+  const resourceCityGraphData = {
+    labels: Object.keys(filteredResourceCityCount),
+    datasets: [{
+      label: 'Resources',
+      data: Object.values(filteredResourceCityCount),
+      backgroundColor: Object.keys(filteredResourceCityCount).map((_, index) => dashboardColors[index % dashboardColors.length]),
+      borderColor: '#ffffff',
+      borderWidth: 2
+    }]
+  };
+  const resourceStatusGraphData = {
+    labels: Object.keys(resourceStatusCount),
+    datasets: [{
+      label: 'Resources',
+      data: Object.values(resourceStatusCount),
+      backgroundColor: Object.keys(resourceStatusCount).map((_, index) => dashboardColors[index % dashboardColors.length]),
+      borderRadius: 8,
+      maxBarThickness: 42
+    }]
+  };
+  const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       title: {
-        display: true,
-        text: 'Status Distribution'
+        display: false
       },
       legend: {
-        position: 'top',
+        position: 'bottom',
         labels: {
-          generateLabels: chart => {
-            return chart.data.labels.map((label, index) => ({
-              text: legendLabels[label] || label,
-              fillStyle: chart.data.datasets[0].backgroundColor[index],
-              strokeStyle: chart.data.datasets[0].borderColor[index],
-              lineWidth: 1
-            }));
-          }
+          boxHeight: 10,
+          boxWidth: 10,
+          usePointStyle: true
+        }
+      }
+    }
+  };
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: {
+        display: false
+      },
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false
         },
-        onClick: null
+        ticks: {
+          color: '#64748b'
+        }
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: '#eef2f7'
+        },
+        ticks: {
+          precision: 0,
+          color: '#64748b'
+        }
       }
     }
   };
@@ -575,7 +670,7 @@ const CmtApp = _ref => {
     span: 6,
     className: "table-cell"
   }, "Phone Number")), duplicateData.map((item, index) => {
-    var _item$address2, _item$address3, _item$address4, _item$address5, _item$address6, _item$address7;
+    var _item$address5, _item$address6, _item$address7, _item$address8, _item$address9, _item$address0;
     return /*#__PURE__*/React.createElement(Row, {
       key: index,
       className: "table-row"
@@ -588,7 +683,7 @@ const CmtApp = _ref => {
     }, item.customerName), /*#__PURE__*/React.createElement(Col, {
       span: 10,
       className: "table-cell"
-    }, [(_item$address2 = item.address) === null || _item$address2 === void 0 || (_item$address2 = _item$address2[0]) === null || _item$address2 === void 0 ? void 0 : _item$address2.houseNo, (_item$address3 = item.address) === null || _item$address3 === void 0 || (_item$address3 = _item$address3[0]) === null || _item$address3 === void 0 ? void 0 : _item$address3.street1, (_item$address4 = item.address) === null || _item$address4 === void 0 || (_item$address4 = _item$address4[0]) === null || _item$address4 === void 0 ? void 0 : _item$address4.street2, (_item$address5 = item.address) === null || _item$address5 === void 0 || (_item$address5 = _item$address5[0]) === null || _item$address5 === void 0 ? void 0 : _item$address5.city, (_item$address6 = item.address) === null || _item$address6 === void 0 || (_item$address6 = _item$address6[0]) === null || _item$address6 === void 0 ? void 0 : _item$address6.state, (_item$address7 = item.address) === null || _item$address7 === void 0 || (_item$address7 = _item$address7[0]) === null || _item$address7 === void 0 ? void 0 : _item$address7.country].filter(Boolean).join(', ')), /*#__PURE__*/React.createElement(Col, {
+    }, [(_item$address5 = item.address) === null || _item$address5 === void 0 || (_item$address5 = _item$address5[0]) === null || _item$address5 === void 0 ? void 0 : _item$address5.houseNo, (_item$address6 = item.address) === null || _item$address6 === void 0 || (_item$address6 = _item$address6[0]) === null || _item$address6 === void 0 ? void 0 : _item$address6.street1, (_item$address7 = item.address) === null || _item$address7 === void 0 || (_item$address7 = _item$address7[0]) === null || _item$address7 === void 0 ? void 0 : _item$address7.street2, (_item$address8 = item.address) === null || _item$address8 === void 0 || (_item$address8 = _item$address8[0]) === null || _item$address8 === void 0 ? void 0 : _item$address8.city, (_item$address9 = item.address) === null || _item$address9 === void 0 || (_item$address9 = _item$address9[0]) === null || _item$address9 === void 0 ? void 0 : _item$address9.state, (_item$address0 = item.address) === null || _item$address0 === void 0 || (_item$address0 = _item$address0[0]) === null || _item$address0 === void 0 ? void 0 : _item$address0.country].filter(Boolean).join(', ')), /*#__PURE__*/React.createElement(Col, {
       span: 6,
       className: "table-cell"
     }, item.phoneNumber));
@@ -647,43 +742,86 @@ const CmtApp = _ref => {
     }
   }, "+"))), /*#__PURE__*/React.createElement(Divider, {
     type: "horizontal"
-  }), showDashboard && /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: "100%"
-    }
-  }, /*#__PURE__*/React.createElement(Row, {
-    className: "status-track-icons"
-  }, Object.entries(statusCount).map((_ref2, index) => {
-    let [city, count] = _ref2;
-    const colors = ['#FFB6C1', '#ADD8E6', '#90EE90', '#FFD580', '#D8BFD8', '#98FB98'];
-    const bgColor = colors[index % colors.length];
-    return /*#__PURE__*/React.createElement(Col, {
-      key: city,
-      className: "status-icons"
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        backgroundColor: bgColor
-      }
-    }, count), /*#__PURE__*/React.createElement("h3", null, city));
-  })), /*#__PURE__*/React.createElement(Col, {
-    style: {
-      paddingTop: '0px'
-    }
-  }, /*#__PURE__*/React.createElement(Divider, {
-    type: "horizontal"
-  })), /*#__PURE__*/React.createElement(Row, {
-    className: "graph",
-    justify: 'center'
+  }), showDashboard && /*#__PURE__*/React.createElement("section", {
+    className: "dashboard-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-heading"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", null, "Member dashboard"), /*#__PURE__*/React.createElement("h2", null, statusSelection === "All" ? "All member activity" : "".concat(statusSelection, " member activity"))), /*#__PURE__*/React.createElement("span", null, duplicateData.length, " showing of ", data.length)), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-metrics"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat primary"
+  }, /*#__PURE__*/React.createElement(TeamOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Total members"), /*#__PURE__*/React.createElement("strong", null, data.length))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(CheckCircleOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Active"), /*#__PURE__*/React.createElement("strong", null, activeMembers))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(EnvironmentOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Cities"), /*#__PURE__*/React.createElement("strong", null, uniqueCities.length))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(ApartmentOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Groups"), /*#__PURE__*/React.createElement("strong", null, Object.keys(groupCount).length))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(PhoneOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Phone coverage"), /*#__PURE__*/React.createElement("strong", null, data.length ? Math.round(withPhone / data.length * 100) : 0, "%"))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(MailOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Email coverage"), /*#__PURE__*/React.createElement("strong", null, data.length ? Math.round(withEmail / data.length * 100) : 0, "%")))), /*#__PURE__*/React.createElement(Row, {
+    gutter: [16, 16],
+    className: "dashboard-content"
   }, /*#__PURE__*/React.createElement(Col, {
     xs: 24,
-    sm: 22,
-    md: 20,
-    lg: 16,
-    xl: 12
-  }, /*#__PURE__*/React.createElement(Bar, {
-    data: graphData,
-    options: options
-  })))), /*#__PURE__*/React.createElement(Modal, {
+    lg: 10
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card chart-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card-title"
+  }, /*#__PURE__*/React.createElement("h3", null, "City distribution"), /*#__PURE__*/React.createElement("span", null, Object.keys(filteredCityCount).length, " locations")), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-chart"
+  }, Object.keys(filteredCityCount).length ? /*#__PURE__*/React.createElement(Pie, {
+    data: cityGraphData,
+    options: chartOptions
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-empty"
+  }, "No city data available")))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    lg: 14
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card chart-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card-title"
+  }, /*#__PURE__*/React.createElement("h3", null, "Top groups"), /*#__PURE__*/React.createElement("span", null, topGroups.length, " tracked")), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-chart"
+  }, topGroups.length ? /*#__PURE__*/React.createElement(Bar, {
+    data: groupGraphData,
+    options: barOptions
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-empty"
+  }, "No group data available")))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    lg: 12
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card-title"
+  }, /*#__PURE__*/React.createElement("h3", null, "Top cities"), /*#__PURE__*/React.createElement("span", null, "Members by location")), /*#__PURE__*/React.createElement("div", {
+    className: "rank-list"
+  }, topCities.length ? topCities.map((_ref4, index) => {
+    let [city, count] = _ref4;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "rank-item",
+      key: city
+    }, /*#__PURE__*/React.createElement("span", null, index + 1), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, city), /*#__PURE__*/React.createElement("em", null, count, " member", count === 1 ? "" : "s")), /*#__PURE__*/React.createElement("b", {
+      style: {
+        width: "".concat(data.length ? count / data.length * 100 : 0, "%")
+      }
+    }));
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-empty compact"
+  }, "No city data available")))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    lg: 12
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card insight-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card-title"
+  }, /*#__PURE__*/React.createElement("h3", null, "Engagement snapshot"), /*#__PURE__*/React.createElement("span", null, "From member records")), /*#__PURE__*/React.createElement("div", {
+    className: "insight-grid"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Comments"), /*#__PURE__*/React.createElement("strong", null, totalComments)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Subscriptions"), /*#__PURE__*/React.createElement("strong", null, totalSubscriptions)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Filtered members"), /*#__PURE__*/React.createElement("strong", null, duplicateData.length)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Without email"), /*#__PURE__*/React.createElement("strong", null, Math.max(data.length - withEmail, 0)))))))), /*#__PURE__*/React.createElement(Modal, {
     open: isAddNewNameCardModalOpen,
     onCancel: () => {
       setIsAddNewNameCardModalOpen(false);
@@ -713,7 +851,7 @@ const CmtApp = _ref => {
         form.resetFields();
       }
     }
-  })) : resourcePage ? /*#__PURE__*/React.createElement(ResourcePage, {
+  })) : resourcePage ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ResourcePage, {
     resourceData: resourceData,
     setResourceData1: setResourceData1,
     setResourceData: setResourceData,
@@ -725,9 +863,86 @@ const CmtApp = _ref => {
     setGroupMessages: setGroupMessages,
     selectedGroup: selectedGroup,
     uniqueGroups: uniqueGroups
-  }) : openCalendarPage ? /*#__PURE__*/React.createElement(CalendarPage, {
-    sampleData: sampleData,
-    setSampleData: setSampleData,
+  }), showDashboard && /*#__PURE__*/React.createElement("section", {
+    className: "dashboard-panel resource-dashboard-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-heading"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", null, "Resource dashboard"), /*#__PURE__*/React.createElement("h2", null, "Resource availability and coverage")), /*#__PURE__*/React.createElement("span", null, resourceData.length, " showing of ", resourceData1.length)), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-metrics"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat primary"
+  }, /*#__PURE__*/React.createElement(ApartmentOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Total resources"), /*#__PURE__*/React.createElement("strong", null, resourceData1.length))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(CheckCircleOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Active"), /*#__PURE__*/React.createElement("strong", null, availableResources))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(EnvironmentOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Locations"), /*#__PURE__*/React.createElement("strong", null, Object.keys(resourceCityCount).length))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(TeamOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Groups"), /*#__PURE__*/React.createElement("strong", null, Object.keys(resourceGroupCount).length))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(PhoneOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Phone coverage"), /*#__PURE__*/React.createElement("strong", null, resourceData1.length ? Math.round(resourcesWithPhone / resourceData1.length * 100) : 0, "%"))), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-stat"
+  }, /*#__PURE__*/React.createElement(MailOutlined, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Email coverage"), /*#__PURE__*/React.createElement("strong", null, resourceData1.length ? Math.round(resourcesWithEmail / resourceData1.length * 100) : 0, "%")))), /*#__PURE__*/React.createElement(Row, {
+    gutter: [16, 16],
+    className: "dashboard-content"
+  }, /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    lg: 10
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card chart-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card-title"
+  }, /*#__PURE__*/React.createElement("h3", null, "Location distribution"), /*#__PURE__*/React.createElement("span", null, Object.keys(filteredResourceCityCount).length, " locations")), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-chart"
+  }, Object.keys(filteredResourceCityCount).length ? /*#__PURE__*/React.createElement(Pie, {
+    data: resourceCityGraphData,
+    options: chartOptions
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-empty"
+  }, "No location data available")))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    lg: 14
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card chart-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card-title"
+  }, /*#__PURE__*/React.createElement("h3", null, "Status overview"), /*#__PURE__*/React.createElement("span", null, Object.keys(resourceStatusCount).length, " statuses")), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-chart"
+  }, Object.keys(resourceStatusCount).length ? /*#__PURE__*/React.createElement(Bar, {
+    data: resourceStatusGraphData,
+    options: barOptions
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-empty"
+  }, "No status data available")))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    lg: 12
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card-title"
+  }, /*#__PURE__*/React.createElement("h3", null, "Top resource cities"), /*#__PURE__*/React.createElement("span", null, "Resources by location")), /*#__PURE__*/React.createElement("div", {
+    className: "rank-list"
+  }, topResourceCities.length ? topResourceCities.map((_ref5, index) => {
+    let [city, count] = _ref5;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "rank-item",
+      key: city
+    }, /*#__PURE__*/React.createElement("span", null, index + 1), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, city), /*#__PURE__*/React.createElement("em", null, count, " resource", count === 1 ? "" : "s")), /*#__PURE__*/React.createElement("b", {
+      style: {
+        width: "".concat(resourceData1.length ? count / resourceData1.length * 100 : 0, "%")
+      }
+    }));
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-empty compact"
+  }, "No location data available")))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    lg: 12
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card insight-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-card-title"
+  }, /*#__PURE__*/React.createElement("h3", null, "Resource snapshot"), /*#__PURE__*/React.createElement("span", null, "From resource records")), /*#__PURE__*/React.createElement("div", {
+    className: "insight-grid"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Comments"), /*#__PURE__*/React.createElement("strong", null, resourceComments)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Tracked groups"), /*#__PURE__*/React.createElement("strong", null, topResourceGroups.length)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Filtered resources"), /*#__PURE__*/React.createElement("strong", null, resourceData.length)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, "Without email"), /*#__PURE__*/React.createElement("strong", null, Math.max(resourceData1.length - resourcesWithEmail, 0))))))))) : openCalendarPage ? /*#__PURE__*/React.createElement(CalendarPage, {
     entityId: entityId,
     duplicateData: duplicateData,
     resourceData: resourceData
