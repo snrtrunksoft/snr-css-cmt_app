@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 import "./CalendarPage.css";
-import { ChevronLeft, ChevronRight, Edit } from "lucide-react";
-import { getRecurringCalendar, getAllRecurringCalendar, getCalendar, createEvent, updateEvent, deleteEvent } from "./api/APIUtil";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getRecurringCalendar, getCalendar, createEvent, updateEvent, deleteEvent } from "./api/APIUtil";
 
-import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Pagination, Row, TimePicker, Grid, Spin, DatePicker } from "antd";
+import { Button, Checkbox, Col, Divider, Dropdown, Select, Menu, Modal, Row, TimePicker, Grid, Spin, DatePicker } from "antd";
 
 import dayjs from "dayjs";
 import { LoadingOutlined, LockOutlined } from "@ant-design/icons";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const { useBreakpoint } = Grid;
+const MAX_CALENDAR_MONTH_CACHE = 3;
+const MAX_CALENDAR_USER_CACHE = 2;
 
-const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, resourceData}) => {
+const CalendarPage = ({ duplicateData, entityId, resourceData}) => {
   const [openEventStatusModal, setOpenEventStatusModal] = useState(false);
   const [ currentDate, setCurrentDate] = useState(new Date());
+  const [ pendingFilterDate, setPendingFilterDate ] = useState(dayjs());
   const [ openWeekCalendar, setOpenWeekCalendar ] = useState(true);
   const [ openMonthCalendar, setOpenMonthCalendar ] = useState(false);
   const [ openDailyCalendar, setOpenDailyCalendar ] = useState(false);
@@ -55,11 +58,24 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   const [ selectedRecurringEvent, setSelectedRecurringEvent ] = useState(null);
   const [ deleteRecurringType, setDeleteRecurringType ] = useState('all'); // 'all' or 'single'
   const [ isRecurringEventModalOpen, setIsRecurringEventModalOpen ] = useState(false);
+  const [ sampleData, setSampleData ] = useState([]);
+  const [ showMyAppointments, setShowMyAppointments ] = useState(false);
+  const calendarCacheRef = useRef({});
+  const calendarCacheOrderRef = useRef({});
+  const calendarUserCacheOrderRef = useRef([]);
+  const recurringCacheRef = useRef({});
+  const calendarRequestRef = useRef({});
+  const recurringRequestRef = useRef({});
 
   const [effectiveEntityId, setEffectiveEntityId] = useState(entityId || null);
 
   useEffect(() => {
-    if (!effectiveEntityId && typeof window !== "undefined") {
+    if (entityId) {
+      setEffectiveEntityId(entityId);
+      return;
+    }
+
+    if (typeof window !== "undefined") {
       try {
         const storedId = localStorage.getItem("entityId");
         if (storedId) {
@@ -70,23 +86,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         console.log("Unable to read entityId from localStorage in CalendarPage", e);
       }
     }
-  }, [effectiveEntityId, entityId]);
+  }, [entityId]);
   const [ overlapWarning, setOverlapWarning ] = useState("");
-
-  useEffect(() => {
-    const fetchRecurringCalendar = async() => {
-      try{
-        const recurringCalendarData = await getAllRecurringCalendar(effectiveEntityId);
-        console.log("recurringCalendarData:", recurringCalendarData);
-        setRecurringAllCalendar(recurringCalendarData);
-      } catch(error) {
-          console.log("unable to fetch the Recurring All Calendar:", error)
-        } finally {
-            setIsLoading(false);
-          }
-    }
-    fetchRecurringCalendar();
-  }, [effectiveEntityId])
   
   const screens = useBreakpoint();
   
@@ -102,9 +103,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
   const validateFields = () => {
     let fieldError = {};
-    if (!selectedMemberId) fieldError.selectedMemberId = "please enter member Id";
-    if (!selectedResourceId) fieldError.selectedResourceId = "please enter resource Id";
+    if (!selectedMemberId) fieldError.selectedMemberId = "Please select a member";
+    if (!selectedResourceId) fieldError.selectedResourceId = "Please select a resource";
     if (!eventTitle) fieldError.eventTitle = "Title required...!";
+    if (fromTimeSlot === null || fromTimeSlot === undefined) fieldError.fromTimeSlot = "From time required";
+    if (toTimeSlot === null || toTimeSlot === undefined) fieldError.toTimeSlot = "To time required";
 
     // For recurring events ensure start/end dates aren't in the past and the range is valid
     if (recurring || frequencyOfEvent !== 'noRecurring') {
@@ -154,61 +157,174 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   }, [currentDate]);
 
   useEffect(() => {
-    // Only fetch if calendarUserId is set (not empty string)
-    if (!calendarUserId) {
+    setPendingFilterDate(dayjs(currentDate));
+  }, [currentDate]);
+
+  const getCalendarRequestParams = useCallback((date) => {
+    const targetDate = date || new Date();
+    return {
+      monthName: targetDate.toLocaleString("default", { month: "long" }),
+      year: targetDate.getFullYear().toString(),
+    };
+  }, []);
+
+  const getVisibleCalendarMonths = useCallback((date) => {
+    const targetDate = date || new Date();
+    const datesToCheck = openWeekCalendar
+      ? Array.from({ length: 7 }, (_, i) => {
+        const startOfWeek = new Date(targetDate);
+        startOfWeek.setDate(targetDate.getDate() - targetDate.getDay());
+        const day = new Date(startOfWeek);
+        day.setDate(startOfWeek.getDate() + i);
+        return day;
+      })
+      : [targetDate];
+    const monthMap = new Map();
+
+    datesToCheck.forEach((visibleDate) => {
+      const { monthName, year } = getCalendarRequestParams(visibleDate);
+      monthMap.set(`${monthName}:${year}`, { monthName, year, date: visibleDate });
+    });
+
+    return Array.from(monthMap.values());
+  }, [openWeekCalendar, getCalendarRequestParams]);
+  const rememberCalendarUserCacheKey = useCallback((userCacheKey) => {
+    calendarUserCacheOrderRef.current = [
+      userCacheKey,
+      ...calendarUserCacheOrderRef.current.filter((key) => key !== userCacheKey),
+    ];
+
+    while (calendarUserCacheOrderRef.current.length > MAX_CALENDAR_USER_CACHE) {
+      const userKeyToDelete = calendarUserCacheOrderRef.current.pop();
+      const calendarKeyPrefix = `${userKeyToDelete}:`;
+
+      Object.keys(calendarCacheRef.current).forEach((cacheKey) => {
+        if (cacheKey.startsWith(calendarKeyPrefix)) {
+          delete calendarCacheRef.current[cacheKey];
+        }
+      });
+
+      Object.keys(calendarRequestRef.current).forEach((cacheKey) => {
+        if (cacheKey.startsWith(calendarKeyPrefix)) {
+          delete calendarRequestRef.current[cacheKey];
+        }
+      });
+
+      delete calendarCacheOrderRef.current[userKeyToDelete];
+      delete recurringCacheRef.current[userKeyToDelete];
+      delete recurringRequestRef.current[userKeyToDelete];
+    }
+  }, []);
+
+  const rememberCalendarCacheKey = useCallback((userCacheKey, cacheKey) => {
+    rememberCalendarUserCacheKey(userCacheKey);
+
+    const userMonthOrder = calendarCacheOrderRef.current[userCacheKey] || [];
+    calendarCacheOrderRef.current[userCacheKey] = [
+      cacheKey,
+      ...userMonthOrder.filter((key) => key !== cacheKey),
+    ];
+
+    while (calendarCacheOrderRef.current[userCacheKey].length > MAX_CALENDAR_MONTH_CACHE) {
+      const keyToDelete = calendarCacheOrderRef.current[userCacheKey].pop();
+      delete calendarCacheRef.current[keyToDelete];
+      delete calendarRequestRef.current[keyToDelete];
+    }
+  }, [rememberCalendarUserCacheKey]);
+
+  const visibleMonthsKey = getVisibleCalendarMonths(currentDate)
+    .map(({ monthName, year }) => `${monthName}:${year}`)
+    .join("|");
+
+  const loadCalendarData = useCallback(async (userId, date) => {
+    if (!effectiveEntityId || !userId || userId === "Select Member" || userId === "Select Resource") {
+      setIsLoading(false);
       return;
     }
-    
-    setIsLoading(true);
-    
-    if(calendarUserId && calendarUserId !== "All" ){
-      // calendarUserId now contains the actual ID (member ID or resource ID)
-      const fetchMembersCalendar = async () => {
-        try {
-          const monthName = currentDate.toLocaleString("default", { month: "long" });
-          const year = currentDate.getFullYear().toString();
-          
-          // Fetch regular calendar data
-          const memberData = await getCalendar(effectiveEntityId, calendarUserId, monthName, year);
-          console.log("Filtered Calendar:", memberData);
-          setResourceCalendar(memberData);
-          
-          // Fetch recurring calendar data
-          const recurringResourceData = await getRecurringCalendar(effectiveEntityId, calendarUserId);
-          console.log("recurringResourceData:", recurringResourceData);
-          setRecurringResourceCalendar(recurringResourceData);
-        } catch(error) {
-          console.log("Error fetching calendar data:", error);
-        } finally {
-          setIsLoading(false);
-        }
+
+    try {
+      setIsLoading(true);
+      const visibleMonths = getVisibleCalendarMonths(date);
+      const recurringCacheKey = `${effectiveEntityId}:${userId}`;
+      rememberCalendarUserCacheKey(recurringCacheKey);
+
+      const cachedRecurringData = recurringCacheRef.current[recurringCacheKey];
+
+      const [calendarDataByMonth, recurringData] = await Promise.all([
+        Promise.all(visibleMonths.map(({ monthName, year }) => {
+          const calendarCacheKey = `${effectiveEntityId}:${userId}:${monthName}:${year}`;
+          const cachedCalendarData = calendarCacheRef.current[calendarCacheKey];
+          if (cachedCalendarData !== undefined) {
+            rememberCalendarCacheKey(recurringCacheKey, calendarCacheKey);
+            return Promise.resolve(cachedCalendarData);
+          }
+
+          if (!calendarRequestRef.current[calendarCacheKey]) {
+            calendarRequestRef.current[calendarCacheKey] = getCalendar(effectiveEntityId, userId, monthName, year).then((calendarData) => {
+              if (calendarUserCacheOrderRef.current.includes(recurringCacheKey)) {
+                calendarCacheRef.current[calendarCacheKey] = calendarData;
+                rememberCalendarCacheKey(recurringCacheKey, calendarCacheKey);
+              }
+              delete calendarRequestRef.current[calendarCacheKey];
+              return calendarData;
+            }).catch((error) => {
+              delete calendarRequestRef.current[calendarCacheKey];
+              throw error;
+            });
+          }
+
+          return calendarRequestRef.current[calendarCacheKey];
+        })),
+        cachedRecurringData !== undefined
+          ? Promise.resolve(cachedRecurringData)
+          : (() => {
+            if (!recurringRequestRef.current[recurringCacheKey]) {
+              recurringRequestRef.current[recurringCacheKey] = getRecurringCalendar(effectiveEntityId, userId).then((recurringData) => {
+                if (calendarUserCacheOrderRef.current.includes(recurringCacheKey)) {
+                  recurringCacheRef.current[recurringCacheKey] = recurringData;
+                }
+                delete recurringRequestRef.current[recurringCacheKey];
+                return recurringData;
+              }).catch((error) => {
+                delete recurringRequestRef.current[recurringCacheKey];
+                throw error;
+              });
+            }
+            return recurringRequestRef.current[recurringCacheKey];
+          })(),
+      ]);
+      const calendarData = calendarDataByMonth.flatMap((monthData) => Array.isArray(monthData) ? monthData : []);
+
+      if (userId === "All") {
+        setSampleData(Array.isArray(calendarData) ? calendarData : []);
+        setRecurringAllCalendar(recurringData || []);
+        setResourceCalendar([]);
+        setRecurringResourceCalendar([]);
+      } else {
+        setResourceCalendar(Array.isArray(calendarData) ? calendarData : []);
+        setRecurringResourceCalendar(recurringData || []);
       }
-      fetchMembersCalendar();
-    } else if(calendarUserId === "All") {
-      // Fetch data for all users
-      const fetchAllCalendar = async () => {
-        try {
-          const monthName = currentDate.toLocaleString("default", { month: "long" });
-          const year = currentDate.getFullYear().toString();
-          
-          // Fetch regular calendar data for all users
-          const allData = await getCalendar(effectiveEntityId, "All", monthName, year);
-          console.log("All Calendar Data:", allData);
-          setSampleData(allData);
-          
-          // Fetch recurring calendar data for all users
-          const recurringAllData = await getRecurringCalendar(effectiveEntityId, "All");
-          console.log("All Recurring Data:", recurringAllData);
-          setRecurringAllCalendar(recurringAllData);
-        } catch(error) {
-          console.log("Error fetching all calendar data:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-      fetchAllCalendar();
+    } catch(error) {
+      console.log("Error fetching calendar data:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [calendarUserId, currentDate, effectiveEntityId]);
+  }, [effectiveEntityId, getVisibleCalendarMonths, rememberCalendarCacheKey, rememberCalendarUserCacheKey]);
+
+  const isCalendarMonthCached = useCallback((userId, date) => {
+    if (!effectiveEntityId || !userId || userId === "Select Member" || userId === "Select Resource") {
+      return true;
+    }
+
+    return getVisibleCalendarMonths(date).every(({ monthName, year }) => {
+      const calendarCacheKey = `${effectiveEntityId}:${userId}:${monthName}:${year}`;
+      return calendarCacheRef.current[calendarCacheKey] !== undefined || calendarRequestRef.current[calendarCacheKey];
+    });
+  }, [effectiveEntityId, getVisibleCalendarMonths]);
+
+  useEffect(() => {
+    loadCalendarData(calendarUserId, currentDate);
+  }, [calendarUserId, visibleMonthsKey, loadCalendarData]);
 
   const generateCalendar = () => {
     const year = currentDate.getFullYear();
@@ -242,6 +358,16 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     startDate.setDate(date.getDate() - date.getDay());
     return startDate;
   };
+
+  const getWeekDaysForDate = (date) => {
+    const startOfWeek = getStartOfWeek(date);
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      return day;
+    });
+  };
+
     useEffect(() => {
       const format24Hour = dayjs(timeSlot,"h A").hour();
       setFromTimeSlot(format24Hour);
@@ -249,11 +375,86 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     },[timeSlot]);
 
   const getWeekDays = () => {
-    const startOfWeek = getStartOfWeek(currentDate);
-    return Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      return day;
+    return getWeekDaysForDate(currentDate);
+  };
+
+  const parseApiDate = (value) => {
+    if (!value) return null;
+    const parsedDate = value instanceof Date ? value : new Date(value);
+
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return dayjs(parsedDate);
+    }
+
+    const normalizedDate = String(value).replace(" UTC ", " GMT ");
+    const normalizedParsedDate = new Date(normalizedDate);
+    return Number.isNaN(normalizedParsedDate.getTime()) ? null : dayjs(normalizedParsedDate);
+  };
+
+  const isRecurringWithinDateRange = (date, event) => {
+    if (!event || typeof event !== "object") return true;
+
+    const selectedDate = dayjs(date).startOf("day");
+    const startDate = parseApiDate(event.startDate)?.startOf("day");
+    const endDate = parseApiDate(event.endDate)?.startOf("day");
+
+    const startsOk = !startDate || selectedDate.isSame(startDate, "day") || selectedDate.isAfter(startDate, "day");
+    const endsOk = !endDate || selectedDate.isSame(endDate, "day") || selectedDate.isBefore(endDate, "day");
+    return startsOk && endsOk;
+  };
+
+  const getRecurringRoot = (calendarData) => calendarData?.AllEvents || calendarData || {};
+
+  const getRecurringBucket = (calendarData, key) => {
+    const root = getRecurringRoot(calendarData);
+    const titleKey = key ? key.charAt(0).toUpperCase() + key.slice(1).toLowerCase() : key;
+    return root?.[key] || root?.[key?.toUpperCase?.()] || root?.[key?.toLowerCase?.()] || root?.[titleKey] || {};
+  };
+
+  const getHourItems = (items, hourKey) => {
+    const hourItems = items?.[hourKey];
+    return Array.isArray(hourItems) ? hourItems : [];
+  };
+
+  const getRecurringHourItemsForDate = (calendarData, date, hour) => {
+    const dateObj = dayjs(date);
+    const hourKey = `hour_${hour}`;
+    const weekdayKey = dateObj.format("dddd");
+    const monthDayKey = `Day_${dateObj.date()}`;
+    const recurringItems = [
+      ...getHourItems(getRecurringBucket(calendarData, weekdayKey), hourKey),
+      ...getHourItems(getRecurringBucket(calendarData, monthDayKey), hourKey),
+    ];
+    const seen = new Set();
+
+    return recurringItems.filter((item, index) => {
+      const key = item && typeof item === "object"
+        ? `${item.id || "recurring"}-${item.frequency || ""}-${item.from || hour}-${item.to || ""}-${index}`
+        : `${String(item)}-${index}`;
+
+      if (seen.has(key)) return false;
+      seen.add(key);
+
+      if (!item || typeof item !== "object") return true;
+      if (!isRecurringWithinDateRange(dateObj, item)) return false;
+
+      const from = Number(item.from);
+      const to = Number(item.to);
+      if (Number.isFinite(from) && Number.isFinite(to) && !(from <= hour && hour < to)) {
+        return false;
+      }
+
+      if (item.frequency === "monthly") {
+        return Number(item.monthDays?.[0] || item.date || dateObj.date()) === dateObj.date();
+      }
+
+      if (item.frequency === "weekly") {
+        const weekday = dateObj.format("dddd");
+        const weekdayCaps = weekday.toUpperCase();
+        return !item.day && !item.days ? true : item.day === weekday || item.day === weekdayCaps || item.days === weekdayCaps;
+      }
+
+      return true;
     });
   };
 
@@ -336,6 +537,23 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   const paginateEvents = filteredEvents.slice(startIndex,startIndex + itemsForPage);
   const { Option } = Select;
 
+  const handleApplyDateFilter = () => {
+    const selectedDate = pendingFilterDate ? pendingFilterDate.toDate() : new Date(currentDate);
+    const nextDate = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate()
+    );
+
+    setWeekEventDate(null);
+    setCurrentPage(1);
+    setCurrentDate(nextDate);
+
+    if (!isCalendarMonthCached(calendarUserId, nextDate)) {
+      loadCalendarData(calendarUserId, nextDate);
+    }
+  };
+
   // useEffect(() => {
   //   if(eventStatus){
   //     showStatusModal();
@@ -380,46 +598,65 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
   // Unified refresh function to reload calendar data from backend
   const refreshCalendarUI = async (userId = calendarUserId, date = currentDate) => {
-    if (userId === "Select Member" || userId === "Select Resource") {
+    if (!effectiveEntityId || userId === "Select Member" || userId === "Select Resource") {
       return;
     }
 
     try {
       setIsLoading(true);
 
-      const monthName = date.toLocaleString("default", { month: "long" });
-      const yearNumber = date.getFullYear();
+      const recurringCacheKey = `${effectiveEntityId}:${userId}`;
+      const visibleMonths = getVisibleCalendarMonths(date);
+      rememberCalendarUserCacheKey(recurringCacheKey);
 
-      // Fetch calendar data
-      const calendarData = await getCalendar(effectiveEntityId, userId, monthName, yearNumber);
+      const [calendarDataByMonth, recurringData] = await Promise.all([
+        Promise.all(visibleMonths.map(({ monthName, year }) =>
+          getCalendar(effectiveEntityId, userId, monthName, year).then((calendarData) => {
+            const calendarCacheKey = `${effectiveEntityId}:${userId}:${monthName}:${year}`;
+            calendarCacheRef.current[calendarCacheKey] = calendarData;
+            rememberCalendarCacheKey(recurringCacheKey, calendarCacheKey);
+            return calendarData;
+          })
+        )),
+        getRecurringCalendar(effectiveEntityId, userId),
+      ]);
+      const calendarData = calendarDataByMonth.flatMap((monthData) => Array.isArray(monthData) ? monthData : []);
       console.log("Refreshed Calendar Data:", calendarData);
+      recurringCacheRef.current[recurringCacheKey] = recurringData;
 
       if (userId === "All") {
-        setSampleData(calendarData);
+        setSampleData(Array.isArray(calendarData) ? calendarData : []);
       } else {
-        setResourceCalendar(calendarData);
+        setResourceCalendar(Array.isArray(calendarData) ? calendarData : []);
       }
 
-      // Fetch recurring events data
-      const recurringData = await getRecurringCalendar(effectiveEntityId, userId);
       console.log("Refreshed Recurring Data:", recurringData);
-      setRecurringResourceCalendar(recurringData);
+      if (userId === "All") {
+        setRecurringAllCalendar(recurringData || []);
+      } else {
+        setRecurringResourceCalendar(recurringData || []);
+      }
 
-      setIsLoading(false);
     } catch (error) {
       console.log("Error refreshing calendar UI:", error);
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleCalendarEvent = () => {
+    if (!validateFields()) {
+      return;
+    }
+
     setEventLoading(true);
     setOpenEventStatusModal(true);
     setOpenEventSlot(false);
+    const appointmentDate = Number(monthlyRecurring) || currentDate.getDate();
     const eventDetails = {
       memberId:selectedMemberId,
       resourceId:selectedResourceId,
-      date: monthlyRecurring,
+      date: appointmentDate,
       month:monthName,
       year:currentDate.getFullYear().toString(),
       title: eventTitle,
@@ -429,7 +666,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       isRecurring: recurring,
       frequency: frequencyOfEvent,
       ...(frequencyOfEvent === "monthly" && { monthDays: [monthlyRecurring] }),
-      day: weeklyDayRecurring || dayjs().format("dddd"),
+      day: weeklyDayRecurring || dayjs(new Date(currentDate.getFullYear(), currentDate.getMonth(), appointmentDate)).format("dddd"),
       ...(recurring && recurringStartDate && { startDate: recurringStartDate.format("YYYY-MM-DD") }),
       ...(recurring && recurringEndDate && { endDate: recurringEndDate.format("YYYY-MM-DD") })
     };
@@ -454,10 +691,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         closeAllModals();
         handleCloseEventSlot();
 
-        // Refresh UI after brief delay to allow success message to display
-        setTimeout(() => {
-          refreshCalendarUI(calendarUserId, currentDate);
-        }, 800);
+        // Refresh from the API after a successful write; do not populate calendar state locally.
+        await refreshCalendarUI(calendarUserId, currentDate);
 
       } catch (error) {
         console.log(isUpdate ? "Unable to update event:" : "Unable to create event:", error);
@@ -466,11 +701,6 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
         setEventLoading(false);
       }
     };
-
-    // Run validation for required and recurring date constraints
-    if (!validateFields()) {
-      return;
-    }
 
     // Check for overlap before submitting
     checkResourceOverlap(selectedResourceId, fromTimeSlot, toTimeSlot, weekEventDate).then(hasOverlap => {
@@ -662,8 +892,12 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     );
 
     // Step 2: Get booked resource IDs in that hour from filtered calendar and sampleData (so 'All' view is covered)
-    const recurringDayOfWeek = openWeekCalendar ? dayjs(weekEventDate).format("dddd") : dayjs(currentDate.getDate()).format('dddd');
-    const recurringEvents = recurringAllCalendar?.AllEvents?.[recurringDayOfWeek]?.[hourKey] ?? [];
+    const resourceMenuDate = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      openWeekCalendar && weekEventDate ? weekEventDate : currentDate.getDate()
+    );
+    const recurringEvents = getRecurringHourItemsForDate(recurringAllCalendar, resourceMenuDate, hour);
 
     // Get booked resource IDs from the filtered resourceCalendar data
     const bookedResourceIds = resourceCalendar
@@ -731,8 +965,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     setWeeklyDayRecurring(event.day || "");
     setMonthlyRecurring(event.date || dayjs().date());
     setTimeSlot(event.from === 0 ? "12 AM" : event.from < 12 ? `${event.from} AM` : event.from === 12 ? "12 PM" : `${event.from - 12} PM`);
-    setRecurringStartDate(event.startDate ? dayjs(event.startDate) : null);
-    setRecurringEndDate(event.endDate ? dayjs(event.endDate) : null);
+    setRecurringStartDate(parseApiDate(event.startDate));
+    setRecurringEndDate(parseApiDate(event.endDate));
 
     // Ensure recurring/editor flags are set correctly
     setRecurring(Boolean(event.isRecurring));
@@ -743,24 +977,68 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   };
 
   const handleShowBookedEventDetails = (event) => {
-    // Check if this is a recurring event
-    if (event.isRecurring) {
+    setSelectedBookedEvent(event);
+    if (event?.isRecurring) {
       setSelectedRecurringEvent(event);
-      openRecurringEventModalOnly();
-    } else {
-      setSelectedBookedEvent(event);
-      openBookedEventModalOnly();
-      
-      // Calculate available resources for this slot
-      const eventHour = event.from;
-      const hourKey = `hour_${eventHour}`;
-      const bookedInSlot = sampleData.flatMap(day => day.allEvents?.[hourKey] ?? []);
-      const bookedSet = new Set(bookedInSlot.map(b => (b && b.resourceId != null) ? String(b.resourceId) : String(b)));
-      const available = resourceData.filter(res => 
-        !bookedSet.has(String(res.resourceId)) && !bookedSet.has(String(res.resourceName))
-      );
-      setAvailableResourcesForSlot(available);
     }
+    openBookedEventModalOnly();
+
+    // Calculate available resources for this slot
+    const eventHour = event?.from;
+    const hourKey = `hour_${eventHour}`;
+    const bookedInSlot = sampleData.flatMap(day => day.allEvents?.[hourKey] ?? []);
+    const bookedSet = new Set(bookedInSlot.map(b => (b && b.resourceId != null) ? String(b.resourceId) : String(b)));
+    const available = resourceData.filter(res =>
+      !bookedSet.has(String(res.resourceId)) && !bookedSet.has(String(res.resourceName))
+    );
+    setAvailableResourcesForSlot(available);
+  };
+
+  const getBookedEventsForSlot = (date, hourValue) => {
+    const slotDate = dayjs(date);
+    const month = slotDate.format("MMMM");
+    const year = slotDate.year();
+    const dateNumber = slotDate.date();
+    const weekday = slotDate.format("dddd");
+    const weekdayCaps = weekday.toUpperCase();
+
+    const oneTimeEvents = resourceCalendar.flatMap((calendarDay) => {
+      const isMatchingDay =
+        calendarDay.month === month &&
+        parseInt(calendarDay.year, 10) === year &&
+        parseInt(calendarDay.date, 10) === dateNumber;
+
+      if (!isMatchingDay) return [];
+
+      return (calendarDay.events || [])
+        .filter((event) => event.from <= hourValue && hourValue < event.to)
+        .map((event) => ({
+          ...event,
+          date: event.date || calendarDay.date,
+          month: event.month || calendarDay.month,
+          year: event.year || calendarDay.year,
+        }));
+    });
+
+    const recurringItemsForDate = getRecurringHourItemsForDate(recurringResourceCalendar, slotDate, hourValue);
+    const weeklyRecurringEvents = recurringItemsForDate
+      .filter((event) => {
+        if (!event || typeof event !== "object") return true;
+        if (event.frequency === "daily") return event.from <= hourValue && hourValue < event.to;
+        if (event.frequency === "weekly") return (event.days === weekdayCaps || event.day === weekdayCaps || event.day === weekday) && event.from <= hourValue && hourValue < event.to;
+        if (event.frequency === "monthly") return Number(event.monthDays?.[0] || event.date || dateNumber) === dateNumber && event.from <= hourValue && hourValue < event.to;
+        return event.from <= hourValue && hourValue < event.to;
+      })
+      .map((event) => ({
+        ...event,
+        date: event.date || String(dateNumber),
+        month: event.month || month,
+        year: event.year || String(year),
+        day: event.day || weekday,
+        isRecurring: event.isRecurring ?? true,
+      }));
+
+    return [...oneTimeEvents, ...weeklyRecurringEvents];
   };
 
   // Edit handlers for booked and recurring events
@@ -785,13 +1063,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
   // Helper function to check if a date falls within recurring event range
   const isDateInRecurringRange = (date, event) => {
-    if (!event.startDate || !event.endDate) return true;
-    const checkDate = dayjs(date);
-    const startDate = dayjs(event.startDate);
-    const endDate = dayjs(event.endDate);
-    const isAfterStart = checkDate.isAfter(startDate) || checkDate.isSame(startDate, 'day');
-    const isBeforeEnd = checkDate.isBefore(endDate) || checkDate.isSame(endDate, 'day');
-    return isAfterStart && isBeforeEnd;
+    return isRecurringWithinDateRange(date, event);
   };
 
   // Helper function to check if a recurring event occurs on a specific date
@@ -810,6 +1082,118 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       return dateOfMonth === parseInt(event.monthDays?.[0] || event.date);
     }
     return false;
+  };
+
+  const getCalendarDayEntry = (date) => {
+    const dateObj = dayjs(date);
+    return sampleData.find((day) =>
+      parseInt(day.date, 10) === dateObj.date() &&
+      day.month === dateObj.format("MMMM") &&
+      parseInt(day.year, 10) === dateObj.year()
+    );
+  };
+
+  const getAllEventsForSlot = (date, hour) => {
+    const dateObj = dayjs(date);
+    const hourKey = `hour_${hour}`;
+    const dayEntry = getCalendarDayEntry(dateObj.toDate());
+    return [
+      ...getHourItems(dayEntry?.allEvents, hourKey),
+      ...getRecurringHourItemsForDate(recurringAllCalendar, dateObj, hour),
+    ];
+  };
+
+  const getAllCalendarHourCount = (date, hour) => {
+    const dateObj = dayjs(date);
+    const hourKey = `hour_${hour}`;
+    const dayEntry = getCalendarDayEntry(dateObj.toDate());
+    const oneTimeCount = getHourItems(dayEntry?.allEvents, hourKey).length;
+    const recurringCount = getRecurringHourItemsForDate(recurringAllCalendar, dateObj, hour).length;
+
+    return oneTimeCount + recurringCount;
+  };
+
+  const getFilteredCalendarHourCount = (date, hour) => {
+    const dateObj = dayjs(date);
+    const hourKey = `hour_${hour}`;
+    const dayEvents = resourceCalendar.flatMap((calendarDay) => {
+      const isMatchingDay =
+        calendarDay.month === dateObj.format("MMMM") &&
+        parseInt(calendarDay.year, 10) === dateObj.year() &&
+        parseInt(calendarDay.date, 10) === dateObj.date();
+
+      if (!isMatchingDay) return [];
+
+      return calendarDay.events?.filter((event) => event.from <= hour && hour < event.to) ?? [];
+    });
+    const recurringEvents = getRecurringHourItemsForDate(recurringResourceCalendar, dateObj, hour);
+
+    return dayEvents.length + recurringEvents.length;
+  };
+
+  const getBookedEventCountForHour = (date, hour) => {
+    const isFilteredCalendar =
+      calendarUserId &&
+      calendarUserId !== "All" &&
+      calendarUserId !== "Select Member" &&
+      calendarUserId !== "Select Resource";
+
+    return isFilteredCalendar
+      ? getFilteredCalendarHourCount(date, hour)
+      : getAllCalendarHourCount(date, hour);
+  };
+
+  const getBookedEventCountForDay = (date) => {
+    return Array.from({ length: 24 }, (_, hour) => getBookedEventCountForHour(date, hour))
+      .reduce((total, count) => total + count, 0);
+  };
+
+  const getBookedResourceKey = (event) => {
+    if (!event) return "";
+    if (typeof event === "string" || typeof event === "number") return String(event);
+    return String(event.resourceId || event.resourceName || event.id || "");
+  };
+
+  const getBookedResourceCount = (events) => {
+    const uniqueResources = new Set(
+      (events || [])
+        .map(getBookedResourceKey)
+        .filter(Boolean)
+    );
+
+    return uniqueResources.size || (events || []).length;
+  };
+
+  const isSlotFullyBooked = (events) => {
+    if (!events || events.length === 0) return false;
+    const totalResources = resourceData.length || 0;
+    return totalResources > 0 && getBookedResourceCount(events) >= totalResources;
+  };
+
+  const isFilteredCalendarView = () =>
+    calendarUserId &&
+    calendarUserId !== "All" &&
+    calendarUserId !== "Select Member" &&
+    calendarUserId !== "Select Resource";
+
+  const getBookedEventsForDay = (date) => {
+    return Array.from({ length: 24 }, (_, hour) => (
+      isFilteredCalendarView() ? getBookedEventsForSlot(date, hour) : getAllEventsForSlot(date, hour)
+    ))
+      .find((events) => isFilteredCalendarView() ? events.length > 0 : isSlotFullyBooked(events)) || [];
+  };
+
+  const renderBookedStatus = (events, className = "") => {
+    if (!events || events.length === 0) return null;
+    const eventTitle = isFilteredCalendarView()
+      ? events.find((event) => event && typeof event === "object" && event.title)?.title
+      : "";
+
+    return (
+      <span className={`booked-count ${className}`}>
+        {eventTitle || "Booked"}
+      </span>
+    );
   };
 
   const dropDownList = (
@@ -866,6 +1250,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       return;
     }
 
+    if (calendarUserId !== "All" && (!selectedFilterType || !calendarUserId)) {
+      showErrorMessage("Please select a member or resource from the calendar dropdown before booking.");
+      return;
+    }
+
     time = (time === 0 ? "12 AM" : time < 12 ? `${time} AM` : time === 12 ? "12 PM" : `${time - 12} PM`);
       setWeekEventDate(null);
       setMonthlyRecurring(currentDate.getDate());
@@ -883,8 +1272,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       setTimeSlot(time);
 
       if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
-        openEventSlotModal();
-        setOpenAppointment(true);
+        const bookedEvents = getBookedEventsForSlot(currentDate, parseInt(dayjs(time, "h A").format("HH"), 10));
+        if (bookedEvents.length > 0) {
+          handleShowBookedEventDetails(bookedEvents[0]);
+        }
       } else if (bookedEventsList < resourceData.length) {
         setOpenAppointment(false);
         openEventSlotModal();
@@ -909,6 +1300,11 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       return;
     }
 
+    if (calendarUserId !== "All" && (!selectedFilterType || !calendarUserId)) {
+      showErrorMessage("Please select a member or resource from the calendar dropdown before booking.");
+      return;
+    }
+
     // If a member/resource filter is active, default that selection for booking so it's fixed
     if (calendarUserId && calendarUserId !== "All") {
       if (resourceDropDown) {
@@ -919,8 +1315,10 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
     }
 
     if (calendarUserId && calendarUserId !== "All" && bookedEventsList) {
-        openEventSlotModal();
-        setOpenAppointment(true);
+        const bookedEvents = getBookedEventsForSlot(date, hourValue);
+        if (bookedEvents.length > 0) {
+          handleShowBookedEventDetails(bookedEvents[0]);
+        }
       } else if (bookedEventsList < resourceData.length) {
         setOpenAppointment(false);
         openEventSlotModal();
@@ -1015,8 +1413,9 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       const weekday = dayjs(selectedDate ? new Date(yearNumber, currentDate.getMonth(), selectedDate) : currentDate).format("dddd").toUpperCase();
       const selectedDateObj = dayjs(selectedDate ? new Date(yearNumber, currentDate.getMonth(), selectedDate) : currentDate);
       
-      const recurringOverlap = recurringData[weekday] ? 
-        Object.values(recurringData[weekday]).some(hourEvents => 
+      const recurringDayBucket = getRecurringBucket(recurringData, weekday);
+      const recurringOverlap = recurringDayBucket ?
+        Object.values(recurringDayBucket).some(hourEvents =>
           Array.isArray(hourEvents) && hourEvents.some(event => {
             const isSameResource = event.resourceId === resourceId;
             if (isSameResource) {
@@ -1025,13 +1424,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
               if (editingId && event.id === editingId) return false;
 
               // Check if selected date is within the recurring event date range
-              if (event.startDate && event.endDate) {
-                const startDate = dayjs(event.startDate);
-                const endDate = dayjs(event.endDate);
-                const isAfterStart = selectedDateObj.isAfter(startDate) || selectedDateObj.isSame(startDate, 'day');
-                const isBeforeEnd = selectedDateObj.isBefore(endDate) || selectedDateObj.isSame(endDate, 'day');
-                if (!(isAfterStart && isBeforeEnd)) return false;
-              }
+              if (!isRecurringWithinDateRange(selectedDateObj, event)) return false;
               
               const eventFrom = typeof event.from === 'string' ? parseInt(event.from, 10) : event.from;
               const eventTo = typeof event.to === 'string' ? parseInt(event.to, 10) : event.to;
@@ -1073,6 +1466,8 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
       setCalendarUserId(""); // Stay with empty, wait for dropdown selection
     } else if (value === "All") {
       setCalendarUserId("All");
+      setSelectedMemberId("");
+      setSelectedResourceId("");
     }
   }
   useEffect(() => {
@@ -1100,90 +1495,193 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
   // If a member/resource filter is active, inputs should be considered prefilled and non-editable
   const isPrefilledMember = selectedFilterType === 'member' && calendarUserId && calendarUserId !== "All";
   const isPrefilledResource = selectedFilterType === 'resource' && calendarUserId && calendarUserId !== "All";
+  const weekDaysForView = getWeekDays();
+  const weekRangeLabel = `${dayjs(weekDaysForView[0]).format("MMM D, YYYY")} - ${dayjs(weekDaysForView[6]).format("MMM D, YYYY")}`;
+  const selectedCalendarName = selectedFilterType === "resource"
+    ? getResourceNameById(calendarUserId)
+    : selectedFilterType === "member"
+      ? getMemberNameById(calendarUserId)
+      : "";
+  const myAppointments = resourceCalendar
+    .flatMap((calendarDay) => (calendarDay.events || []).map((event) => ({
+      ...event,
+      date: event.date || calendarDay.date,
+      month: event.month || calendarDay.month,
+      year: event.year || calendarDay.year,
+    })))
+    .sort((a, b) => {
+      const dateA = dayjs(`${a.month} ${a.date} ${a.year}`, "MMMM D YYYY").valueOf();
+      const dateB = dayjs(`${b.month} ${b.date} ${b.year}`, "MMMM D YYYY").valueOf();
+      if (dateA !== dateB) return dateA - dateB;
+      return Number(a.from) - Number(b.from);
+    });
+  const formatEventTime = (hour) => dayjs().hour(Number(hour)).minute(0).format("h:mm A");
+  const formatAppointmentDate = (value) => {
+    const parsedDate = parseApiDate(value);
+    return parsedDate ? parsedDate.format("ddd, MMM D, YYYY") : "Not specified";
+  };
+
+  const openMyAppointments = () => {
+    if (!selectedFilterType || !calendarUserId || calendarUserId === "All") {
+      showErrorMessage("Please select a member or resource before opening My appointments.");
+      return;
+    }
+    setShowMyAppointments(true);
+  };
 
   return (
     <div className="calendar-container">
-      <div className="calendar-header">
-        <Row hidden={!CalendarPage} className="filterCalendar" gutter={[8, 8]} style={{ marginBottom: '20px' }}>
-          <Col
-            xs={24}
-            sm={12}
-            md={8}
-            style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}
-          >
-            <Checkbox checked={memberDropDown} onClick={() => handleDropDown("members")}>Member</Checkbox>
-            <Checkbox checked={resourceDropDown} onClick={() => handleDropDown("resource")}>Resource</Checkbox>
-            <Checkbox checked={calendarUserId === "All"} onClick={() => handleDropDown("All")}>Availability</Checkbox>
-          </Col>
-
-          <Col
-            xs={24}
-            sm={12}
-            md={16}
-            style={{ padding: '10px 0' }}
-          >
-            {dropDownList}
-          </Col>
-        </Row>
-        <Row style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:'40px'}}>
-            <Col>
-                <Button onClick={() => setCurrentDate(new Date())}><h3>Today</h3></Button> &nbsp;
-            </Col>
-            <Col>
-              {isLoading && (<h3><LoadingOutlined /> Loading...</h3>)}
-            </Col>
-            <Col>
-                <Button onClick={()=>{setOpenDailyCalendar(true);setOpenWeekCalendar(false);setOpenMonthCalendar(false)}}
-                style={{backgroundColor: openDailyCalendar ? "lightBlue" :"" }}><h3>Daily</h3></Button> &nbsp;
+        <main className="scheduler-main">
+          <div className="calendar-header">
+            <div className="scheduler-topbar">
+              <div className="calendar-view-actions">
+                <Button onClick={()=>{setShowMyAppointments(false);setOpenDailyCalendar(true);setOpenWeekCalendar(false);setOpenMonthCalendar(false)}}
+                className={`calendar-view-btn ${!showMyAppointments && openDailyCalendar ? "active" : ""}`}>Day</Button>
                 {screens.lg &&
                 <span>
-                  <Button onClick={()=>{setOpenWeekCalendar(true);setOpenDailyCalendar(false);setOpenMonthCalendar(false);}}
-                  style={{backgroundColor: openWeekCalendar ? "lightBlue" :"" }}><h3>Week</h3></Button> &nbsp;
+                  <Button onClick={()=>{setShowMyAppointments(false);setOpenWeekCalendar(true);setOpenDailyCalendar(false);setOpenMonthCalendar(false);}}
+                  className={`calendar-view-btn ${!showMyAppointments && openWeekCalendar ? "active" : ""}`}>Week</Button>
                 </span>}
-                <Button onClick={()=>{setOpenMonthCalendar(true);setOpenWeekCalendar(false);setOpenDailyCalendar(false);}}
-                style={{backgroundColor: openMonthCalendar ? "lightBlue" :"" }}><h3>Month</h3></Button>
-            </Col>
-        </Row>
-        <Divider type="horizontal"></Divider>
-      </div>
-      <Row style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:'-20px'}}>
-          <Button onClick={ handlePrev }><ChevronLeft/></Button>
-          <h2 hidden={!openDailyCalendar}>{formattedDate}, {currentDate.getFullYear()}</h2>
-          <h2 hidden={openDailyCalendar}>{formattedDate}, {currentDate.getFullYear()}</h2>
-          <Button onClick={ handleNext }><ChevronRight/></Button>
-        </Row>
-      {(openMonthCalendar) ? (
-          <div className="calendar-grid">
+                <Button onClick={()=>{setShowMyAppointments(false);setOpenMonthCalendar(true);setOpenWeekCalendar(false);setOpenDailyCalendar(false);}}
+                className={`calendar-view-btn ${!showMyAppointments && openMonthCalendar ? "active" : ""}`}>Month</Button>
+                <Button className={`calendar-view-btn ${showMyAppointments ? "active" : ""}`} onClick={openMyAppointments}>My appointments</Button>
+              </div>
+
+              <div className="scheduler-date-control">
+                <Button className="calendar-nav-btn" onClick={ handlePrev } aria-label="Previous period"><ChevronLeft size={18}/></Button>
+                <div>
+                  <strong>{showMyAppointments ? `${currentDate.toLocaleString("default", { month: "long" })} ${currentDate.getFullYear()}` : openWeekCalendar ? weekRangeLabel : `${formattedDate}, ${currentDate.getFullYear()}`}</strong>
+                  <span>{showMyAppointments ? "My appointments" : openDailyCalendar ? "Day" : openMonthCalendar ? "Month" : "Week"}</span>
+                </div>
+                <Button className="calendar-nav-btn" onClick={ handleNext } aria-label="Next period"><ChevronRight size={18}/></Button>
+              </div>
+
+              <div className="scheduler-apply-control">
+                <DatePicker
+                  value={pendingFilterDate}
+                  format="DD-MM-YYYY"
+                  onChange={(date) => {
+                    if (date) setPendingFilterDate(date);
+                  }}
+                  allowClear={false}
+                />
+                <Button type="primary" className="scheduler-apply-btn" onClick={handleApplyDateFilter}>Apply</Button>
+              </div>
+            </div>
+            <Row hidden={!CalendarPage} className="filterCalendar scheduler-filter-row" gutter={[12, 12]}>
+              <Col
+                xs={24}
+                sm={12}
+                md={8}
+                className="calendar-filter-options"
+              >
+                <Checkbox checked={memberDropDown} onClick={() => handleDropDown("members")}>Member</Checkbox>
+                <Checkbox checked={resourceDropDown} onClick={() => handleDropDown("resource")}>Resource</Checkbox>
+                <Checkbox checked={calendarUserId === "All"} onClick={() => handleDropDown("All")}>Availability</Checkbox>
+              </Col>
+
+              <Col
+                xs={24}
+                sm={12}
+                md={16}
+                className="calendar-filter-select"
+              >
+                {dropDownList}
+              </Col>
+            </Row>
+            <div className="scheduler-subbar">
+              <Button className="calendar-action-btn" onClick={() => setCurrentDate(new Date())}>Today</Button>
+              {isLoading && (<span className="calendar-loading"><LoadingOutlined /> Loading...</span>)}
+              <div className="calendar-legend">
+                <span><b className="legend-dot low"></b>Low</span>
+                <span><b className="legend-dot medium"></b>Medium</span>
+                <span><b className="legend-dot full"></b>Full</span>
+              </div>
+            </div>
+          </div>
+      {showMyAppointments ? (
+          <section className="my-appointments-panel calendar-surface">
+            <div className="my-appointments-header">
+              <div>
+                <h3>My appointments</h3>
+                <span>{currentDate.toLocaleString("default", { month: "long" })} {currentDate.getFullYear()}</span>
+                {selectedCalendarName && <em>{selectedCalendarName}</em>}
+              </div>
+              <strong>{myAppointments.length} booked</strong>
+            </div>
+            <div className="my-appointments-list">
+              {myAppointments.length ? myAppointments.map((event) => (
+                <button
+                  type="button"
+                  className="my-appointment-row"
+                  key={event.id || `${event.memberId}-${event.resourceId}-${event.date}-${event.from}`}
+                  onClick={() => handleShowBookedEventDetails(event)}
+                >
+                  <div className="my-appointment-title">
+                    <strong>{event.title || "Untitled appointment"}</strong>
+                    <span>
+                      {selectedFilterType === "resource"
+                        ? getMemberNameById(event.memberId) || event.memberId
+                        : getResourceNameById(event.resourceId) || event.resourceId}
+                    </span>
+                  </div>
+                  <div className="my-appointment-time">
+                    <strong>{dayjs(`${event.month} ${event.date} ${event.year}`, "MMMM D YYYY").format("ddd, MMM D")}</strong>
+                    <span>{formatEventTime(event.from)} - {formatEventTime(event.to)}</span>
+                  </div>
+                  <span className="my-appointment-type">{event.isRecurring ? event.frequency || "Recurring" : "One time"}</span>
+                </button>
+              )) : (
+                <div className="my-appointments-empty">
+                  No appointments found for the selected {selectedFilterType || "filter"} in this month.
+                </div>
+              )}
+            </div>
+          </section>
+      ) : (openMonthCalendar) ? (
+          <div className="calendar-grid calendar-surface">
             {weekdays.map((day, index) => (
               <div key={index} className="grid-header-item">
                 {day}
               </div>
             ))}
 
-            {days.map((item, index) => (
-              <div key={index} className={item.type === "current" ? "grid-item" : "disabled"}
-                onClick={() => {
-                  setOpenMonthCalendar(false);
-                  setOpenDailyCalendar(true);
-                  setCurrentDate((prev) => new Date(prev.setDate(item.day)));
-                }}
-                style={{
-                  backgroundColor:
-                    currentDate.getFullYear() === new Date().getFullYear() &&
-                    currentDate.getMonth() === new Date().getMonth() &&
-                    item.day === new Date().getDate() &&
-                    item.type === "current"
-                      ? "lightblue"
-                      : "",
-                }}
-              >
-                {item.day}
-              </div>
-            ))}
+            {days.map((item, index) => {
+              const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), item.day);
+              const isPastDay = item.type === "current" && dayjs(calendarDate).isBefore(dayjs().startOf('day'), 'day');
+              const bookedEvents = item.type === "current" && !isPastDay
+                ? isFilteredCalendarView()
+                  ? getBookedEventsForDay(calendarDate)
+                  : getBookedEventsForDay(calendarDate)
+                : [];
+
+              return (
+                <div key={index} className={`${item.type === "current" ? "grid-item" : "disabled"} ${isPastDay ? "past-calendar-cell" : ""}`}
+                  onClick={() => {
+                    if (item.type !== "current" || isPastDay) return;
+                    setOpenMonthCalendar(false);
+                    setOpenDailyCalendar(true);
+                    setCurrentDate((prev) => new Date(prev.setDate(item.day)));
+                  }}
+                  style={{
+                    backgroundColor:
+                      currentDate.getFullYear() === new Date().getFullYear() &&
+                      currentDate.getMonth() === new Date().getMonth() &&
+                      item.day === new Date().getDate() &&
+                      item.type === "current"
+                        ? "#eef6ff"
+                        : "",
+                  }}
+                >
+                  <span>{item.day}</span>
+                  {isPastDay ? <span className="past-slot-label month-past-label">Past</span> : renderBookedStatus(bookedEvents, "month-count")}
+                </div>
+              );
+            })}
           </div>
 
         ):(openDailyCalendar ? (
-           <div className="day-view">
+           <div className="day-view calendar-surface">
             <div className="time-column">
               {Array.from({ length: 24 }, (_, i) => (
                 <div key={i} className="time-slot">
@@ -1193,6 +1691,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
             </div>
             <div className="event-column" style={{ position: "relative" }}>
               {Array.from({ length: 24 }, (_, i) => {
+                const isPastSlot = isPastDateTime(currentDate, i);
                 const hourKey = `hour_${i}`;
                 const weekday = dayjs(currentDate).format("dddd");
                 const dailySampleEvents = sampleData.flatMap(day => {
@@ -1207,9 +1706,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
 
                     return hourEvents;
                   });
-                const dailyRecurringEvents = recurringAllCalendar?.AllEvents?.[weekday]?.[hourKey]?? [];
-                const monthlyRecurringAttribute = "Day_" + currentDate.getDate();
-                const fetchingMonthlyAllRecurringEvents = recurringAllCalendar?.AllEvents?.[monthlyRecurringAttribute]?.[hourKey]?? [];
+                const dailyRecurringEvents = getRecurringHourItemsForDate(recurringAllCalendar, currentDate, i);
                 const resourceCalendarEvents = resourceCalendar.flatMap(prev => prev.events.filter(item => {
                   // For non-daily recurring events, check the month/year/date too
                   return prev.month === monthName &&
@@ -1217,51 +1714,29 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                     parseInt(prev.date) === currentDate.getDate() &&
                     item.from <= i && i < item.to;
                 }))
-                const dayOfWeekCaps = weekday.toUpperCase();
-                const resourceMonthlyRecurringEvents = recurringResourceCalendar?.[monthlyRecurringAttribute.toLowerCase()]?.[hourKey] || [];
-                const matchingEventsSlot = recurringResourceCalendar[dayOfWeekCaps]?.[hourKey] || [];
-                const recurringResourceEvents = matchingEventsSlot.filter(item => {
-                  if (item.isRecurring) {
-                    // Check if current date is within the recurring event date range
-                    // Only apply date range check if both startDate and endDate are present
-                    if (item.startDate && item.endDate) {
-                      const currentDateObj = dayjs(currentDate);
-                      const startDate = dayjs(item.startDate);
-                      const endDate = dayjs(item.endDate);
-                      
-                      // Check if current date is between start and end dates (inclusive)
-                      const isAfterStart = currentDateObj.isAfter(startDate) || currentDateObj.isSame(startDate, 'day');
-                      const isBeforeEnd = currentDateObj.isBefore(endDate) || currentDateObj.isSame(endDate, 'day');
-                      
-                      if (!(isAfterStart && isBeforeEnd)) return false;
-                    }
-                    
-                    if (item.frequency === "daily") {
-                      return item.from <= i && i < item.to;
-                    } else if (item.frequency === "weekly") {
-                        return item.days === weekday.toUpperCase() &&
-                        item.from <= i && i < item.to;
-                    }
-                     {/* else if (item.frequency === "monthly") {
-                        return item.date === currentDate.getDate().toString() &&
-                        item.from <= i && i < item.to;
-                    } */}
-                  }
-                  return false;
-                });
+                const recurringResourceEvents = getRecurringHourItemsForDate(recurringResourceCalendar, currentDate, i);
 
-                const eventsAtTimeSlot = (calendarUserId && calendarUserId !== "All") ? 
-                [...resourceCalendarEvents,...recurringResourceEvents,...resourceMonthlyRecurringEvents] : [...dailySampleEvents,...dailyRecurringEvents,...fetchingMonthlyAllRecurringEvents];
+                const eventsAtTimeSlot = isPastSlot ? [] : (calendarUserId && calendarUserId !== "All") ? 
+                [...resourceCalendarEvents,...recurringResourceEvents] : [...dailySampleEvents,...dailyRecurringEvents];
+                const isUnavailableSlot = isFilteredCalendarView() ? eventsAtTimeSlot.length > 0 : isSlotFullyBooked(eventsAtTimeSlot);
                 let backgroundColor = "";
-                if (eventsAtTimeSlot.length < parseInt(resourceData.length / 2)) backgroundColor = "green";
-                else if (eventsAtTimeSlot.length >= resourceData.length) backgroundColor = "red";
-                else backgroundColor = "orangered";
+                let borderColor = "";
+                if (eventsAtTimeSlot.length < parseInt(resourceData.length / 2)) {
+                  backgroundColor = "#eef8f1";
+                  borderColor = "#b7e4c7";
+                } else if (eventsAtTimeSlot.length >= resourceData.length) {
+                  backgroundColor = "#fde8e7";
+                  borderColor = "#ffccc7";
+                } else {
+                  backgroundColor = "#f7ead1";
+                  borderColor = "#ffe0a3";
+                }
 
                 return (
                   <div key={i} 
-                    className="event-slot"
+                    className={`event-slot ${isPastSlot ? "past-time-slot" : ""}`}
                     style={eventsAtTimeSlot.length > 0
-                    ? {backgroundColor, borderRight:'2px solid gray',borderLeft:"2px solid gray",
+                    ? {backgroundColor, borderRight:`1px solid ${borderColor}`,borderLeft:`1px solid ${borderColor}`,
                     borderBottom: ((calendarUserId === "All" || !calendarUserId)
                       ? sampleData.some(prev => {
                           const isMatchingDay =
@@ -1290,12 +1765,15 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                                 i === item.to - 1
                               );
                           }))) || [...recurringResourceEvents].length > 0)
-                        ? "1px solid gray"
+                        ? `1px solid ${borderColor}`
                         : "1px solid transparent",
                     } :{}}
-                    onClick={() => handleDailyCalendarEvent(i, eventsAtTimeSlot.length)}
+                    onClick={() => {
+                      if (!isPastSlot) handleDailyCalendarEvent(i, getBookedResourceCount(eventsAtTimeSlot));
+                    }}
                     >
-                    {calendarUserId && calendarUserId !== "All" ? resourceCalendar.map(prev => {
+                    {isPastSlot ? <span className="past-slot-label">Past</span> : (isUnavailableSlot ? renderBookedStatus(eventsAtTimeSlot, "slot-count") : <span className="available-slot-label">Available</span>)}
+                    {false && !isPastSlot && calendarUserId && calendarUserId !== "All" ? resourceCalendar.map(prev => {
                       if(
                         prev.month === monthName &&
                         parseInt(prev.year) === currentDate.getFullYear() &&
@@ -1308,7 +1786,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                       }
                       return "";
                     }) : ""}
-                    {calendarUserId && calendarUserId !== "All" ? recurringResourceEvents.map(item => {
+                    {false && !isPastSlot && calendarUserId && calendarUserId !== "All" ? recurringResourceEvents.map(item => {
                       const midpoint = Math.floor((item.from + item.to) / 2);
                       return i === midpoint ? (
                         <div
@@ -1346,7 +1824,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                             left: 0,
                             width: "100%",
                             height: "2px",
-                            backgroundColor: "violet",
+                            backgroundColor: "#1677ff",
                             top: 35,
                           }}
                         />
@@ -1356,8 +1834,17 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
             </div>
           </div>
         ) : (
-          <div className="grid-container header1">
-             {getWeekDays().map((day, index) => (
+          <div className="weekly-calendar-shell calendar-surface">
+            <div className="weekly-time-rail">
+              <div className="time-section weekly-time-header">Time</div>
+              {hours.map((hour, index) => (
+                <div key={index} className="time-section weekly-time-label">
+                  {hour}
+                </div>
+              ))}
+            </div>
+            <div className="grid-container header1 weekly-calendar-surface">
+              {getWeekDays().map((day, index) => (
               <div key={index}>
                 <div 
                   className="grid-header-item"
@@ -1365,7 +1852,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                   currentDate.getFullYear() === new Date().getFullYear() &&
                   currentDate.getMonth() === new Date().getMonth() &&
                   day.getDate() === new Date().getDate()
-                  ) ? "lightblue" : "",
+                  ) ? "#eef6ff" : "",
                   opacity: day.getMonth() !== currentDate.getMonth() ? 0.5 : 1, 
                   pointerEvents: day.getMonth() !== currentDate.getMonth() ? "none" : "auto" 
                   }}
@@ -1374,25 +1861,17 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                   <span className="day-number">{day.getDate()}</span>
                 </div>
                 <div style={{position:'relative'}}>
-                  <div hidden={weekdays[index]!=="Sun"} style={{position:"absolute",left:'-80px',width:'80px'}} className="week-days">
-                  <div className="time-section" style={{borderBottom:'1px solid gray',backgroundColor:"#ececec"}}>all-day</div>
-                    {hours.map((hour, index) => (
-                      <div key={index} className="time-section" style={{backgroundColor:"#ececec"}}>
-                        {hour}
-                      </div>
-                    ))}
-                  </div>
                   <div 
                     className="week-days"
                     style={currentDate.getFullYear() === new Date().getFullYear() &&
                     currentDate.getMonth() === new Date().getMonth() &&
                     day.getDate() === new Date().getDate() ?
-                    { border:'2px solid gray',marginTop:'-1px'}:{}}
+                    { border:'1px solid #9fc7ff', boxShadow:'inset 0 0 0 1px #d8eaff', marginTop:'-1px'}:{}}
                       >
-                      <div className="time-section" style={{borderBottom:'1px solid gray'}}></div>
                         {hours.map((hour, index) => {
                           const weekday = dayjs(day).format('dddd');
                           const currentHourSlot = parseInt(dayjs(hour, "h A").format("HH"), 10);
+                          const isPastSlot = isPastDateTime(day, currentHourSlot);
                           const hourKey = `hour_${parseInt(dayjs(hour, "h A").format("HH"), 10)}`;
                           const sampleEvents = sampleData.flatMap(prev => {
                             const isMatchingDay =
@@ -1405,9 +1884,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                             return prev.allEvents?.[hourKey] ?? [];
                           })
 
-                          const recurringEvents = recurringAllCalendar?.AllEvents?.[weekday]?.[hourKey]?? [];
-                          const monthlyRecurringAttribute = "Day_" + parseInt(day.getDate()).toString();
-                          const fetchingMonthlyAllRecurringEvent = recurringAllCalendar?.AllEvents?.[monthlyRecurringAttribute]?.[hourKey]?? [];
+                          const recurringEvents = getRecurringHourItemsForDate(recurringAllCalendar, day, currentHourSlot);
 
                           const resourceCalendarEvents = resourceCalendar.flatMap(prev => {
                             const isMatchingDay =
@@ -1424,52 +1901,30 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                             });
                           })
 
-                          const dayOfWeekCaps = weekday.toUpperCase();
-                          const matchingEventsSlot = recurringResourceCalendar?.[dayOfWeekCaps]?.[hourKey] || [];
-                          const resourceMonthlyRecurringEvents = recurringResourceCalendar?.[monthlyRecurringAttribute.toLowerCase()]?.[hourKey] || [];
-                          const recurringResourceEvents = matchingEventsSlot.filter(item => {
-                            if (item.isRecurring) {
-                              // Check if current date is within the recurring event date range
-                              // Only apply date range check if both startDate and endDate are present
-                              if (item.startDate && item.endDate) {
-                                const dayObj = dayjs(day);
-                                const startDate = dayjs(item.startDate);
-                                const endDate = dayjs(item.endDate);
-                                
-                                // Check if day is between start and end dates (inclusive)
-                                const isAfterStart = dayObj.isAfter(startDate) || dayObj.isSame(startDate, 'day');
-                                const isBeforeEnd = dayObj.isBefore(endDate) || dayObj.isSame(endDate, 'day');
-                                
-                                if (!(isAfterStart && isBeforeEnd)) return false;
-                              }
-                              
-                              if (item.frequency === "daily") {
-                                return item.from <= currentHourSlot && currentHourSlot < item.to;
-                              } else if (item.frequency === "weekly") {
-                                  return item.days === weekday.toUpperCase() &&
-                                  item.from <= currentHourSlot && currentHourSlot < item.to;
-                              }
-                               {/* else if (item.frequency === "monthly") {
-                                  return item.date === day.getDate().toString() &&
-                                  item.from <= currentHourSlot && currentHourSlot < item.to;
-                              } */}
-                            }
-                            return false;
-                          });
+                          const recurringResourceEvents = getRecurringHourItemsForDate(recurringResourceCalendar, day, currentHourSlot);
                           
-                          const eventsAtTimeSlot = (
+                          const eventsAtTimeSlot = isPastSlot ? [] : (
                             calendarUserId !== "All" &&
                             calendarUserId !== "Select Member" &&
                             calendarUserId !== "Select Resource"
                           ) ? 
-                          [...resourceCalendarEvents,...recurringResourceEvents,...resourceMonthlyRecurringEvents]: [...sampleEvents,...recurringEvents,...fetchingMonthlyAllRecurringEvent];
+                          [...resourceCalendarEvents,...recurringResourceEvents]: [...sampleEvents,...recurringEvents];
+                          const isUnavailableSlot = isFilteredCalendarView() ? eventsAtTimeSlot.length > 0 : isSlotFullyBooked(eventsAtTimeSlot);
 
                           let backgroundColor = "";
-                          if (eventsAtTimeSlot.length < (resourceData.length)/2) backgroundColor = "green";
-                          else if (eventsAtTimeSlot.length >= resourceData.length) backgroundColor = "red";
-                          else backgroundColor = "orangered";
+                          let borderColor = "";
+                          if (eventsAtTimeSlot.length < (resourceData.length)/2) {
+                            backgroundColor = "#eef8f1";
+                            borderColor = "#b7e4c7";
+                          } else if (eventsAtTimeSlot.length >= resourceData.length) {
+                            backgroundColor = "#fde8e7";
+                            borderColor = "#ffccc7";
+                          } else {
+                            backgroundColor = "#f7ead1";
+                            borderColor = "#ffe0a3";
+                          }
                           return (
-                          <div key={index} className="time-section"
+                          <div key={index} className={`time-section ${isPastSlot ? "past-time-slot" : ""}`}
                             style={eventsAtTimeSlot.length > 0
                               ? {backgroundColor,
                               borderBottom: ((calendarUserId === "All" || !calendarUserId)
@@ -1501,11 +1956,14 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                                         return item.from <= currentHourSlot && currentHourSlot < item.to;
                                     });
                                   })) || [...recurringResourceEvents].length > 0)
-                                    ? "1px solid gray"
+                                    ? `1px solid ${borderColor}`
                                     : "1px solid transparent"
                               } : {}}
-                            onClick= {() => {handleWeeklyCalendarEvent(hour, day, eventsAtTimeSlot.length)}}>
-                          {calendarUserId && calendarUserId !== "All" ? resourceCalendar.map((prev) => {
+                            onClick= {() => {
+                              if (!isPastSlot) handleWeeklyCalendarEvent(hour, day, getBookedResourceCount(eventsAtTimeSlot));
+                            }}>
+                          {isPastSlot ? <span className="past-slot-label weekly-past-label">Past</span> : (isUnavailableSlot ? renderBookedStatus(eventsAtTimeSlot, "slot-count weekly-count") : <span className="available-slot-label weekly-available-label">Available</span>)}
+                          {false && !isPastSlot && calendarUserId && calendarUserId !== "All" ? resourceCalendar.map((prev) => {
                             if (
                               prev.month === monthName &&
                               parseInt(prev.year) === currentDate.getFullYear() &&
@@ -1521,7 +1979,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                             }
                             return "";
                           }):""}
-                          {calendarUserId && calendarUserId !== "All" ? recurringResourceEvents.map((item) => {
+                          {false && !isPastSlot && calendarUserId && calendarUserId !== "All" ? recurringResourceEvents.map((item) => {
                             const fromTime = parseInt(item.from, 10);
                             const toTime = parseInt(item.to, 10);
                             const midpoint = Math.floor((fromTime + toTime) / 2); // Midpoint calculation
@@ -1572,7 +2030,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                                 left: 0,
                                 width: "100%",
                                 height: "2px",
-                                backgroundColor: "violet",
+                                backgroundColor: "#1677ff",
                                 top: 30,
                               }}
                             />
@@ -1582,215 +2040,198 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                   </div>
                 </div>
               </div>
-            ))}
+              ))}
+            </div>
           </div>
           )
         )}
+        </main>
         <Modal
          open={openEventSlot}
-         title={timeSlot +" Slot"}
+         title="Book appointment"
          onCancel={handleCloseEventSlot}
-         footer={!openAppointment && <div>
+         className="appointment-modal"
+         width={650}
+         footer={<div className="appointment-modal-footer">
+          <Button onClick={handleCloseEventSlot}>Cancel</Button>
           <Button
             type="primary"
             onClick={handleCalendarEvent}
             disabled={!!(overlapWarning && !isEditingEvent)}
             title={overlapWarning && !isEditingEvent ? overlapWarning : ''}
           >
-            {isEditingEvent ? 'Update Event' : 'Create Event'}
+            {isEditingEvent ? 'Update Appointment' : 'Book Appointment'}
           </Button>
-          <Button onClick={handleCloseEventSlot} style={{marginLeft:'10px'}}>Cancel</Button>
         </div>}
          >
           <div>
-            {!openAppointment ? 
-            <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
-              <Row style={{position:'relative'}}>
-                <span style={{display:'inline-flex',alignItems:'center',gap:'8px'}}>
-                  <Dropdown overlay={membersMenu} trigger={["click"]} disabled={isEditingEvent || isPrefilledMember}>
-                    <input
-                      disabled={isEditingEvent || isPrefilledMember}
-                      title={isPrefilledMember ? 'Prefilled by active member filter' : ''}
-                      style={{
-                        border: !selectedMemberId ? "2px solid red": "",
-                        backgroundColor: (isEditingEvent || isPrefilledMember) ? '#f5f5f5' : 'white',
-                        cursor: (isEditingEvent || isPrefilledMember) ? 'not-allowed' : 'pointer'
-                      }}
-                      className="memberResourceInput"
-                      placeholder="Search for members"
-                      value={getMemberNameById(selectedMemberId)}
-                      onChange={(e)=> handleMembersDropDown(e.target.value)}></input>
-                  </Dropdown>
-                  {isPrefilledMember && (
-                    <span style={{display:'inline-flex',alignItems:'center',gap:'6px',color:'#666',fontSize:'12px'}} title={'Prefilled by active member filter'}>
-                      <LockOutlined style={{fontSize:12}} />
-                      <span style={{lineHeight:1}}>Prefilled</span>
-                    </span>
-                  )}
-                </span>
-                {newErrors.selectedMemberId && <span className="inputError1">{newErrors.selectedMemberId}</span>}
-                <span style={{display:'inline-flex',alignItems:'center',gap:'8px'}}>
-                  <Dropdown overlay={resourceMenu} trigger={["click"]} disabled={isEditingEvent || isPrefilledResource}>
-                    <input
-                      disabled={isEditingEvent || isPrefilledResource}
-                      title={isPrefilledResource ? 'Prefilled by active resource filter' : ''}
-                      style={{
-                        border:!selectedResourceId ? '2px solid red':"",
-                        backgroundColor: (isEditingEvent || isPrefilledResource) ? '#f5f5f5' : 'white',
-                        cursor: (isEditingEvent || isPrefilledResource) ? 'not-allowed' : 'pointer'
-                      }}
-                      className="memberResourceInput"
-                      placeholder="Search for resource"
-                      value={getResourceNameById(selectedResourceId)}
-                      onChange={(e)=> handleResourceDropDown(e.target.value)}></input>
-                  </Dropdown>
-                  {isPrefilledResource && (
-                    <span style={{display:'inline-flex',alignItems:'center',gap:'6px',color:'#666',fontSize:'12px'}} title={'Prefilled by active resource filter'}>
-                      <LockOutlined style={{fontSize:12}} />
-                      <span style={{lineHeight:1}}>Prefilled</span>
-                    </span>
-                  )}
-                </span>
-                {newErrors.selectedResourceId && <span className="inputError2">{newErrors.selectedResourceId}</span>}
-              </Row>
-              <h2>Title :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
+            <div className="appointment-form">
+              <div className="appointment-summary">
+                <div><strong>Member:</strong> {getMemberNameById(selectedMemberId) || "Select member below"}</div>
+                <div><strong>Resource:</strong> {getResourceNameById(selectedResourceId) || "Select resource below"}</div>
+                <div><strong>Date:</strong> {dayjs(new Date(currentDate.getFullYear(), currentDate.getMonth(), Number(monthlyRecurring) || currentDate.getDate())).format("ddd, MMM D")}</div>
+                <div><strong>Day:</strong> {weeklyDayRecurring || dayjs(new Date(currentDate.getFullYear(), currentDate.getMonth(), Number(monthlyRecurring) || currentDate.getDate())).format("dddd")}</div>
+              </div>
+
+              <div className="appointment-field-grid">
+                <label className="appointment-field">
+                  <span>Member <em>*</em></span>
+                  <Select
+                    value={selectedMemberId || undefined}
+                    placeholder="Select member"
+                    disabled={isPrefilledMember}
+                    onChange={(value) => setSelectedMemberId(value)}
+                    showSearch
+                    optionFilterProp="children"
+                  >
+                    {duplicateData.map((member) => (
+                      <Option key={member.id} value={member.id}>{member.customerName}</Option>
+                    ))}
+                  </Select>
+                  {newErrors.selectedMemberId && <small>{newErrors.selectedMemberId}</small>}
+                </label>
+                <label className="appointment-field">
+                  <span>Resource <em>*</em></span>
+                  <Select
+                    value={selectedResourceId || undefined}
+                    placeholder="Select resource"
+                    disabled={isPrefilledResource}
+                    onChange={(value) => setSelectedResourceId(value)}
+                    showSearch
+                    optionFilterProp="children"
+                  >
+                    {resourceData.map((resource) => (
+                      <Option key={resource.resourceId} value={resource.resourceId}>{resource.resourceName}</Option>
+                    ))}
+                  </Select>
+                  {newErrors.selectedResourceId && <small>{newErrors.selectedResourceId}</small>}
+                </label>
+              </div>
+
+              <label className="appointment-field">
+                <span>Title <em>*</em></span>
+                <input
+                  className="appointment-input"
+                  placeholder="Appointment title"
                   onChange={(e)=>setEventTitle(e.target.value)}
                   value={eventTitle}
+                />
+                {newErrors.eventTitle && <small>{newErrors.eventTitle}</small>}
+              </label>
+
+              <div className="appointment-field-grid">
+                <label className="appointment-field">
+                  <span>From <em>*</em></span>
+                  <TimePicker
+                    format="h A"
+                    className="appointment-time-picker"
+                    value={Number.isInteger(fromTimeSlot) ? dayjs().hour(fromTimeSlot) : fromTimeSlot}
+                    onChange={(value) => setFromTimeSlot(value ? value.hour() : null)}
+                    needConfirm={false}
                   />
-                  {newErrors.eventTitle &&  <span style={{color:"red"}}>*</span>}</h2>
-                  <h2>Notes :<input style={{border:'transparent',outline:'none',borderBottom:'3px solid purple',fontSize:'20px',marginLeft:'10px'}}
+                  {newErrors.fromTimeSlot && <small>{newErrors.fromTimeSlot}</small>}
+                </label>
+                <label className="appointment-field">
+                  <span>To <em>*</em></span>
+                  <TimePicker
+                    format="h A"
+                    className="appointment-time-picker"
+                    value={Number.isInteger(toTimeSlot) ? dayjs().hour(toTimeSlot) : toTimeSlot}
+                    onChange={(value) => setToTimeSlot(value ? value.hour() : null)}
+                    needConfirm={false}
+                  />
+                  {newErrors.toTimeSlot && <small>{newErrors.toTimeSlot}</small>}
+                </label>
+              </div>
+
+              <label className="appointment-field">
+                <span>Notes</span>
+                <textarea
+                  className="appointment-textarea"
+                  placeholder="Optional notes"
                   onChange={(e)=>setEventNotes(e.target.value)}
                   value={eventNotes}
-                  /></h2>
-                  <Row style={{display:'flex',alignItems:'center',flexDirection:'row'}}>
-                    <h2>Recurring : {" "}
-                        <Select 
-                          value={frequencyOfEvent}
-                          onChange={(value) => setFrequencyOfEvent(value)}
-                          style={{borderRadius:'5px',padding:'5px',fontSize:'15px',outline:'none'}}>
-                          <Option value="noRecurring">No Recurring</Option>
-                          <Option value="daily">Daily</Option>
-                          <Option value="weekly">Weekly</Option>
-                          <Option value="monthly">Monthly</Option>
-                      </Select></h2> &nbsp;&nbsp;
-                    {frequencyOfEvent === "monthly" &&  
-                    <h2>Day : {" "}
-                        <select 
-                            value={frequencyOfEvent === "monthly" ? monthlyRecurring : weeklyDayRecurring}
-                            onChange={(e) => {frequencyOfEvent === "weekly" ? setWeeklyDayRecurring(e.target.value): setMonthlyRecurring(e.target.value)}}
+                />
+              </label>
 
-                            disabled={frequencyOfEvent !== "monthly"}
-                            style={{borderRadius:'5px',padding:'5px',fontSize:'15px',outline:'none'}}>
-                            {days.map((day,index) => 
-                            <option value={day.day}>{" "+ day.day}</option>)}
-                        </select>
-                    </h2>}
-                  </Row>
-                  {frequencyOfEvent !== "noRecurring" && (
-                    <Row style={{display:'flex',alignItems:'center',flexDirection:'column',gap:'15px',marginTop:'15px'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:'15px',width:'100%'}}>
-                        <h3>Start Date: {" "}</h3>
-                        <DatePicker 
-                          value={recurringStartDate}
-                          onChange={(date) => setRecurringStartDate(date)}
-                          format="YYYY-MM-DD"
-                          disabledDate={(current) => current && current.isBefore(dayjs().startOf('day'), 'day')}
-                          style={{width:'150px'}}
-                        />
-                        {newErrors.recurringStartDate && <span style={{color:'red'}}>{newErrors.recurringStartDate}</span>}
-                      </div>
-                      <div style={{display:'flex',alignItems:'center',gap:'15px',width:'100%'}}>
-                        <h3>End Date: {" "}</h3>
-                        <DatePicker 
-                          value={recurringEndDate}
-                          onChange={(date) => setRecurringEndDate(date)}
-                          format="YYYY-MM-DD"
-                          disabledDate={(current) => {
-                            if (!current) return false;
-                            if (current.isBefore(dayjs().startOf('day'), 'day')) return true; // no past end dates
-                            if (!recurringStartDate) return false;
-                            return current.isBefore(recurringStartDate, 'day');
-                          }}
-                          style={{width:'150px'}}
-                        />
-                        {newErrors.recurringEndDate && <span style={{color:'red'}}>{newErrors.recurringEndDate}</span>}
-                      </div>
-                    </Row>
-                  )}
-                  <h3>From :<TimePicker 
-                                format="h A"
-                                style={{width:'100px'}}
-                                value={Number.isInteger(fromTimeSlot) ? dayjs().hour(fromTimeSlot) : fromTimeSlot}
-                                onChange={(e) => {
-                                  setFromTimeSlot(e.hour());
-                                  // Validation will be triggered by useEffect
-                                }}
-                                needConfirm={false}
-                                /> &nbsp;&nbsp;
-                      To :<TimePicker
-                                format="h A"
-                                style={{width:'100px'}}
-                                value={Number.isInteger(toTimeSlot) ? dayjs().hour(toTimeSlot) : toTimeSlot}
-                                onChange={(e) => {
-                                  setToTimeSlot(e.hour());
-                                  // Validation will be triggered by useEffect
-                                }}
-                                needConfirm={false}
-                                /></h3>
+              <div className="appointment-recurring-row">
+                <Checkbox checked={frequencyOfEvent !== "noRecurring"} onChange={(e) => setFrequencyOfEvent(e.target.checked ? "weekly" : "noRecurring")}>
+                  Recurring appointment
+                </Checkbox>
+                {frequencyOfEvent !== "noRecurring" && (
+                  <Select
+                    value={frequencyOfEvent}
+                    onChange={(value) => setFrequencyOfEvent(value)}
+                    className="appointment-recurring-select"
+                  >
+                    <Option value="daily">Daily</Option>
+                    <Option value="weekly">Weekly</Option>
+                    <Option value="monthly">Monthly</Option>
+                  </Select>
+                )}
+              </div>
+
+              {frequencyOfEvent === "monthly" && (
+                <label className="appointment-field compact">
+                  <span>Recurring day</span>
+                  <select
+                    value={monthlyRecurring}
+                    onChange={(e) => setMonthlyRecurring(e.target.value)}
+                    className="appointment-input"
+                  >
+                    {days.filter(day => day.type === "current").map((day,index) => (
+                      <option key={`${day.day}-${index}`} value={day.day}>{day.day}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
+              {frequencyOfEvent !== "noRecurring" && (
+                <div className="appointment-field-grid">
+                  <label className="appointment-field">
+                    <span>Start date</span>
+                    <DatePicker
+                      value={recurringStartDate}
+                      onChange={(date) => setRecurringStartDate(date)}
+                      format="YYYY-MM-DD"
+                      disabledDate={(current) => current && current.isBefore(dayjs().startOf('day'), 'day')}
+                    />
+                    {newErrors.recurringStartDate && <small>{newErrors.recurringStartDate}</small>}
+                  </label>
+                  <label className="appointment-field">
+                    <span>End date</span>
+                    <DatePicker
+                      value={recurringEndDate}
+                      onChange={(date) => setRecurringEndDate(date)}
+                      format="YYYY-MM-DD"
+                      disabledDate={(current) => {
+                        if (!current) return false;
+                        if (current.isBefore(dayjs().startOf('day'), 'day')) return true;
+                        if (!recurringStartDate) return false;
+                        return current.isBefore(recurringStartDate, 'day');
+                      }}
+                    />
+                    {newErrors.recurringEndDate && <small>{newErrors.recurringEndDate}</small>}
+                  </label>
+                </div>
+              )}
+
                   {overlapWarning && !isEditingEvent && (
-                    <div style={{
-                      color: '#ff4d4f',
-                      backgroundColor: '#fff2e8',
-                      border: '1px solid #ffbb96',
-                      borderRadius: '4px',
-                      padding: '8px 12px',
-                      marginTop: '10px',
-                      fontSize: '14px'
-                    }}>
+                    <div className="appointment-warning">
                       {overlapWarning}
                     </div>
                   )}
-            </div> : <div style={{display:'flex',textAlign:'left',flexDirection:'column'}}>
-                {paginateEvents.map(item => (
-                  <center key={item.title} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginBottom:'10px'}}>
-                    <h2>{item.title} </h2>
-                    <span style={{marginLeft: '5px', marginTop:'10px', cursor: 'pointer', fontSize: '18px', color:'#1890ff'}} onClick={() => {
-                      handleShowBookedEventDetails(filteredEvents[currentPage - 1]);
-                      // setOpenBookedEventModal(false);
-                      // setOpenEventSlot(true);
-                    }}><Edit /></span>
-                  </center>
-                ))}
-              <Pagination
-                current={currentPage}
-                pageSize={itemsForPage}
-                onChange={page => setCurrentPage(page)}
-                total={filteredEvents.length}
-                showSizeChanger={false}
-                simple={true}
-                style={{ marginTop: "10px", textAlign: "center" }}>
-              </Pagination>
-            </div>}
+            </div>
           </div>
          </Modal>
          <Modal
-            title="Booked Event Details"
+            title="Appointment details"
             open={openBookedEventModal}
             onCancel={() => {
               closeAllModalsAndResetSelection();
             }}
+            className="appointment-details-modal"
             footer={[
-              <Button key="back" onClick={() => {
-                closeAllModalsAndResetSelection();
-              }}>Close</Button>,
-              <Button key="book" type="primary" onClick={() => {
-                setOpenAppointment(false);
-                openEventSlotModal();
-              }}>Book New Event</Button>,
-              <Button key="edit" type="primary" onClick={() => {
-                handleUpdateExistingEventDetails(selectedBookedEvent);
-                openEventSlotModal();
-              }}>Edit</Button>,
               <Button key="delete" danger onClick={async () => {
                 if (!selectedBookedEvent) return;
                 setEventLoading(true);
@@ -1806,59 +2247,85 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                 } finally {
                   setEventLoading(false);
                 }
-              }}>Delete</Button>
+              }}>Cancel Appointment</Button>,
+              <Button key="back" onClick={() => {
+                closeAllModalsAndResetSelection();
+              }}>Close</Button>,
+              <Button key="edit" onClick={editBookedEvent}>
+                Edit Appointment
+              </Button>,
+              <Button key="calendar" type="primary" onClick={() => {
+                if (selectedBookedEvent?.date) {
+                  setCurrentDate(new Date(Number(selectedBookedEvent.year), dayjs().month(selectedBookedEvent.month).month(), Number(selectedBookedEvent.date)));
+                  setOpenDailyCalendar(true);
+                  setOpenWeekCalendar(false);
+                  setOpenMonthCalendar(false);
+                  setShowMyAppointments(false);
+                }
+                closeAllModalsAndResetSelection();
+              }}>View on Calendar</Button>
             ]}
-            width={500}
+            width={650}
          >
             {selectedBookedEvent && (
-              <div style={{textAlign:'left', display:'flex', flexDirection:'column', gap:'15px'}}>
-                <div>
-                  <strong>Event Title:</strong>
-                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.title}</p>
+              <div className="appointment-details-card">
+                <div className="appointment-details-hero">
+                  <div>
+                    <span>Appointment</span>
+                    <h3>{selectedBookedEvent.title || "Untitled appointment"}</h3>
+                  </div>
+                  <b>Booked</b>
                 </div>
-                <div>
-                  <strong>Member:</strong>
-                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.memberId}</p>
+                <div className="appointment-detail-row">
+                  <span>Reference</span>
+                  <strong>{selectedBookedEvent.id || "-"}</strong>
                 </div>
-                <div>
-                  <strong>Resource:</strong>
-                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.resourceId}</p>
+                <div className="appointment-detail-row">
+                  <span>Member ID</span>
+                  <strong>{selectedBookedEvent.memberId || "-"}</strong>
                 </div>
-                <div>
-                  <strong>Time Slot:</strong>
-                  <p style={{margin:'5px 0'}}>
-                    {selectedBookedEvent.from === 0 ? '12 AM' : selectedBookedEvent.from < 12 ? `${selectedBookedEvent.from} AM` : selectedBookedEvent.from === 12 ? '12 PM' : `${selectedBookedEvent.from - 12} PM`}
-                    {' to '}
-                    {selectedBookedEvent.to === 0 ? '12 AM' : selectedBookedEvent.to < 12 ? `${selectedBookedEvent.to} AM` : selectedBookedEvent.to === 12 ? '12 PM' : `${selectedBookedEvent.to - 12} PM`}
-                  </p>
+                <div className="appointment-detail-row">
+                  <span>Resource</span>
+                  <strong>{getResourceNameById(selectedBookedEvent.resourceId) || selectedBookedEvent.resourceId || "-"}</strong>
                 </div>
-                <div>
-                  <strong>Notes:</strong>
-                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.notes || 'N/A'}</p>
+                <div className="appointment-detail-row">
+                  <span>Date</span>
+                  <strong>{dayjs(`${selectedBookedEvent.month} ${selectedBookedEvent.date} ${selectedBookedEvent.year}`, "MMMM D YYYY").format("ddd, MMM D")}</strong>
                 </div>
-                <div>
-                  <strong>Date:</strong>
-                  <p style={{margin:'5px 0'}}>{selectedBookedEvent.date}/{selectedBookedEvent.month}/{selectedBookedEvent.year}</p>
+                <div className="appointment-detail-row">
+                  <span>Time</span>
+                  <strong>{formatEventTime(selectedBookedEvent.from)} - {formatEventTime(selectedBookedEvent.to)}</strong>
+                </div>
+                <div className="appointment-detail-row">
+                  <span>Duration</span>
+                  <strong>{Math.max(Number(selectedBookedEvent.to) - Number(selectedBookedEvent.from), 0)} hour{Math.max(Number(selectedBookedEvent.to) - Number(selectedBookedEvent.from), 0) === 1 ? "" : "s"}</strong>
+                </div>
+                <div className="appointment-detail-row">
+                  <span>Recurring</span>
+                  <strong>{selectedBookedEvent.isRecurring ? selectedBookedEvent.frequency || "Yes" : "No"}</strong>
+                </div>
+                {selectedBookedEvent.isRecurring && (
+                  <>
+                    <div className="appointment-detail-row">
+                      <span>Start Date</span>
+                      <strong>{formatAppointmentDate(selectedBookedEvent.startDate)}</strong>
+                    </div>
+                    <div className="appointment-detail-row">
+                      <span>End Date</span>
+                      <strong>{formatAppointmentDate(selectedBookedEvent.endDate)}</strong>
+                    </div>
+                  </>
+                )}
+                <div className="appointment-detail-notes">
+                  <span>Notes</span>
+                  <p>{selectedBookedEvent.notes || "No notes"}</p>
                 </div>
                 {availableResourcesForSlot.length > 0 && (
-                  <div style={{
-                    backgroundColor:'#e6f7ff',
-                    padding:'10px',
-                    borderRadius:'4px',
-                    border:'1px solid #91d5ff'
-                  }}>
+                  <div className="appointment-detail-resources">
                     <strong>Other available resources for this slot:</strong>
-                    <div style={{margin:'5px 0'}}>
+                    <div>
                       {availableResourcesForSlot.map(res => (
-                        <span key={res.id} style={{
-                          display:'inline-block',
-                          backgroundColor:'#1890ff',
-                          color:'white',
-                          padding:'4px 8px',
-                          borderRadius:'3px',
-                          marginRight:'5px',
-                          marginTop:'5px'
-                        }}>
+                        <span key={res.id || res.resourceId}>
                           {res.resourceName}
                         </span>
                       ))}
@@ -1916,7 +2383,7 @@ const CalendarPage = ({ sampleData, setSampleData, duplicateData, entityId, reso
                     {selectedRecurringEvent.to === 0 ? '12 AM' : selectedRecurringEvent.to < 12 ? `${selectedRecurringEvent.to} AM` : selectedRecurringEvent.to === 12 ? '12 PM' : `${selectedRecurringEvent.to - 12} PM`}
                   </p>
                 </div>
-                <div style={{backgroundColor:'#fff7e6', padding:'10px', borderRadius:'4px', border:'1px solid #ffd666'}}>
+                <div style={{backgroundColor:'#f7ead1', padding:'10px', borderRadius:'4px', border:'1px solid #ffd666'}}>
                   <strong>📅 Recurrence Pattern:</strong>
                   <div style={{margin:'8px 0', marginLeft:'15px'}}>
                     <div><strong>Frequency:</strong> {selectedRecurringEvent.frequency?.toUpperCase()}</div>
