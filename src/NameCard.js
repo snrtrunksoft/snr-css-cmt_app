@@ -80,7 +80,7 @@ const NameCard = ({
     const [ nameCardDrawer, setNameCardDrawer ] = useState(false);
     const [ isEditable, setIsEditable] = useState(false);
     const [ statusModal, setStatusModal ] = useState(EMPTY_STATUS_MODAL);
-    const [ subscriptionPlans, setSubscriptionPlans ] = useState([]);
+    // const [ subscriptionPlans, setSubscriptionPlans ] = useState([]);
     const [ loadingPlans, setLoadingPlans ] = useState(false);
     const [ isUpdating, setIsUpdating ] = useState(false);
     const [ isAddingComment, setIsAddingComment ] = useState(false);
@@ -113,25 +113,25 @@ const NameCard = ({
         form.setFieldsValue(defaultValues);
     },[form, defaultValues]);
 
-    useEffect(() => {
-        if (nameCardDrawer && membersPage) {
-            setLoadingPlans(true);
-            // Fetch subscription plans from API
-            const fetchSubscriptionPlans = async () => {
-                try {
-                    const res = await getSubscriptionPlans(entityId);
-                    setSubscriptionPlans(res);
-                    console.log("Subscription Plans loaded from API:", res);
-                } catch(error) {
-                    console.log("Error fetching subscription plans:", error);
-                } finally {
-                    setLoadingPlans(false);
-                }
-            }
-            fetchSubscriptionPlans();
-        }
+    // useEffect(() => {
+    //     if (nameCardDrawer && membersPage) {
+    //         setLoadingPlans(true);
+    //         // Fetch subscription plans from API
+    //         const fetchSubscriptionPlans = async () => {
+    //             try {
+    //                 const res = await getSubscriptionPlans(entityId);
+    //                 setSubscriptionPlans(res);
+    //                 console.log("Subscription Plans loaded from API:", res);
+    //             } catch(error) {
+    //                 console.log("Error fetching subscription plans:", error);
+    //             } finally {
+    //                 setLoadingPlans(false);
+    //             }
+    //         }
+    //         fetchSubscriptionPlans();
+    //     }
 
-    }, [entityId, nameCardDrawer, membersPage]);
+    // }, [entityId, nameCardDrawer, membersPage]);
 
     const getDrawerWidth = () => {
         if (screens.xl) return 600;
@@ -755,7 +755,7 @@ const NameCard = ({
                     </Form.Item>
                     </Col>
 
-                    {membersPage && (
+                    {/* {membersPage && (
                     <Col span={12}>
                         <Form.Item name="subscriptionPlanId" label="Subscription Plan">
                         <Spin spinning={loadingPlans}>
@@ -769,7 +769,7 @@ const NameCard = ({
                         </Spin>
                         </Form.Item>
                     </Col>
-                    )}
+                    )} */}
 
                     <Col span={12}>
                     <Form.Item name={["address", "city"]} label="City" rules={[

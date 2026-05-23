@@ -102,7 +102,7 @@ const NameCard = _ref2 => {
   const [nameCardDrawer, setNameCardDrawer] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
   const [statusModal, setStatusModal] = useState(EMPTY_STATUS_MODAL);
-  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  // const [ subscriptionPlans, setSubscriptionPlans ] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAddingComment, setIsAddingComment] = useState(false);
@@ -136,24 +136,27 @@ const NameCard = _ref2 => {
   useEffect(() => {
     form.setFieldsValue(defaultValues);
   }, [form, defaultValues]);
-  useEffect(() => {
-    if (nameCardDrawer && membersPage) {
-      setLoadingPlans(true);
-      // Fetch subscription plans from API
-      const fetchSubscriptionPlans = async () => {
-        try {
-          const res = await getSubscriptionPlans(entityId);
-          setSubscriptionPlans(res);
-          console.log("Subscription Plans loaded from API:", res);
-        } catch (error) {
-          console.log("Error fetching subscription plans:", error);
-        } finally {
-          setLoadingPlans(false);
-        }
-      };
-      fetchSubscriptionPlans();
-    }
-  }, [entityId, nameCardDrawer, membersPage]);
+
+  // useEffect(() => {
+  //     if (nameCardDrawer && membersPage) {
+  //         setLoadingPlans(true);
+  //         // Fetch subscription plans from API
+  //         const fetchSubscriptionPlans = async () => {
+  //             try {
+  //                 const res = await getSubscriptionPlans(entityId);
+  //                 setSubscriptionPlans(res);
+  //                 console.log("Subscription Plans loaded from API:", res);
+  //             } catch(error) {
+  //                 console.log("Error fetching subscription plans:", error);
+  //             } finally {
+  //                 setLoadingPlans(false);
+  //             }
+  //         }
+  //         fetchSubscriptionPlans();
+  //     }
+
+  // }, [entityId, nameCardDrawer, membersPage]);
+
   const getDrawerWidth = () => {
     if (screens.xl) return 600;
     if (screens.lg) return 550;
@@ -766,19 +769,7 @@ const NameCard = _ref2 => {
       value: g
     })),
     allowClear: true
-  }))), membersPage && /*#__PURE__*/React.createElement(Col, {
-    span: 12
-  }, /*#__PURE__*/React.createElement(Form.Item, {
-    name: "subscriptionPlanId",
-    label: "Subscription Plan"
-  }, /*#__PURE__*/React.createElement(Spin, {
-    spinning: loadingPlans
-  }, /*#__PURE__*/React.createElement(Select, {
-    placeholder: "Select a plan"
-  }, subscriptionPlans.map(plan => /*#__PURE__*/React.createElement(Option, {
-    key: plan.id,
-    value: plan.id
-  }, plan.id, " - $", plan.price, " (", plan.type, ")")))))), /*#__PURE__*/React.createElement(Col, {
+  }))), /*#__PURE__*/React.createElement(Col, {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: ["address", "city"],

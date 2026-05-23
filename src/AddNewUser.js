@@ -104,7 +104,8 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
               name="firstName" 
               label="Name" 
               rules={[
-                { validator: validateName }
+                { validator: validateName },
+                { min: 2, message: 'Last name should have at least 2 characters' }
               ]}
             >
               <Input placeholder="Enter name (spaces allowed, min 7 chars)" />
@@ -114,11 +115,11 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
             <Form.Item 
               name="lastName" 
               label="Last Name"
-              // rules={[
-              //   { required: true, message: 'Last name is required' },
-              //   { pattern: /^[a-zA-Z\s]+$/, message: 'Last name should contain only letters' },
-              //   { min: 2, message: 'Last name should have at least 2 characters' }
-              // ]}
+              rules={[
+                { required: true, message: 'Last name is required' },
+                { pattern: /^[a-zA-Z\s]+$/, message: 'Last name should contain only letters' },
+                { min: 2, message: 'Last name should have at least 2 characters' }
+              ]}
             >
               <Input placeholder="Enter last name (letters only, min 2 chars)" />
             </Form.Item>
@@ -252,24 +253,7 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
           </Select>
         </Form.Item>
 
-        {mode === "member" && (
-          <Form.Item 
-            name="subscriptionPlanId" 
-            label="Subscription Plan"
-            // rules={[{ required: true, message: 'Subscription plan is required' }]}
-          >
-            <Select 
-              placeholder="Select a subscription plan"
-              loading={loadingPlans}
-            >
-              {subscriptionPlans.map((plan) => (
-                <Option key={plan.id} value={plan.id}>
-                  {plan.id} - ${plan.price} ({plan.type})
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        )}
+        
 
         <Form.Item>
           <Button type="primary" htmlType="submit" block style={{ backgroundColor: '#ff5c5c', height: '45px', fontSize: '16px' }} loading={isSubmitting} disabled={isSubmitting} aria-busy={isSubmitting}>
