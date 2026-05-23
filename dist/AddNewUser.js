@@ -126,6 +126,9 @@ const AddNewUser = _ref => {
     label: "Name",
     rules: [{
       validator: validateName
+    }, {
+      min: 2,
+      message: 'Last name should have at least 2 characters'
     }]
   }, /*#__PURE__*/React.createElement(Input, {
     placeholder: "Enter name (spaces allowed, min 7 chars)"
@@ -133,12 +136,17 @@ const AddNewUser = _ref => {
     span: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "lastName",
-    label: "Last Name"
-    // rules={[
-    //   { required: true, message: 'Last name is required' },
-    //   { pattern: /^[a-zA-Z\s]+$/, message: 'Last name should contain only letters' },
-    //   { min: 2, message: 'Last name should have at least 2 characters' }
-    // ]}
+    label: "Last Name",
+    rules: [{
+      required: true,
+      message: 'Last name is required'
+    }, {
+      pattern: /^[a-zA-Z\s]+$/,
+      message: 'Last name should contain only letters'
+    }, {
+      min: 2,
+      message: 'Last name should have at least 2 characters'
+    }]
   }, /*#__PURE__*/React.createElement(Input, {
     placeholder: "Enter last name (letters only, min 2 chars)"
   })))), /*#__PURE__*/React.createElement(Form.Item, {
@@ -281,17 +289,7 @@ const AddNewUser = _ref => {
     value: "COMPLETED"
   }, "COMPLETED"), /*#__PURE__*/React.createElement(Option, {
     value: "CANCELLED"
-  }, "CANCELLED"))), mode === "member" && /*#__PURE__*/React.createElement(Form.Item, {
-    name: "subscriptionPlanId",
-    label: "Subscription Plan"
-    // rules={[{ required: true, message: 'Subscription plan is required' }]}
-  }, /*#__PURE__*/React.createElement(Select, {
-    placeholder: "Select a subscription plan",
-    loading: loadingPlans
-  }, subscriptionPlans.map(plan => /*#__PURE__*/React.createElement(Option, {
-    key: plan.id,
-    value: plan.id
-  }, plan.id, " - $", plan.price, " (", plan.type, ")")))), /*#__PURE__*/React.createElement(Form.Item, null, /*#__PURE__*/React.createElement(Button, {
+  }, "CANCELLED"))), /*#__PURE__*/React.createElement(Form.Item, null, /*#__PURE__*/React.createElement(Button, {
     type: "primary",
     htmlType: "submit",
     block: true,
