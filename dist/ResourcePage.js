@@ -197,7 +197,10 @@ const ResourcePage = _ref => {
       setAddNewResourceModal(false);
       form.resetFields();
     },
-    footer: null
+    footer: null,
+    width: 920,
+    className: "add-user-modal",
+    destroyOnHidden: true
   }, /*#__PURE__*/React.createElement(AddNewUser, {
     mode: "resource",
     form: form,

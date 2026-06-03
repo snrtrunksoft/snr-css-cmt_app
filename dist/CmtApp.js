@@ -713,6 +713,9 @@ const CmtApp = _ref => {
     entityId: entityId,
     data: data,
     setData: setData,
+    resourceData: resourceData,
+    setResourceData: setResourceData,
+    setResourceData1: setResourceData1,
     customerId: item.id,
     customerName: item.customerName,
     email: item.email,
@@ -827,7 +830,10 @@ const CmtApp = _ref => {
       setIsAddNewNameCardModalOpen(false);
       form.resetFields();
     },
-    footer: null
+    footer: null,
+    width: 920,
+    className: "add-user-modal",
+    destroyOnHidden: true
   }, /*#__PURE__*/React.createElement(AddNewUser, {
     mode: "member",
     form: form,

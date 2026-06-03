@@ -5,11 +5,8 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import React, { useState, useEffect } from "react";
 import "./AddNewUser.css";
-import { Row, Col, Input, Select, Button, Form, Typography, Spin } from 'antd';
+import { Row, Col, Input, Button, Form, Typography, Spin } from 'antd';
 import { getSubscriptionPlans } from "./api/APIUtil";
-const {
-  Option
-} = Select;
 const {
   Title
 } = Typography;
@@ -41,6 +38,7 @@ const AddNewUser = _ref => {
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   useEffect(() => {
     const fetchSubscriptionPlans = async () => {
       setLoadingPlans(true);
@@ -71,6 +69,20 @@ const AddNewUser = _ref => {
   //   }
   // }, [mode]);
 
+  const entityLabel = mode === "resource" ? "Resource" : "Member";
+  const personalFields = ["firstName", "lastName", "email", "phone"];
+  const addressFields = ["country", "state", "city", "pincode", "houseNo", "street1", "street2"];
+  const allFields = [...personalFields, ...addressFields];
+  const resetForm = () => {
+    setCurrentStep(0);
+    form.resetFields(allFields);
+    form.setFields(allFields.map(name => ({
+      name,
+      value: undefined,
+      errors: [],
+      warnings: []
+    })));
+  };
   const handleSubmit = async values => {
     if (!onSubmit) return;
     setIsSubmitting(true);
@@ -85,8 +97,7 @@ const AddNewUser = _ref => {
       if (result && typeof result.then === 'function') {
         await result;
       }
-      // On success, reset fields
-      form.resetFields();
+      resetForm();
     } catch (error) {
       // Allow parent to handle error, but we stop spinner
       console.error('Submit failed in AddNewUser:', error);
@@ -95,32 +106,66 @@ const AddNewUser = _ref => {
       setIsSubmitting(false);
     }
   };
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      margin: '0 auto',
-      padding: '0px 40px',
-      borderRadius: '10px'
+  const handleNext = async () => {
+    try {
+      await form.validateFields(personalFields);
+      form.setFields(addressFields.map(name => ({
+        name,
+        errors: []
+      })));
+      setCurrentStep(1);
+      setTimeout(() => {
+        form.setFields(addressFields.map(name => ({
+          name,
+          errors: []
+        })));
+      }, 0);
+    } catch (error) {
+      console.error("Step validation failed in AddNewUser:", error);
     }
+  };
+  const handleBack = () => {
+    setCurrentStep(0);
+  };
+  const handleCreate = async () => {
+    try {
+      const values = await form.validateFields([...personalFields, ...addressFields]);
+      await handleSubmit(values);
+    } catch (error) {
+      console.error("Create validation failed in AddNewUser:", error);
+    }
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "add-new-user"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "add-new-user__header"
   }, /*#__PURE__*/React.createElement(Title, {
     level: 2,
-    style: {
-      textAlign: 'center',
-      color: '#007bff'
-    }
-  }, mode === "resource" ? "Add Resource" : "Add Member"), /*#__PURE__*/React.createElement(Form, {
+    className: "add-new-user__title"
+  }, "Add ", entityLabel), /*#__PURE__*/React.createElement("div", {
+    className: "add-new-user__steps",
+    "aria-label": "Form progress"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "add-new-user__step ".concat(currentStep === 0 ? "is-active" : "")
+  }, "1. Personal"), /*#__PURE__*/React.createElement("span", {
+    className: "add-new-user__step ".concat(currentStep === 1 ? "is-active" : "")
+  }, "2. Address"))), /*#__PURE__*/React.createElement(Form, {
     form: form,
     layout: "vertical",
-    onFinish: handleSubmit,
-    initialValues: {
-      status: "ACTIVE"
-    }
+    className: "add-new-user__form",
+    onSubmitCapture: event => event.preventDefault()
   }, /*#__PURE__*/React.createElement(Spin, {
     spinning: isSubmitting,
     tip: "Submitting..."
-  }, /*#__PURE__*/React.createElement(Row, {
-    gutter: 16
+  }, currentStep === 0 && /*#__PURE__*/React.createElement("section", {
+    className: "add-user-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "add-user-section__heading"
+  }, /*#__PURE__*/React.createElement("h3", null, "Profile Information")), /*#__PURE__*/React.createElement(Row, {
+    gutter: [18, 4]
   }, /*#__PURE__*/React.createElement(Col, {
-    span: 12
+    xs: 24,
+    md: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "firstName",
     label: "Name",
@@ -128,12 +173,13 @@ const AddNewUser = _ref => {
       validator: validateName
     }, {
       min: 2,
-      message: 'Last name should have at least 2 characters'
+      message: 'Name should have at least 2 characters'
     }]
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter name (spaces allowed, min 7 chars)"
+    placeholder: "Enter name"
   }))), /*#__PURE__*/React.createElement(Col, {
-    span: 12
+    xs: 24,
+    md: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "lastName",
     label: "Last Name",
@@ -141,15 +187,18 @@ const AddNewUser = _ref => {
       required: true,
       message: 'Last name is required'
     }, {
-      pattern: /^[a-zA-Z\s]+$/,
-      message: 'Last name should contain only letters'
+      pattern: /^[a-zA-Z0-9\s\-'.]+$/,
+      message: 'Last name can contain letters, digits, spaces, hyphens, apostrophes, and dots'
     }, {
       min: 2,
       message: 'Last name should have at least 2 characters'
     }]
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter last name (letters only, min 2 chars)"
-  })))), /*#__PURE__*/React.createElement(Form.Item, {
+    placeholder: "Enter last name"
+  }))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    md: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "email",
     label: "Email",
     rules: [{
@@ -161,22 +210,10 @@ const AddNewUser = _ref => {
     }]
   }, /*#__PURE__*/React.createElement(Input, {
     type: "email",
-    placeholder: "Enter valid email address"
-  })), /*#__PURE__*/React.createElement(Row, {
-    gutter: 16
-  }, /*#__PURE__*/React.createElement(Col, {
-    span: 12
-  }, /*#__PURE__*/React.createElement(Form.Item, {
-    name: "country",
-    label: "Country",
-    rules: [{
-      required: true,
-      message: 'Country is required'
-    }]
-  }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter country"
+    placeholder: "name@example.com"
   }))), /*#__PURE__*/React.createElement(Col, {
-    span: 12
+    xs: 24,
+    md: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "phone",
     label: "Phone",
@@ -189,12 +226,29 @@ const AddNewUser = _ref => {
     }]
   }, /*#__PURE__*/React.createElement(Input, {
     type: "tel",
-    placeholder: "Enter 10-digit phone number",
+    placeholder: "10-digit phone number",
     maxLength: 10
-  })))), /*#__PURE__*/React.createElement(Row, {
-    gutter: 16
+  }))))), currentStep === 1 && /*#__PURE__*/React.createElement("section", {
+    className: "add-user-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "add-user-section__heading"
+  }, /*#__PURE__*/React.createElement("h3", null, "Address Details")), /*#__PURE__*/React.createElement(Row, {
+    gutter: [18, 4]
   }, /*#__PURE__*/React.createElement(Col, {
-    span: 12
+    xs: 24,
+    md: 12
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: "country",
+    label: "Country",
+    rules: [{
+      required: true,
+      message: 'Country is required'
+    }]
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "Enter country"
+  }))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    md: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "state",
     label: "State/Province",
@@ -205,20 +259,8 @@ const AddNewUser = _ref => {
   }, /*#__PURE__*/React.createElement(Input, {
     placeholder: "Enter state/province"
   }))), /*#__PURE__*/React.createElement(Col, {
-    span: 12
-  }, /*#__PURE__*/React.createElement(Form.Item, {
-    name: "houseNo",
-    label: "House No.",
-    rules: [{
-      required: true,
-      message: 'House number is required'
-    }]
-  }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter house/building number"
-  })))), /*#__PURE__*/React.createElement(Row, {
-    gutter: 16
-  }, /*#__PURE__*/React.createElement(Col, {
-    span: 12
+    xs: 24,
+    md: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "city",
     label: "City",
@@ -233,9 +275,10 @@ const AddNewUser = _ref => {
       message: 'City name should have at least 2 characters'
     }]
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter city name (letters only, min 2 chars)"
+    placeholder: "Enter city"
   }))), /*#__PURE__*/React.createElement(Col, {
-    span: 12
+    xs: 24,
+    md: 12
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "pincode",
     label: "Pincode",
@@ -247,12 +290,19 @@ const AddNewUser = _ref => {
       message: 'Pincode should be 5-6 digits'
     }]
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter 5-6 digit pincode",
+    placeholder: "5-6 digit pincode",
     maxLength: 6
-  })))), /*#__PURE__*/React.createElement(Row, {
-    gutter: 16
-  }, /*#__PURE__*/React.createElement(Col, {
-    span: 12
+  }))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    md: 8
+  }, /*#__PURE__*/React.createElement(Form.Item, {
+    name: "houseNo",
+    label: "House No."
+  }, /*#__PURE__*/React.createElement(Input, {
+    placeholder: "House/building"
+  }))), /*#__PURE__*/React.createElement(Col, {
+    xs: 24,
+    md: 8
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "street1",
     label: "Street 1",
@@ -264,43 +314,36 @@ const AddNewUser = _ref => {
       message: 'Street 1 should have at least 2 characters'
     }]
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter street 1"
+    placeholder: "Primary street"
   }))), /*#__PURE__*/React.createElement(Col, {
-    span: 12
+    xs: 24,
+    md: 8
   }, /*#__PURE__*/React.createElement(Form.Item, {
     name: "street2",
     label: "Street 2"
   }, /*#__PURE__*/React.createElement(Input, {
-    placeholder: "Enter street 2"
-  })))), /*#__PURE__*/React.createElement(Form.Item, {
-    name: "status",
-    label: "Status",
-    rules: [{
-      required: true,
-      message: 'Status is required'
-    }]
-  }, /*#__PURE__*/React.createElement(Select, {
-    placeholder: "Select a status"
-  }, /*#__PURE__*/React.createElement(Option, {
-    value: "ACTIVE"
-  }, "ACTIVE"), /*#__PURE__*/React.createElement(Option, {
-    value: "IN_PROGRESS"
-  }, "IN_PROGRESS"), /*#__PURE__*/React.createElement(Option, {
-    value: "COMPLETED"
-  }, "COMPLETED"), /*#__PURE__*/React.createElement(Option, {
-    value: "CANCELLED"
-  }, "CANCELLED"))), /*#__PURE__*/React.createElement(Form.Item, null, /*#__PURE__*/React.createElement(Button, {
+    placeholder: "Area, landmark, or suite"
+  }))))), /*#__PURE__*/React.createElement("div", {
+    className: "add-new-user__footer"
+  }, currentStep === 1 && /*#__PURE__*/React.createElement(Button, {
+    type: "default",
+    htmlType: "button",
+    className: "add-new-user__secondary",
+    onClick: handleBack,
+    disabled: isSubmitting
+  }, "Back"), currentStep === 0 ? /*#__PURE__*/React.createElement(Button, {
     type: "primary",
-    htmlType: "submit",
-    block: true,
-    style: {
-      backgroundColor: '#ff5c5c',
-      height: '45px',
-      fontSize: '16px'
-    },
+    htmlType: "button",
+    className: "add-new-user__submit",
+    onClick: handleNext
+  }, "Next") : /*#__PURE__*/React.createElement(Button, {
+    type: "primary",
+    htmlType: "button",
+    className: "add-new-user__submit",
+    onClick: handleCreate,
     loading: isSubmitting,
     disabled: isSubmitting,
     "aria-busy": isSubmitting
-  }, isSubmitting ? 'Submitting...' : 'SUBMIT')))));
+  }, isSubmitting ? 'Submitting...' : "Create ".concat(entityLabel))))));
 };
 export default AddNewUser;

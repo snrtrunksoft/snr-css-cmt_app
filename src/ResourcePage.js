@@ -174,6 +174,9 @@ const ResourcePage = ({ resourceData, setResourceData, setResourceData1, entityI
               open={addNewResourceModal}
               onCancel={()=> {setAddNewResourceModal(false); form.resetFields();}}
               footer={null}
+              width={920}
+              className="add-user-modal"
+              destroyOnHidden
               >
                 <AddNewUser
                   mode="resource"
