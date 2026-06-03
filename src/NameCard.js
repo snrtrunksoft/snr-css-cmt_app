@@ -5,7 +5,7 @@ import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import StatusModal from "./StatusModal";
-import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource } from "./api/APIUtil";
+import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource, createResource } from "./api/APIUtil";
 import PunchCardsPage  from "./PunchCardsPage";
 import dayjs from "dayjs";
 
@@ -59,6 +59,7 @@ const NameCard = ({
     entityId,
     resourceData,
     setResourceData,
+    setResourceData1,
     customerId, 
     customerName,
     email,
@@ -83,6 +84,7 @@ const NameCard = ({
     // const [ subscriptionPlans, setSubscriptionPlans ] = useState([]);
     const [ loadingPlans, setLoadingPlans ] = useState(false);
     const [ isUpdating, setIsUpdating ] = useState(false);
+    const [ isCreatingResource, setIsCreatingResource ] = useState(false);
     const [ isAddingComment, setIsAddingComment ] = useState(false);
     // Track which comment index is currently being deleted (null = none)
     const [ deletingCommentIndex, setDeletingCommentIndex ] = useState(null);
@@ -112,26 +114,6 @@ const NameCard = ({
     useEffect(() => {
         form.setFieldsValue(defaultValues);
     },[form, defaultValues]);
-
-    // useEffect(() => {
-    //     if (nameCardDrawer && membersPage) {
-    //         setLoadingPlans(true);
-    //         // Fetch subscription plans from API
-    //         const fetchSubscriptionPlans = async () => {
-    //             try {
-    //                 const res = await getSubscriptionPlans(entityId);
-    //                 setSubscriptionPlans(res);
-    //                 console.log("Subscription Plans loaded from API:", res);
-    //             } catch(error) {
-    //                 console.log("Error fetching subscription plans:", error);
-    //             } finally {
-    //                 setLoadingPlans(false);
-    //             }
-    //         }
-    //         fetchSubscriptionPlans();
-    //     }
-
-    // }, [entityId, nameCardDrawer, membersPage]);
 
     const getDrawerWidth = () => {
         if (screens.xl) return 600;
@@ -381,6 +363,85 @@ const NameCard = ({
     const handleClear = () =>{
         setNewComment("");
     }
+
+    const splitName = (name = "") => {
+        const nameParts = name.trim().split(/\s+/).filter(Boolean);
+        if (nameParts.length <= 1) {
+            return { firstName: nameParts[0] || "", lastName: "" };
+        }
+        return {
+            firstName: nameParts[0],
+            lastName: nameParts.slice(1).join(" "),
+        };
+    };
+
+    const handlePromoteToResource = async () => {
+        if (!membersPage) return;
+
+        setIsCreatingResource(true);
+        try {
+            const values = await form.validateFields([
+                "customerName",
+                "email",
+                "phoneNumber",
+                "status",
+                "groupId",
+                ["address", "city"],
+                ["address", "state"],
+                ["address", "country"],
+                ["address", "street1"],
+            ]);
+            const memberName = values.customerName || customerName || "";
+            const { firstName, lastName } = splitName(memberName);
+            const currentAddress = values.address || {};
+
+            const newResource = {
+                firstName,
+                lastName,
+                phoneNumber: values.phoneNumber || phoneNumber || "",
+                address: [{
+                    country: currentAddress.country || address?.[0]?.country || "",
+                    city: currentAddress.city || address?.[0]?.city || "",
+                    houseNo: currentAddress.houseNo || address?.[0]?.houseNo || "",
+                    street1: currentAddress.street1 || address?.[0]?.street1 || "",
+                    street2: currentAddress.street2 || address?.[0]?.street2 || "",
+                    pincode: currentAddress.pincode || address?.[0]?.pincode || "",
+                    state: currentAddress.state || address?.[0]?.state || "",
+                }],
+                comments: Array.isArray(comments) ? comments : [],
+                status: values.status || status || "Active",
+                email: values.email || email || "",
+                groupId: normalizeGroupId(values.groupId || groupId),
+            };
+
+            const postData = await createResource(entityId, newResource);
+            const createdResource = {
+                ...newResource,
+                resourceName: `${firstName}${lastName}` || memberName.trim(),
+                resourceId: `${firstName.slice(0, 3)}${postData.resourceId || ""}`,
+            };
+
+            setResourceData?.((prev = []) => [...prev, createdResource]);
+            setResourceData1?.((prev = []) => [...prev, createdResource]);
+
+            setStatusModal({
+                visible: true,
+                type: "success",
+                title: "Resource Created",
+                message: `${memberName || "Member"} has been added to resources successfully.`
+            });
+        } catch (error) {
+            console.error("Failed to create resource from member:", error);
+            setStatusModal({
+                visible: true,
+                type: "error",
+                title: "Resource Creation Failed",
+                message: "Unable to create a resource from this member. Please try again."
+            });
+        } finally {
+            setIsCreatingResource(false);
+        }
+    };
 
     const handleDeleteMember = async () => {
         try {
@@ -695,7 +756,22 @@ const NameCard = ({
                 layout="vertical"
                 onFinish={onFinish}
             >
-                <Card title="Edit Details" style={{ margin: 16, borderRadius: 8 }}>
+                <Card
+                    title="Edit Details"
+                    extra={membersPage && (
+                        <Button
+                            type="default"
+                            htmlType="button"
+                            size="small"
+                            onClick={handlePromoteToResource}
+                            loading={isCreatingResource}
+                            disabled={isCreatingResource || isUpdating}
+                        >
+                            Promote to Resource
+                        </Button>
+                    )}
+                    style={{ margin: 16, borderRadius: 8 }}
+                >
                 <Row gutter={16}>
                     <Col span={12}>
                     <Form.Item name="customerId" label="Customer ID">
@@ -803,7 +879,13 @@ const NameCard = ({
                     </Col>
                 </Row>
 
-                <Button type="primary" htmlType="submit" block loading={isUpdating} disabled={isUpdating}>
+                <Button
+                    type="primary"
+                    htmlType="submit"
+                    block
+                    loading={isUpdating}
+                    disabled={isUpdating || isCreatingResource}
+                >
                     Save Changes
                 </Button>
                 </Card>

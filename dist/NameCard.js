@@ -16,7 +16,7 @@ import { DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import StatusModal from "./StatusModal";
-import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource } from "./api/APIUtil";
+import { getSubscriptionPlans, deleteMember, deleteResource, updateMember, updateResource, createResource } from "./api/APIUtil";
 import PunchCardsPage from "./PunchCardsPage";
 import dayjs from "dayjs";
 const {
@@ -73,7 +73,7 @@ const sanitizeSubscriptionsForMemberUpdate = function () {
   }) : subscriptions;
 };
 const NameCard = _ref2 => {
-  var _groupMessages, _groupMessages2, _groupMessages3, _address$8, _address$9, _address$0, _address$1;
+  var _groupMessages, _groupMessages2, _groupMessages3, _address$13, _address$14, _address$15, _address$16;
   let {
     membersPage,
     data,
@@ -81,6 +81,7 @@ const NameCard = _ref2 => {
     entityId,
     resourceData,
     setResourceData,
+    setResourceData1,
     customerId,
     customerName,
     email,
@@ -105,6 +106,7 @@ const NameCard = _ref2 => {
   // const [ subscriptionPlans, setSubscriptionPlans ] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCreatingResource, setIsCreatingResource] = useState(false);
   const [isAddingComment, setIsAddingComment] = useState(false);
   // Track which comment index is currently being deleted (null = none)
   const [deletingCommentIndex, setDeletingCommentIndex] = useState(null);
@@ -136,27 +138,6 @@ const NameCard = _ref2 => {
   useEffect(() => {
     form.setFieldsValue(defaultValues);
   }, [form, defaultValues]);
-
-  // useEffect(() => {
-  //     if (nameCardDrawer && membersPage) {
-  //         setLoadingPlans(true);
-  //         // Fetch subscription plans from API
-  //         const fetchSubscriptionPlans = async () => {
-  //             try {
-  //                 const res = await getSubscriptionPlans(entityId);
-  //                 setSubscriptionPlans(res);
-  //                 console.log("Subscription Plans loaded from API:", res);
-  //             } catch(error) {
-  //                 console.log("Error fetching subscription plans:", error);
-  //             } finally {
-  //                 setLoadingPlans(false);
-  //             }
-  //         }
-  //         fetchSubscriptionPlans();
-  //     }
-
-  // }, [entityId, nameCardDrawer, membersPage]);
-
   const getDrawerWidth = () => {
     if (screens.xl) return 600;
     if (screens.lg) return 550;
@@ -393,6 +374,81 @@ const NameCard = _ref2 => {
   };
   const handleClear = () => {
     setNewComment("");
+  };
+  const splitName = function () {
+    let name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+    const nameParts = name.trim().split(/\s+/).filter(Boolean);
+    if (nameParts.length <= 1) {
+      return {
+        firstName: nameParts[0] || "",
+        lastName: ""
+      };
+    }
+    return {
+      firstName: nameParts[0],
+      lastName: nameParts.slice(1).join(" ")
+    };
+  };
+  const handlePromoteToResource = async () => {
+    if (!membersPage) return;
+    setIsCreatingResource(true);
+    try {
+      var _address$8, _address$9, _address$0, _address$1, _address$10, _address$11, _address$12;
+      const values = await form.validateFields(["customerName", "email", "phoneNumber", "status", "groupId", ["address", "city"], ["address", "state"], ["address", "country"], ["address", "street1"]]);
+      const memberName = values.customerName || customerName || "";
+      const {
+        firstName,
+        lastName
+      } = splitName(memberName);
+      const currentAddress = values.address || {};
+      const newResource = {
+        firstName,
+        lastName,
+        phoneNumber: values.phoneNumber || phoneNumber || "",
+        address: [{
+          country: currentAddress.country || (address === null || address === void 0 || (_address$8 = address[0]) === null || _address$8 === void 0 ? void 0 : _address$8.country) || "",
+          city: currentAddress.city || (address === null || address === void 0 || (_address$9 = address[0]) === null || _address$9 === void 0 ? void 0 : _address$9.city) || "",
+          houseNo: currentAddress.houseNo || (address === null || address === void 0 || (_address$0 = address[0]) === null || _address$0 === void 0 ? void 0 : _address$0.houseNo) || "",
+          street1: currentAddress.street1 || (address === null || address === void 0 || (_address$1 = address[0]) === null || _address$1 === void 0 ? void 0 : _address$1.street1) || "",
+          street2: currentAddress.street2 || (address === null || address === void 0 || (_address$10 = address[0]) === null || _address$10 === void 0 ? void 0 : _address$10.street2) || "",
+          pincode: currentAddress.pincode || (address === null || address === void 0 || (_address$11 = address[0]) === null || _address$11 === void 0 ? void 0 : _address$11.pincode) || "",
+          state: currentAddress.state || (address === null || address === void 0 || (_address$12 = address[0]) === null || _address$12 === void 0 ? void 0 : _address$12.state) || ""
+        }],
+        comments: Array.isArray(comments) ? comments : [],
+        status: values.status || status || "Active",
+        email: values.email || email || "",
+        groupId: normalizeGroupId(values.groupId || groupId)
+      };
+      const postData = await createResource(entityId, newResource);
+      const createdResource = _objectSpread(_objectSpread({}, newResource), {}, {
+        resourceName: "".concat(firstName).concat(lastName) || memberName.trim(),
+        resourceId: "".concat(firstName.slice(0, 3)).concat(postData.resourceId || "")
+      });
+      setResourceData === null || setResourceData === void 0 || setResourceData(function () {
+        let prev = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+        return [...prev, createdResource];
+      });
+      setResourceData1 === null || setResourceData1 === void 0 || setResourceData1(function () {
+        let prev = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+        return [...prev, createdResource];
+      });
+      setStatusModal({
+        visible: true,
+        type: "success",
+        title: "Resource Created",
+        message: "".concat(memberName || "Member", " has been added to resources successfully.")
+      });
+    } catch (error) {
+      console.error("Failed to create resource from member:", error);
+      setStatusModal({
+        visible: true,
+        type: "error",
+        title: "Resource Creation Failed",
+        message: "Unable to create a resource from this member. Please try again."
+      });
+    } finally {
+      setIsCreatingResource(false);
+    }
   };
   const handleDeleteMember = async () => {
     try {
@@ -677,13 +733,21 @@ const NameCard = _ref2 => {
       WebkitLineClamp: 2,
       WebkitBoxOrient: "vertical"
     }
-  }, [address === null || address === void 0 || (_address$8 = address[0]) === null || _address$8 === void 0 ? void 0 : _address$8.street1, address === null || address === void 0 || (_address$9 = address[0]) === null || _address$9 === void 0 ? void 0 : _address$9.city, address === null || address === void 0 || (_address$0 = address[0]) === null || _address$0 === void 0 ? void 0 : _address$0.state, address === null || address === void 0 || (_address$1 = address[0]) === null || _address$1 === void 0 ? void 0 : _address$1.country].filter(Boolean).join(", ")))), /*#__PURE__*/React.createElement(Form, {
+  }, [address === null || address === void 0 || (_address$13 = address[0]) === null || _address$13 === void 0 ? void 0 : _address$13.street1, address === null || address === void 0 || (_address$14 = address[0]) === null || _address$14 === void 0 ? void 0 : _address$14.city, address === null || address === void 0 || (_address$15 = address[0]) === null || _address$15 === void 0 ? void 0 : _address$15.state, address === null || address === void 0 || (_address$16 = address[0]) === null || _address$16 === void 0 ? void 0 : _address$16.country].filter(Boolean).join(", ")))), /*#__PURE__*/React.createElement(Form, {
     hidden: !isEditable,
     form: form,
     layout: "vertical",
     onFinish: onFinish
   }, /*#__PURE__*/React.createElement(Card, {
     title: "Edit Details",
+    extra: membersPage && /*#__PURE__*/React.createElement(Button, {
+      type: "default",
+      htmlType: "button",
+      size: "small",
+      onClick: handlePromoteToResource,
+      loading: isCreatingResource,
+      disabled: isCreatingResource || isUpdating
+    }, "Promote to Resource"),
     style: {
       margin: 16,
       borderRadius: 8
@@ -823,7 +887,7 @@ const NameCard = _ref2 => {
     htmlType: "submit",
     block: true,
     loading: isUpdating,
-    disabled: isUpdating
+    disabled: isUpdating || isCreatingResource
   }, "Save Changes"))), membersPage && /*#__PURE__*/React.createElement(Card, {
     title: "Punch Cards",
     style: {

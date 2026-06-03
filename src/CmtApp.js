@@ -643,6 +643,9 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
                           entityId={entityId}
                           data={data}
                           setData={setData}
+                          resourceData={resourceData}
+                          setResourceData={setResourceData}
+                          setResourceData1={setResourceData1}
                           customerId={item.id}
                           customerName={item.customerName}
                           email={item.email}
@@ -815,6 +818,9 @@ const CmtApp = ({ headerTitle, logoPath, setSelectedApp, selectedGroup, groupMes
                 open={isAddNewNameCardModalOpen}
                 onCancel={() => {setIsAddNewNameCardModalOpen(false); form.resetFields();}}
                 footer={null}
+                width={920}
+                className="add-user-modal"
+                destroyOnHidden
               >
                 <AddNewUser
                   mode="member"

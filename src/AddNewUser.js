@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./AddNewUser.css";
-import { Row, Col, Input, Select, Button, Form, Typography, Spin } from 'antd';
+import { Row, Col, Input, Button, Form, Typography, Spin } from 'antd';
 import { getSubscriptionPlans } from "./api/APIUtil";
 
-const { Option } = Select;
 const { Title } = Typography;
 const NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9._]*(?: +[a-zA-Z0-9._]+)*$/;
 const validateName = (_, value) => {
@@ -27,6 +26,7 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
     const fetchSubscriptionPlans = async () => {
@@ -59,6 +59,24 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
   //   }
   // }, [mode]);
 
+  const entityLabel = mode === "resource" ? "Resource" : "Member";
+  const personalFields = ["firstName", "lastName", "email", "phone"];
+  const addressFields = ["country", "state", "city", "pincode", "houseNo", "street1", "street2"];
+  const allFields = [...personalFields, ...addressFields];
+
+  const resetForm = () => {
+    setCurrentStep(0);
+    form.resetFields(allFields);
+    form.setFields(
+      allFields.map((name) => ({
+        name,
+        value: undefined,
+        errors: [],
+        warnings: [],
+      }))
+    );
+  };
+
   const handleSubmit = async (values) => {
     if (!onSubmit) return;
     setIsSubmitting(true);
@@ -73,8 +91,7 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
       if (result && typeof result.then === 'function') {
         await result;
       }
-      // On success, reset fields
-      form.resetFields();
+      resetForm();
     } catch (error) {
       // Allow parent to handle error, but we stop spinner
       console.error('Submit failed in AddNewUser:', error);
@@ -84,182 +101,220 @@ const AddNewUser = ({ mode = "member", form, onSubmit, entityId }) => {
     }
   };
 
+  const handleNext = async () => {
+    try {
+      await form.validateFields(personalFields);
+      form.setFields(addressFields.map((name) => ({ name, errors: [] })));
+      setCurrentStep(1);
+      setTimeout(() => {
+        form.setFields(addressFields.map((name) => ({ name, errors: [] })));
+      }, 0);
+    } catch (error) {
+      console.error("Step validation failed in AddNewUser:", error);
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(0);
+  };
+
+  const handleCreate = async () => {
+    try {
+      const values = await form.validateFields([...personalFields, ...addressFields]);
+      await handleSubmit(values);
+    } catch (error) {
+      console.error("Create validation failed in AddNewUser:", error);
+    }
+  };
+
   return (
-    <div style={{ margin: '0 auto', padding: '0px 40px', borderRadius: '10px' }}>
-      <Title level={2} style={{ textAlign: 'center', color: '#007bff' }}>
-        {mode === "resource" ? "Add Resource" : "Add Member"}
-      </Title>
+    <div className="add-new-user">
+      <div className="add-new-user__header">
+        <Title level={2} className="add-new-user__title">
+          Add {entityLabel}
+        </Title>
+        <div className="add-new-user__steps" aria-label="Form progress">
+          <span className={`add-new-user__step ${currentStep === 0 ? "is-active" : ""}`}>
+            1. Personal
+          </span>
+          <span className={`add-new-user__step ${currentStep === 1 ? "is-active" : ""}`}>
+            2. Address
+          </span>
+        </div>
+      </div>
 
       <Form
         form={form}
         layout="vertical"
-        onFinish={handleSubmit}
-        initialValues={{ status: "ACTIVE" }}
+        className="add-new-user__form"
+        onSubmitCapture={(event) => event.preventDefault()}
       >
         <Spin spinning={isSubmitting} tip="Submitting...">
-        {/* Personal Information Section */}
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item 
-              name="firstName" 
-              label="Name" 
-              rules={[
-                { validator: validateName },
-                { min: 2, message: 'Last name should have at least 2 characters' }
-              ]}
-            >
-              <Input placeholder="Enter name (spaces allowed, min 7 chars)" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item 
-              name="lastName" 
-              label="Last Name"
-              rules={[
-                { required: true, message: 'Last name is required' },
-                { pattern: /^[a-zA-Z\s]+$/, message: 'Last name should contain only letters' },
-                { min: 2, message: 'Last name should have at least 2 characters' }
-              ]}
-            >
-              <Input placeholder="Enter last name (letters only, min 2 chars)" />
-            </Form.Item>
-          </Col>
-        </Row>
+          {currentStep === 0 && <section className="add-user-section">
+            <div className="add-user-section__heading">
+              <h3>Profile Information</h3>
+            </div>
+            <Row gutter={[18, 4]}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="firstName"
+                  label="Name"
+                  rules={[
+                    { validator: validateName },
+                    { min: 2, message: 'Name should have at least 2 characters' }
+                  ]}
+                >
+                  <Input placeholder="Enter name" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="lastName"
+                  label="Last Name"
+                  rules={[
+                    { required: true, message: 'Last name is required' },
+                    { pattern: /^[a-zA-Z0-9\s\-'.]+$/, message: 'Last name can contain letters, digits, spaces, hyphens, apostrophes, and dots' },
+                    { min: 2, message: 'Last name should have at least 2 characters' }
+                  ]}
+                >
+                  <Input placeholder="Enter last name" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="email"
+                  label="Email"
+                  rules={[
+                    { required: true, message: 'Email is required' },
+                    { type: 'email', message: 'Please enter a valid email address' }
+                  ]}
+                >
+                  <Input type="email" placeholder="name@example.com" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="phone"
+                  label="Phone"
+                  rules={[
+                    { required: true, message: 'Phone number is required' },
+                    { pattern: /^[0-9]{10}$/, message: 'Phone number should be exactly 10 digits' }
+                  ]}
+                >
+                  <Input type="tel" placeholder="10-digit phone number" maxLength={10} />
+                </Form.Item>
+              </Col>
+            </Row>
+          </section>}
 
-        <Form.Item 
-          name="email" 
-          label="Email" 
-          rules={[
-            { required: true, message: 'Email is required' },
-            { type: 'email', message: 'Please enter a valid email address' }
-          ]}
-        >
-          <Input type="email" placeholder="Enter valid email address"/>
-        </Form.Item>
+          {currentStep === 1 && <section className="add-user-section">
+            <div className="add-user-section__heading">
+              <h3>Address Details</h3>
+            </div>
+            <Row gutter={[18, 4]}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="country"
+                  label="Country"
+                  rules={[{ required: true, message: 'Country is required' }]}
+                >
+                  <Input placeholder="Enter country" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="state"
+                  label="State/Province"
+                  rules={[{ required: true, message: 'State is required' }]}
+                >
+                  <Input placeholder="Enter state/province" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="city"
+                  label="City"
+                  rules={[
+                    { required: true, message: 'City is required' },
+                    { pattern: /^[a-zA-Z\s]+$/, message: 'City should contain only letters' },
+                    { min: 2, message: 'City name should have at least 2 characters' }
+                  ]}
+                >
+                  <Input placeholder="Enter city" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="pincode"
+                  label="Pincode"
+                  rules={[
+                    { required: true, message: 'Pincode is required' },
+                    { pattern: /^[0-9]{5,6}$/, message: 'Pincode should be 5-6 digits' }
+                  ]}
+                >
+                  <Input placeholder="5-6 digit pincode" maxLength={6} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item name="houseNo" label="House No.">
+                  <Input placeholder="House/building" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item
+                  name="street1"
+                  label="Street 1"
+                  rules={[
+                    { required: true, message: 'Street 1 is required' },
+                    { min: 2, message: 'Street 1 should have at least 2 characters' }
+                  ]}
+                >
+                  <Input placeholder="Primary street" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item name="street2" label="Street 2">
+                  <Input placeholder="Area, landmark, or suite" />
+                </Form.Item>
+              </Col>
+            </Row>
+          </section>}
 
-        {/* Contact Information Section */}
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item 
-              name="country" 
-              label="Country" 
-              rules={[
-                { required: true, message: 'Country is required' }
-              ]}
-            >
-              <Input placeholder="Enter country" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item 
-              name="phone" 
-              label="Phone" 
-              rules={[
-                { required: true, message: 'Phone number is required' },
-                { pattern: /^[0-9]{10}$/, message: 'Phone number should be exactly 10 digits' }
-              ]}
-            >
-              <Input 
-                type="tel" 
-                placeholder="Enter 10-digit phone number" 
-                maxLength={10}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item 
-              name="state" 
-              label="State/Province" 
-              rules={[
-                { required: true, message: 'State is required' }
-              ]}
-            >
-              <Input placeholder="Enter state/province" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item 
-              name="houseNo" 
-              label="House No."
-              rules={[
-                { required: true, message: 'House number is required' }
-              ]}
-            >
-              <Input placeholder="Enter house/building number" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item 
-              name="city" 
-              label="City" 
-              rules={[
-                { required: true, message: 'City is required' },
-                { pattern: /^[a-zA-Z\s]+$/, message: 'City should contain only letters' },
-                { min: 2, message: 'City name should have at least 2 characters' }
-              ]}
-            >
-              <Input placeholder="Enter city name (letters only, min 2 chars)" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item 
-              name="pincode" 
-              label="Pincode"
-              rules={[
-                { required: true, message: 'Pincode is required' },
-                { pattern: /^[0-9]{5,6}$/, message: 'Pincode should be 5-6 digits' }
-              ]}
-            >
-              <Input placeholder="Enter 5-6 digit pincode" maxLength={6} />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item 
-              name="street1" 
-              label="Street 1"
-              rules={[
-                { required: true, message: 'Street 1 is required' },
-                { min: 2, message: 'Street 1 should have at least 2 characters' }
-              ]}
-            >
-              <Input placeholder="Enter street 1" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item 
-              name="street2" 
-              label="Street 2"
-            >
-              <Input placeholder="Enter street 2" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Form.Item name="status" label="Status" rules={[{ required: true, message: 'Status is required' }]}>
-          <Select placeholder="Select a status">
-            <Option value="ACTIVE">ACTIVE</Option>
-            <Option value="IN_PROGRESS">IN_PROGRESS</Option>
-            <Option value="COMPLETED">COMPLETED</Option>
-            <Option value="CANCELLED">CANCELLED</Option>
-          </Select>
-        </Form.Item>
-
-        
-
-        <Form.Item>
-          <Button type="primary" htmlType="submit" block style={{ backgroundColor: '#ff5c5c', height: '45px', fontSize: '16px' }} loading={isSubmitting} disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : 'SUBMIT'}
-          </Button>
-        </Form.Item>
+          <div className="add-new-user__footer">
+            {currentStep === 1 && (
+              <Button
+                type="default"
+                htmlType="button"
+                className="add-new-user__secondary"
+                onClick={handleBack}
+                disabled={isSubmitting}
+              >
+                Back
+              </Button>
+            )}
+            {currentStep === 0 ? (
+              <Button
+                type="primary"
+                htmlType="button"
+                className="add-new-user__submit"
+                onClick={handleNext}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                type="primary"
+                htmlType="button"
+                className="add-new-user__submit"
+                onClick={handleCreate}
+                loading={isSubmitting}
+                disabled={isSubmitting}
+                aria-busy={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : `Create ${entityLabel}`}
+              </Button>
+            )}
+          </div>
         </Spin>
       </Form>
     </div>
