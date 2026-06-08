@@ -5,6 +5,40 @@ import { SwapOutlined } from "@ant-design/icons";
 
 const getSubscriptionId = (card) => card?.subscriptionId || card?.id;
 
+const getPunchCardsFromSubscriptions = (subscriptions) => {
+    if (Array.isArray(subscriptions)) return subscriptions;
+    if (Array.isArray(subscriptions?.punchCards)) return subscriptions.punchCards;
+    return [];
+};
+
+const getPunchCardsFromMember = (member) => {
+    if (Array.isArray(member?.punchCards)) return member.punchCards;
+    return getPunchCardsFromSubscriptions(member?.subscriptions);
+};
+
+const mergePunchCardsIntoSubscriptions = (subscriptions, punchCards) => {
+    if (subscriptions && !Array.isArray(subscriptions) && typeof subscriptions === "object") {
+        return {
+            ...subscriptions,
+            punchCards
+        };
+    }
+    return punchCards;
+};
+
+const mergePunchCardsIntoMember = (member, punchCards) => {
+    const nextMember = {
+        ...member,
+        punchCards
+    };
+
+    if (Array.isArray(member?.subscriptions) || Array.isArray(member?.subscriptions?.punchCards)) {
+        nextMember.subscriptions = mergePunchCardsIntoSubscriptions(member.subscriptions, punchCards);
+    }
+
+    return nextMember;
+};
+
 const getSubscriptionKey = (card, index = 0) =>
     getSubscriptionId(card)
     || [
@@ -18,7 +52,7 @@ const getSubscriptionKey = (card, index = 0) =>
         index
     ].filter(Boolean).join("-");
 
-const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSubscriptions = [], setNewComment, handleSend, setData, entityId, color}) => {
+const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSubscriptions = [], punchCards: memberPunchCards = [], setNewComment, handleSend, setData, entityId, color}) => {
     // ==================== STATE MANAGEMENT ====================
     const [flippedCards, setFlippedCards] = useState({});
     const [checkedServices, setCheckedServices] = useState({});
@@ -50,19 +84,22 @@ const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSu
     // ==================== HELPER FUNCTIONS ====================
     // Get current member's subscriptions from parent data
     const getCurrentSubscriptions = useCallback(() => {
-        if (Array.isArray(memberSubscriptions) && memberSubscriptions.length > 0) {
-            return memberSubscriptions.map((subscription) => ({
+        const propPunchCards = Array.isArray(memberPunchCards) && memberPunchCards.length > 0
+            ? memberPunchCards
+            : getPunchCardsFromSubscriptions(memberSubscriptions);
+        if (propPunchCards.length > 0) {
+            return propPunchCards.map((subscription) => ({
                 ...subscription,
                 subscriptionId: getSubscriptionId(subscription)
             }));
         }
         if (!data || data.length === 0 || !customerId) return [];
         const memberData = data.find(member => member.id === customerId);
-        return (memberData?.subscriptions || []).map((subscription) => ({
+        return getPunchCardsFromMember(memberData).map((subscription) => ({
             ...subscription,
             subscriptionId: getSubscriptionId(subscription)
         }));
-    }, [data, customerId, memberSubscriptions]);
+    }, [data, customerId, memberPunchCards, memberSubscriptions]);
 
     // Get filtered subscriptions based on status
     const punchCards = useMemo(() => {
@@ -152,10 +189,10 @@ const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSu
             setData(prevMembers =>
                 prevMembers.map(member => {
                     if (member.id === customerId) {
-                        return {
-                            ...member,
-                            subscriptions: [...(member.subscriptions || []), newSubscriptionWithId]
-                        };
+                        return mergePunchCardsIntoMember(
+                            member,
+                            [...getPunchCardsFromMember(member), newSubscriptionWithId]
+                        );
                     }
                     return member;
                 })
@@ -242,12 +279,12 @@ const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSu
                 setData(prevMembers =>
                     prevMembers.map(member => {
                         if (member.id === customerId) {
-                            return {
-                                ...member,
-                                subscriptions: (member.subscriptions || []).map(sub =>
+                            return mergePunchCardsIntoMember(
+                                member,
+                                getPunchCardsFromMember(member).map(sub =>
                                     getSubscriptionId(sub) === cardId ? updatedCard : sub
                                 )
-                            };
+                            );
                         }
                         return member;
                     })
@@ -257,7 +294,8 @@ const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSu
             try {
                 await handleSend(subscriptionComment, {
                     showStatus: false,
-                    subscriptionsOverride: updatedSubscriptions
+                    subscriptionsOverride: memberSubscriptions,
+                    punchCardsOverride: updatedSubscriptions
                 });
             } catch (commentError) {
                 console.error("Subscription saved, but automatic comment failed:", commentError);
@@ -281,7 +319,7 @@ const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSu
             setIsLoading(false);
             // handleSend();
         }
-    }, [checkedServices, customerId, effectiveEntityId, entityId, getCurrentSubscriptions, refreshMember, setData, setNewComment, handleSend]);
+    }, [checkedServices, customerId, effectiveEntityId, entityId, getCurrentSubscriptions, refreshMember, setData, setNewComment, handleSend, memberSubscriptions]);
 
     // ==================== UI INTERACTION ====================
     const toggleFlip = useCallback((cardId) => {
@@ -428,7 +466,7 @@ const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSu
                       lineHeight: "18px",
                     }}
                   >
-                    Subscription Services
+                    Services
                   </div>
 
                   <div
@@ -531,7 +569,7 @@ const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSu
   )}
 
   {/* ================= ADD SUBSCRIPTION ================= */}
-  {data &&
+  {/* {data &&
     subscriptionStatus === "ACTIVE" &&
     punchCards.length === 0 && (
       <div style={{ textAlign: "center", marginTop: 12 }}>
@@ -544,7 +582,7 @@ const PunchCardsPage = ({data, customerId, customerName, subscriptions: memberSu
           + Add Active Subscription
         </Button>
       </div>
-    )}
+    )} */}
 </div>
     );
 }

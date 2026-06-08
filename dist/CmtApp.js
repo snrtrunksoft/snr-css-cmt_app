@@ -208,7 +208,13 @@ const CmtApp = _ref => {
   const withPhone = data.filter(item => Boolean(item.phoneNumber)).length;
   const withEmail = data.filter(item => Boolean(item.email)).length;
   const totalComments = data.reduce((total, item) => total + (Array.isArray(item.comments) ? item.comments.length : 0), 0);
-  const totalSubscriptions = data.reduce((total, item) => total + (Array.isArray(item.subscriptions) ? item.subscriptions.length : 0), 0);
+  const totalSubscriptions = data.reduce((total, item) => {
+    var _item$subscriptions;
+    if (Array.isArray(item.punchCards)) return total + item.punchCards.length;
+    if (Array.isArray(item.subscriptions)) return total + item.subscriptions.length;
+    if (Array.isArray((_item$subscriptions = item.subscriptions) === null || _item$subscriptions === void 0 ? void 0 : _item$subscriptions.punchCards)) return total + item.subscriptions.punchCards.length;
+    return total;
+  }, 0);
   const topCities = Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const topGroups = Object.entries(groupCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const resourceCityCount = resourceData1.reduce((acc, item) => {
@@ -367,7 +373,12 @@ const CmtApp = _ref => {
     const trimmedFirstName = (firstName === null || firstName === void 0 ? void 0 : firstName.trim()) || "";
     const trimmedLastName = (lastName === null || lastName === void 0 ? void 0 : lastName.trim()) || "";
     const newRecord = {
-      subscriptions: [],
+      subscriptions: {
+        totalNumberOfPaidServices: "0",
+        totalNumberOfUsedServices: "0",
+        history: []
+      },
+      punchCards: [],
       comments: [],
       groupId: groupId ? [groupId] : [],
       userName: values.userName || createUserName(),
@@ -725,6 +736,7 @@ const CmtApp = _ref => {
     groupId: item.groupId,
     comments: item.comments,
     subscriptions: item.subscriptions,
+    punchCards: item.punchCards,
     setDuplicateData: setDuplicateData,
     commentBox: commentBox,
     setCommentBox: setCommentBox,

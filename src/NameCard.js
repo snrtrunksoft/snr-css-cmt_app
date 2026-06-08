@@ -50,7 +50,136 @@ const getRecordKey = (isMember) => (isMember ? "id" : "resourceId");
 const sanitizeSubscriptionsForMemberUpdate = (subscriptions = []) =>
     Array.isArray(subscriptions)
         ? subscriptions.map(({ entityId, id, ...subscription }) => subscription)
-        : subscriptions;
+        : {
+            ...(subscriptions || {}),
+            ...(Array.isArray(subscriptions?.punchCards)
+                ? {
+                    punchCards: subscriptions.punchCards.map(({ entityId, id, ...subscription }) => ({
+                        ...subscription,
+                        ...(id ? { id } : {})
+                    }))
+                }
+                : {})
+        };
+
+const sanitizePunchCardsForMemberUpdate = (punchCards = []) =>
+    Array.isArray(punchCards)
+        ? punchCards.map(({ entityId, ...punchCard }) => punchCard)
+        : [];
+
+const toNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getSubscriptionSummary = (subscriptions) => {
+    if (!subscriptions || Array.isArray(subscriptions)) {
+        return {
+            totalPaid: 0,
+            totalUsed: 0,
+            totalLeft: 0,
+            history: []
+        };
+    }
+
+    const totalPaid = toNumber(subscriptions.totalNumberOfPaidServices);
+    const totalUsed = toNumber(subscriptions.totalNumberOfUsedServices);
+
+    return {
+        totalPaid,
+        totalUsed,
+        totalLeft: Math.max(totalPaid - totalUsed, 0),
+        history: Array.isArray(subscriptions.history) ? subscriptions.history : []
+    };
+};
+
+const ServiceUsagePanel = ({ subscriptions, color }) => {
+    const { totalPaid, totalUsed, totalLeft, history } = getSubscriptionSummary(subscriptions);
+    const hasSummary = totalPaid > 0 || totalUsed > 0 || history.length > 0;
+
+    if (!hasSummary) {
+        return null;
+    }
+
+    return (
+        <Card
+            title="Subscription Services"
+            style={{ margin: "16px", borderRadius: 8 }}
+            bodyStyle={{ padding: 16 }}
+        >
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                    gap: 10,
+                    marginBottom: history.length ? 16 : 0,
+                }}
+            >
+                {[
+                    ["Paid Services", totalPaid],
+                    ["Used Services", totalUsed],
+                    ["Services Left", totalLeft],
+                ].map(([label, value]) => (
+                    <div
+                        key={label}
+                        style={{
+                            background: "#f8fafc",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: 8,
+                            padding: "10px 8px",
+                            textAlign: "center",
+                        }}
+                    >
+                        <Typography.Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+                            {label}
+                        </Typography.Text>
+                        <Typography.Text strong style={{ display: "block", fontSize: 20, color: label === "Services Left" ? color : "#111827" }}>
+                            {value}
+                        </Typography.Text>
+                    </div>
+                ))}
+            </div>
+
+            {history.length > 0 && (
+                <div>
+                    <Typography.Text strong style={{ display: "block", marginBottom: 8 }}>
+                        Service Purchase History
+                    </Typography.Text>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {history.map((event, index) => (
+                            <div
+                                key={event.id || index}
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr auto",
+                                    gap: 10,
+                                    alignItems: "center",
+                                    padding: "10px 12px",
+                                    border: "1px solid #edf0f5",
+                                    borderRadius: 8,
+                                    background: "#fff",
+                                }}
+                            >
+                                <div style={{ minWidth: 0 }}>
+                                    <Typography.Text strong style={{ display: "block" }}>
+                                        {event.amountPaid ? `$${event.amountPaid}` : "Payment recorded"}
+                                    </Typography.Text>
+                                    <Typography.Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+                                        {event.createdDate || "Date unavailable"}
+                                        {event.updatedDate ? ` | Updated ${event.updatedDate}` : ""}
+                                    </Typography.Text>
+                                </div>
+                                <Tag color={String(event.status || "").toLowerCase() === "new" ? "blue" : "default"}>
+                                    {event.status || "Recorded"}
+                                </Tag>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </Card>
+    );
+};
 
 const NameCard = ({ 
     membersPage,
@@ -69,6 +198,7 @@ const NameCard = ({
     groupId,
     comments,
     subscriptions,
+    punchCards = [],
     commentBox = [], 
     setCommentBox,
     selectedGroup,
@@ -235,7 +365,7 @@ const NameCard = ({
 
     const handleSend = async (commentOverride, options = {}) => {
         const commentText = typeof commentOverride === "string" ? commentOverride : newComment;
-        const { showStatus = true, subscriptionsOverride } = options;
+        const { showStatus = true, subscriptionsOverride, punchCardsOverride } = options;
         const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
         const existingComments = visibleComments;
         const nextCommentId = getNextCommentId(existingComments);
@@ -256,6 +386,7 @@ const NameCard = ({
                 "address" : address,
                 "email" : email,
                 "subscriptions" : sanitizeSubscriptionsForMemberUpdate(subscriptionsOverride || subscriptions),
+                "punchCards" : sanitizePunchCardsForMemberUpdate(punchCardsOverride || punchCards),
                 "groupId": normalizeGroupId(groupId).flat().filter(Boolean),
                 "phoneNumber" : phoneNumber,
                 "comments" : commentBody
@@ -267,7 +398,9 @@ const NameCard = ({
 
                 // 🔹 Remove subscriptions if calling RESOURCES_API
                 if (!membersPage) {
-                const { subscriptions, ...rest } = recordToUpload;
+                const rest = { ...recordToUpload };
+                delete rest.subscriptions;
+                delete rest.punchCards;
                 recordToUpload = rest;
                 }
 
@@ -283,6 +416,7 @@ const NameCard = ({
                         prevData.map(prev =>
                             prev.id === customerId ? {
                                 ...prev,
+                                ...(punchCardsOverride ? { punchCards: punchCardsOverride } : {}),
                                 comments: [...(prev.comments || []), {
                                     commentId : nextCommentId,
                                     message: trimmedComment,
@@ -482,6 +616,7 @@ const NameCard = ({
             "address": address,
             "email": email,
             "subscriptions": sanitizeSubscriptionsForMemberUpdate(subscriptions),
+            "punchCards": sanitizePunchCardsForMemberUpdate(punchCards),
             "groupId": normalizeGroupId(groupId).flat().filter(Boolean),
             "phoneNumber": phoneNumber,
             "comments": updatedComments
@@ -493,7 +628,9 @@ const NameCard = ({
             try {
                 let recordToUpload = { ...updatedRecord };
                 if (!membersPage) {
-                    const { subscriptions, ...rest } = recordToUpload;
+                    const rest = { ...recordToUpload };
+                    delete rest.subscriptions;
+                    delete rest.punchCards;
                     recordToUpload = rest;
                 }
 
@@ -906,6 +1043,7 @@ const NameCard = ({
                     customerId={customerId}
                     customerName={customerName}
                     subscriptions={subscriptions}
+                    punchCards={punchCards}
                     setNewComment={setNewComment}
                     handleSend={handleSend}
                     setData={setData}
@@ -914,6 +1052,10 @@ const NameCard = ({
                     />
                 </Card>
                 )}
+
+            {membersPage && (
+                <ServiceUsagePanel subscriptions={subscriptions} color={color} />
+            )}
 
 
             {/* ================= GROUP MESSAGES ================= */}
