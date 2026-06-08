@@ -1,7 +1,7 @@
 const _excluded = ["entityId", "id"],
-  _excluded2 = ["id", "entityId"],
-  _excluded3 = ["subscriptions"],
-  _excluded4 = ["subscriptions"];
+  _excluded2 = ["entityId", "id"],
+  _excluded3 = ["entityId"],
+  _excluded4 = ["id", "entityId"];
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
@@ -70,9 +70,151 @@ const sanitizeSubscriptionsForMemberUpdate = function () {
       } = _ref,
       subscription = _objectWithoutProperties(_ref, _excluded);
     return subscription;
-  }) : subscriptions;
+  }) : _objectSpread(_objectSpread({}, subscriptions || {}), Array.isArray(subscriptions === null || subscriptions === void 0 ? void 0 : subscriptions.punchCards) ? {
+    punchCards: subscriptions.punchCards.map(_ref2 => {
+      let {
+          entityId,
+          id
+        } = _ref2,
+        subscription = _objectWithoutProperties(_ref2, _excluded2);
+      return _objectSpread(_objectSpread({}, subscription), id ? {
+        id
+      } : {});
+    })
+  } : {});
 };
-const NameCard = _ref2 => {
+const sanitizePunchCardsForMemberUpdate = function () {
+  let punchCards = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+  return Array.isArray(punchCards) ? punchCards.map(_ref3 => {
+    let {
+        entityId
+      } = _ref3,
+      punchCard = _objectWithoutProperties(_ref3, _excluded3);
+    return punchCard;
+  }) : [];
+};
+const toNumber = value => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+const getSubscriptionSummary = subscriptions => {
+  if (!subscriptions || Array.isArray(subscriptions)) {
+    return {
+      totalPaid: 0,
+      totalUsed: 0,
+      totalLeft: 0,
+      history: []
+    };
+  }
+  const totalPaid = toNumber(subscriptions.totalNumberOfPaidServices);
+  const totalUsed = toNumber(subscriptions.totalNumberOfUsedServices);
+  return {
+    totalPaid,
+    totalUsed,
+    totalLeft: Math.max(totalPaid - totalUsed, 0),
+    history: Array.isArray(subscriptions.history) ? subscriptions.history : []
+  };
+};
+const ServiceUsagePanel = _ref4 => {
+  let {
+    subscriptions,
+    color
+  } = _ref4;
+  const {
+    totalPaid,
+    totalUsed,
+    totalLeft,
+    history
+  } = getSubscriptionSummary(subscriptions);
+  const hasSummary = totalPaid > 0 || totalUsed > 0 || history.length > 0;
+  if (!hasSummary) {
+    return null;
+  }
+  return /*#__PURE__*/React.createElement(Card, {
+    title: "Subscription Services",
+    style: {
+      margin: "16px",
+      borderRadius: 8
+    },
+    bodyStyle: {
+      padding: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      gap: 10,
+      marginBottom: history.length ? 16 : 0
+    }
+  }, [["Paid Services", totalPaid], ["Used Services", totalUsed], ["Services Left", totalLeft]].map(_ref5 => {
+    let [label, value] = _ref5;
+    return /*#__PURE__*/React.createElement("div", {
+      key: label,
+      style: {
+        background: "#f8fafc",
+        border: "1px solid #e5e7eb",
+        borderRadius: 8,
+        padding: "10px 8px",
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement(Typography.Text, {
+      type: "secondary",
+      style: {
+        display: "block",
+        fontSize: 12
+      }
+    }, label), /*#__PURE__*/React.createElement(Typography.Text, {
+      strong: true,
+      style: {
+        display: "block",
+        fontSize: 20,
+        color: label === "Services Left" ? color : "#111827"
+      }
+    }, value));
+  })), history.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Typography.Text, {
+    strong: true,
+    style: {
+      display: "block",
+      marginBottom: 8
+    }
+  }, "Service Purchase History"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, history.map((event, index) => /*#__PURE__*/React.createElement("div", {
+    key: event.id || index,
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr auto",
+      gap: 10,
+      alignItems: "center",
+      padding: "10px 12px",
+      border: "1px solid #edf0f5",
+      borderRadius: 8,
+      background: "#fff"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement(Typography.Text, {
+    strong: true,
+    style: {
+      display: "block"
+    }
+  }, event.amountPaid ? "$".concat(event.amountPaid) : "Payment recorded"), /*#__PURE__*/React.createElement(Typography.Text, {
+    type: "secondary",
+    style: {
+      display: "block",
+      fontSize: 12
+    }
+  }, event.createdDate || "Date unavailable", event.updatedDate ? " | Updated ".concat(event.updatedDate) : "")), /*#__PURE__*/React.createElement(Tag, {
+    color: String(event.status || "").toLowerCase() === "new" ? "blue" : "default"
+  }, event.status || "Recorded"))))));
+};
+const NameCard = _ref6 => {
   var _groupMessages, _groupMessages2, _groupMessages3, _address$13, _address$14, _address$15, _address$16;
   let {
     membersPage,
@@ -91,13 +233,14 @@ const NameCard = _ref2 => {
     groupId,
     comments,
     subscriptions,
+    punchCards = [],
     commentBox = [],
     setCommentBox,
     selectedGroup,
     groupMessages,
     setGroupMessages,
     uniqueGroups = []
-  } = _ref2;
+  } = _ref6;
   const [isHovered, setIsHovered] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [nameCardDrawer, setNameCardDrawer] = useState(false);
@@ -192,7 +335,7 @@ const NameCard = _ref2 => {
         id,
         entityId: recordEntityId
       } = updatedRecord,
-      cleanCustomer = _objectWithoutProperties(updatedRecord, _excluded2);
+      cleanCustomer = _objectWithoutProperties(updatedRecord, _excluded4);
 
     // ---------- STEP 3: API update ----------
     const updateNameCard = async () => {
@@ -259,7 +402,8 @@ const NameCard = _ref2 => {
     const commentText = typeof commentOverride === "string" ? commentOverride : newComment;
     const {
       showStatus = true,
-      subscriptionsOverride
+      subscriptionsOverride,
+      punchCardsOverride
     } = options;
     const addTimeForComment = dayjs().format("YYYY-MM-DD HH:mm:ss.SSS");
     const existingComments = visibleComments;
@@ -281,6 +425,7 @@ const NameCard = _ref2 => {
         "address": address,
         "email": email,
         "subscriptions": sanitizeSubscriptionsForMemberUpdate(subscriptionsOverride || subscriptions),
+        "punchCards": sanitizePunchCardsForMemberUpdate(punchCardsOverride || punchCards),
         "groupId": normalizeGroupId(groupId).flat().filter(Boolean),
         "phoneNumber": phoneNumber,
         "comments": commentBody
@@ -292,10 +437,9 @@ const NameCard = _ref2 => {
 
           // 🔹 Remove subscriptions if calling RESOURCES_API
           if (!membersPage) {
-            const {
-                subscriptions
-              } = recordToUpload,
-              rest = _objectWithoutProperties(recordToUpload, _excluded3);
+            const rest = _objectSpread({}, recordToUpload);
+            delete rest.subscriptions;
+            delete rest.punchCards;
             recordToUpload = rest;
           }
           if (membersPage) {
@@ -305,7 +449,9 @@ const NameCard = _ref2 => {
           }
           console.log("✅ successfully added the comment");
           if (membersPage) {
-            setData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread({}, prev), {}, {
+            setData(prevData => prevData.map(prev => prev.id === customerId ? _objectSpread(_objectSpread(_objectSpread({}, prev), punchCardsOverride ? {
+              punchCards: punchCardsOverride
+            } : {}), {}, {
               comments: [...(prev.comments || []), {
                 commentId: nextCommentId,
                 message: trimmedComment,
@@ -501,6 +647,7 @@ const NameCard = _ref2 => {
       "address": address,
       "email": email,
       "subscriptions": sanitizeSubscriptionsForMemberUpdate(subscriptions),
+      "punchCards": sanitizePunchCardsForMemberUpdate(punchCards),
       "groupId": normalizeGroupId(groupId).flat().filter(Boolean),
       "phoneNumber": phoneNumber,
       "comments": updatedComments
@@ -511,10 +658,9 @@ const NameCard = _ref2 => {
       try {
         let recordToUpload = _objectSpread({}, updatedRecord);
         if (!membersPage) {
-          const {
-              subscriptions
-            } = recordToUpload,
-            rest = _objectWithoutProperties(recordToUpload, _excluded4);
+          const rest = _objectSpread({}, recordToUpload);
+          delete rest.subscriptions;
+          delete rest.punchCards;
           recordToUpload = rest;
         }
         if (membersPage) {
@@ -902,12 +1048,16 @@ const NameCard = _ref2 => {
     customerId: customerId,
     customerName: customerName,
     subscriptions: subscriptions,
+    punchCards: punchCards,
     setNewComment: setNewComment,
     handleSend: handleSend,
     setData: setData,
     entityId: entityId,
     color: color
-  })), /*#__PURE__*/React.createElement(Card, {
+  })), membersPage && /*#__PURE__*/React.createElement(ServiceUsagePanel, {
+    subscriptions: subscriptions,
+    color: color
+  }), /*#__PURE__*/React.createElement(Card, {
     title: "Comments",
     style: {
       margin: 16,
