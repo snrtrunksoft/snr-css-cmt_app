@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./NameCard.css";
 import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar, Tag } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { CheckOutlined, DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import StatusModal from "./StatusModal";
@@ -93,9 +93,42 @@ const getSubscriptionSummary = (subscriptions) => {
     };
 };
 
+const chunkServices = (totalPaid, totalUsed, size = 12) => {
+    const paidCount = Math.max(0, Math.floor(totalPaid));
+    const usedCount = Math.min(Math.max(0, Math.floor(totalUsed)), paidCount);
+
+    return Array.from({ length: Math.ceil(paidCount / size) }, (_, cardIndex) => {
+        const start = cardIndex * size;
+        const count = Math.min(size, paidCount - start);
+
+        return Array.from({ length: count }, (_, serviceIndex) => {
+            const absoluteIndex = start + serviceIndex;
+            return {
+                number: absoluteIndex + 1,
+                used: absoluteIndex < usedCount
+            };
+        });
+    });
+};
+
+const getServiceAccentColor = (color) => {
+    const mappedColors = {
+        pink: "#1677ff",
+        lightgreen: "#16a34a",
+        lightblue: "#0284c7",
+        red: "#dc2626"
+    };
+
+    return mappedColors[color] || color || "#1677ff";
+};
+
 const ServiceUsagePanel = ({ subscriptions, color }) => {
     const { totalPaid, totalUsed, totalLeft, history } = getSubscriptionSummary(subscriptions);
     const hasSummary = totalPaid > 0 || totalUsed > 0 || history.length > 0;
+    const serviceCards = chunkServices(totalPaid, totalUsed);
+    const usedCount = Math.min(totalUsed, totalPaid);
+    const usagePercent = totalPaid > 0 ? Math.round((usedCount / totalPaid) * 100) : 0;
+    const accentColor = getServiceAccentColor(color);
 
     if (!hasSummary) {
         return null;
@@ -103,63 +136,74 @@ const ServiceUsagePanel = ({ subscriptions, color }) => {
 
     return (
         <Card
-            title="Subscription Services"
-            style={{ margin: "16px", borderRadius: 8 }}
+            className="subscription-services-card"
+            title={(
+                <div className="subscription-services-title">
+                    <span>Subscription Services</span>
+                    {totalPaid > 0 && <Tag color="blue">{usagePercent}% used</Tag>}
+                </div>
+            )}
+            style={{ "--service-accent": accentColor }}
             bodyStyle={{ padding: 16 }}
         >
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                    gap: 10,
-                    marginBottom: history.length ? 16 : 0,
-                }}
-            >
+            <div className="subscription-services-metrics">
                 {[
                     ["Paid Services", totalPaid],
                     ["Used Services", totalUsed],
                     ["Services Left", totalLeft],
-                ].map(([label, value]) => (
-                    <div
-                        key={label}
-                        style={{
-                            background: "#f8fafc",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: 8,
-                            padding: "10px 8px",
-                            textAlign: "center",
-                        }}
-                    >
-                        <Typography.Text type="secondary" style={{ display: "block", fontSize: 12 }}>
-                            {label}
-                        </Typography.Text>
-                        <Typography.Text strong style={{ display: "block", fontSize: 20, color: label === "Services Left" ? color : "#111827" }}>
-                            {value}
-                        </Typography.Text>
+                ].map(([label, value], index) => (
+                    <div key={label} className={`subscription-service-metric ${index === 2 ? "is-remaining" : ""}`}>
+                        <span>{label}</span>
+                        <strong>{value}</strong>
                     </div>
                 ))}
             </div>
 
+            {totalPaid > 0 && (
+                <div className="subscription-services-progress" aria-label={`${usagePercent}% services used`}>
+                    <span style={{ width: `${usagePercent}%` }} />
+                </div>
+            )}
+
+            {serviceCards.length > 0 && (
+                <div className="subscription-service-card-grid">
+                    {serviceCards.map((serviceCard, cardIndex) => {
+                        const cardUsedCount = serviceCard.filter((service) => service.used).length;
+                        const cardLeftCount = serviceCard.length - cardUsedCount;
+
+                        return (
+                            <div key={`service-card-${cardIndex}`} className="subscription-service-mini-card">
+                                <div className="subscription-service-mini-card-header">
+                                    <div>
+                                        <strong>Services {serviceCard[0]?.number}-{serviceCard[serviceCard.length - 1]?.number}</strong>
+                                        <span>{cardUsedCount} used | {cardLeftCount} left</span>
+                                    </div>
+                                </div>
+                                <div className="subscription-service-box-grid">
+                                    {serviceCard.map((service) => (
+                                        <div
+                                            key={service.number}
+                                            className={`subscription-service-box ${service.used ? "is-used" : "is-left"}`}
+                                            title={`Service ${service.number}`}
+                                        >
+                                            {service.used && <CheckOutlined />}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
             {history.length > 0 && (
-                <div>
-                    <Typography.Text strong style={{ display: "block", marginBottom: 8 }}>
+                <div className="subscription-service-history">
+                    <Typography.Text strong className="subscription-service-history-title">
                         Service Purchase History
                     </Typography.Text>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div className="subscription-service-history-list">
                         {history.map((event, index) => (
-                            <div
-                                key={event.id || index}
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "1fr auto",
-                                    gap: 10,
-                                    alignItems: "center",
-                                    padding: "10px 12px",
-                                    border: "1px solid #edf0f5",
-                                    borderRadius: 8,
-                                    background: "#fff",
-                                }}
-                            >
+                            <div key={event.id || index} className="subscription-service-history-item">
                                 <div style={{ minWidth: 0 }}>
                                     <Typography.Text strong style={{ display: "block" }}>
                                         {event.amountPaid ? `$${event.amountPaid}` : "Payment recorded"}
