@@ -12,7 +12,7 @@ function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t =
 import React, { useEffect, useMemo, useState } from "react";
 import "./NameCard.css";
 import { Badge, Button, Card, Col, Drawer, Form, Grid, Input, message, Row, Space, Select, Spin, Popconfirm, Typography, Avatar, Tag } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { CheckOutlined, DeleteOutlined } from "@ant-design/icons";
 import maleAvatar from "./assets/male_avatar.jpg";
 import TextArea from "antd/es/input/TextArea";
 import StatusModal from "./StatusModal";
@@ -115,6 +115,35 @@ const getSubscriptionSummary = subscriptions => {
     history: Array.isArray(subscriptions.history) ? subscriptions.history : []
   };
 };
+const chunkServices = function (totalPaid, totalUsed) {
+  let size = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 12;
+  const paidCount = Math.max(0, Math.floor(totalPaid));
+  const usedCount = Math.min(Math.max(0, Math.floor(totalUsed)), paidCount);
+  return Array.from({
+    length: Math.ceil(paidCount / size)
+  }, (_, cardIndex) => {
+    const start = cardIndex * size;
+    const count = Math.min(size, paidCount - start);
+    return Array.from({
+      length: count
+    }, (_, serviceIndex) => {
+      const absoluteIndex = start + serviceIndex;
+      return {
+        number: absoluteIndex + 1,
+        used: absoluteIndex < usedCount
+      };
+    });
+  });
+};
+const getServiceAccentColor = color => {
+  const mappedColors = {
+    pink: "#1677ff",
+    lightgreen: "#16a34a",
+    lightblue: "#0284c7",
+    red: "#dc2626"
+  };
+  return mappedColors[color] || color || "#1677ff";
+};
 const ServiceUsagePanel = _ref4 => {
   let {
     subscriptions,
@@ -127,74 +156,69 @@ const ServiceUsagePanel = _ref4 => {
     history
   } = getSubscriptionSummary(subscriptions);
   const hasSummary = totalPaid > 0 || totalUsed > 0 || history.length > 0;
+  const serviceCards = chunkServices(totalPaid, totalUsed);
+  const usedCount = Math.min(totalUsed, totalPaid);
+  const usagePercent = totalPaid > 0 ? Math.round(usedCount / totalPaid * 100) : 0;
+  const accentColor = getServiceAccentColor(color);
   if (!hasSummary) {
     return null;
   }
   return /*#__PURE__*/React.createElement(Card, {
-    title: "Subscription Services",
+    className: "subscription-services-card",
+    title: /*#__PURE__*/React.createElement("div", {
+      className: "subscription-services-title"
+    }, /*#__PURE__*/React.createElement("span", null, "Subscription Services"), totalPaid > 0 && /*#__PURE__*/React.createElement(Tag, {
+      color: "blue"
+    }, usagePercent, "% used")),
     style: {
-      margin: "16px",
-      borderRadius: 8
+      "--service-accent": accentColor
     },
     bodyStyle: {
       padding: 16
     }
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-      gap: 10,
-      marginBottom: history.length ? 16 : 0
-    }
-  }, [["Paid Services", totalPaid], ["Used Services", totalUsed], ["Services Left", totalLeft]].map(_ref5 => {
+    className: "subscription-services-metrics"
+  }, [["Paid Services", totalPaid], ["Used Services", totalUsed], ["Services Left", totalLeft]].map((_ref5, index) => {
     let [label, value] = _ref5;
     return /*#__PURE__*/React.createElement("div", {
       key: label,
-      style: {
-        background: "#f8fafc",
-        border: "1px solid #e5e7eb",
-        borderRadius: 8,
-        padding: "10px 8px",
-        textAlign: "center"
-      }
-    }, /*#__PURE__*/React.createElement(Typography.Text, {
-      type: "secondary",
-      style: {
-        display: "block",
-        fontSize: 12
-      }
-    }, label), /*#__PURE__*/React.createElement(Typography.Text, {
-      strong: true,
-      style: {
-        display: "block",
-        fontSize: 20,
-        color: label === "Services Left" ? color : "#111827"
-      }
-    }, value));
-  })), history.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Typography.Text, {
+      className: "subscription-service-metric ".concat(index === 2 ? "is-remaining" : "")
+    }, /*#__PURE__*/React.createElement("span", null, label), /*#__PURE__*/React.createElement("strong", null, value));
+  })), totalPaid > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "subscription-services-progress",
+    "aria-label": "".concat(usagePercent, "% services used")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: "".concat(usagePercent, "%")
+    }
+  })), serviceCards.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "subscription-service-card-grid"
+  }, serviceCards.map((serviceCard, cardIndex) => {
+    var _serviceCard$, _serviceCard;
+    const cardUsedCount = serviceCard.filter(service => service.used).length;
+    const cardLeftCount = serviceCard.length - cardUsedCount;
+    return /*#__PURE__*/React.createElement("div", {
+      key: "service-card-".concat(cardIndex),
+      className: "subscription-service-mini-card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "subscription-service-mini-card-header"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Services ", (_serviceCard$ = serviceCard[0]) === null || _serviceCard$ === void 0 ? void 0 : _serviceCard$.number, "-", (_serviceCard = serviceCard[serviceCard.length - 1]) === null || _serviceCard === void 0 ? void 0 : _serviceCard.number), /*#__PURE__*/React.createElement("span", null, cardUsedCount, " used | ", cardLeftCount, " left"))), /*#__PURE__*/React.createElement("div", {
+      className: "subscription-service-box-grid"
+    }, serviceCard.map(service => /*#__PURE__*/React.createElement("div", {
+      key: service.number,
+      className: "subscription-service-box ".concat(service.used ? "is-used" : "is-left"),
+      title: "Service ".concat(service.number)
+    }, service.used && /*#__PURE__*/React.createElement(CheckOutlined, null)))));
+  })), history.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "subscription-service-history"
+  }, /*#__PURE__*/React.createElement(Typography.Text, {
     strong: true,
-    style: {
-      display: "block",
-      marginBottom: 8
-    }
+    className: "subscription-service-history-title"
   }, "Service Purchase History"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 8
-    }
+    className: "subscription-service-history-list"
   }, history.map((event, index) => /*#__PURE__*/React.createElement("div", {
     key: event.id || index,
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr auto",
-      gap: 10,
-      alignItems: "center",
-      padding: "10px 12px",
-      border: "1px solid #edf0f5",
-      borderRadius: 8,
-      background: "#fff"
-    }
+    className: "subscription-service-history-item"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       minWidth: 0
